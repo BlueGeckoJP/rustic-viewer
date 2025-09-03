@@ -1,4 +1,5 @@
 use tauri::menu::{Menu, MenuItem, Submenu};
+use tauri_plugin_dialog::DialogExt;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -16,7 +17,16 @@ pub fn run() {
         .on_menu_event(|app, event| {
             println!("Menu event: {:?}", event.id());
             match event.id().as_ref() {
-                "open" => {}
+                "open" => {
+                    app.dialog().file().pick_file(|path| {
+                        if let Some(path) = path {
+                            // TODO: Handle the selected file path
+                            println!("Selected file: {path:?}");
+                        } else {
+                            println!("No file selected");
+                        }
+                    });
+                }
                 "quit" => {
                     app.exit(0);
                 }
