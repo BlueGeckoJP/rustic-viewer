@@ -6,14 +6,22 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .menu(|app| {
-            let file_menu = Submenu::with_items(
-                app,
-                "File",
-                true,
-                &[&MenuItem::new(app, "Open", true, None::<&str>)?],
-            )?;
+            let open_item = MenuItem::with_id(app, "open", "Open", true, Some("Ctrl+O"))?;
+            let quit_item = MenuItem::with_id(app, "quit", "Quit", true, Some("Ctrl+Q"))?;
+
+            let file_menu = Submenu::with_items(app, "File", true, &[&open_item, &quit_item])?;
 
             Menu::with_items(app, &[&file_menu])
+        })
+        .on_menu_event(|app, event| {
+            println!("Menu event: {:?}", event.id());
+            match event.id().as_ref() {
+                "open" => {}
+                "quit" => {
+                    app.exit(0);
+                }
+                _ => {}
+            }
         })
         .invoke_handler(tauri::generate_handler![])
         .run(tauri::generate_context!())
