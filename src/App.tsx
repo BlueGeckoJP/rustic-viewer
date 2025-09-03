@@ -33,7 +33,43 @@ export default function App() {
         const ctx = canvas.getContext("2d");
         if (!ctx) return;
 
-        ctx.putImageData(img, 0, 0);
+        // Calculate aspect ratio and resize canvas
+        const canvasRatio = canvas.width / canvas.height;
+        const imgRatio = img.width / img.height;
+        let drawWidth, drawHeight, offsetX, offsetY;
+
+        if (imgRatio > canvasRatio) {
+          drawWidth = canvas.width;
+          drawHeight = canvas.width / imgRatio;
+          offsetX = 0;
+          offsetY = (canvas.height - drawHeight) / 2;
+        } else {
+          drawHeight = canvas.height;
+          drawWidth = canvas.height * imgRatio;
+          offsetX = (canvas.width - drawWidth) / 2;
+          offsetY = 0;
+        }
+
+        // Offscreen canvas to convert ImageData to CanvasImageSource
+        const srcCanvas = document.createElement("canvas");
+        srcCanvas.width = img.width;
+        srcCanvas.height = img.height;
+        const srcCtx = srcCanvas.getContext("2d");
+        if (!srcCtx) return;
+        srcCtx.putImageData(img, 0, 0);
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(
+          srcCanvas,
+          0,
+          0,
+          img.width,
+          img.height,
+          offsetX,
+          offsetY,
+          drawWidth,
+          drawHeight
+        );
       });
     }).then((fn) => {
       unlisten = fn;
@@ -44,8 +80,8 @@ export default function App() {
   }, []);
 
   return (
-    <>
+    <div className="flex items-center justify-center h-screen">
       <canvas width={800} height={600} ref={canvasRef}></canvas>
-    </>
+    </div>
   );
 }
