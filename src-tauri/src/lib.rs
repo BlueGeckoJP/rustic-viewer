@@ -1,38 +1,8 @@
-use std::{fs, path::Path};
-
-use tauri::menu::{Menu, MenuItem, Submenu};
+use tauri::{
+    menu::{Menu, MenuItem, Submenu},
+    Emitter,
+};
 use tauri_plugin_dialog::DialogExt;
-
-#[tauri::command]
-fn open_image(path: &str) -> Result<(), String> {
-    let p = fs::canonicalize(path).unwrap_or_default();
-
-    // Validate the path
-    if path.is_empty() {
-        println!("No image path provided");
-        return Err("No image path provided".into());
-    } else if !p.exists() {
-        println!("Image path does not exist: {path}");
-        return Err("Image path does not exist".into());
-    } else if !p.is_file() {
-        println!("Path is not a file: {path}");
-        return Err("Path is not a file".into());
-    }
-
-    println!("Open image at path: {path}");
-    // Implement image opening logic here
-    Ok(())
-}
-
-fn open_image_from_any_path<T: AsRef<Path>>(path: Option<T>) {
-    let path_str = path
-        .as_ref()
-        .map(|p| p.as_ref().to_string_lossy())
-        .unwrap_or_default();
-    if open_image(&path_str).is_err() {
-        println!("Failed to open image from path: {path_str}");
-    }
-}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -51,9 +21,10 @@ pub fn run() {
             println!("Menu event: {:?}", event.id());
             match event.id().as_ref() {
                 "open" => {
-                    app.dialog().file().pick_file(|path| {
+                    let inner_app = app.clone();
+                    app.dialog().file().pick_file(move |path| {
                         if let Some(path) = path {
-                            open_image_from_any_path(path.as_path());
+                            inner_app.emit("open-image", path.to_string()).unwrap();
                         } else {
                             println!("No file selected");
                         }
@@ -65,7 +36,7 @@ pub fn run() {
                 _ => {}
             }
         })
-        .invoke_handler(tauri::generate_handler![open_image])
+        .invoke_handler(tauri::generate_handler![])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
