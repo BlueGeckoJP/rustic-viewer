@@ -7,10 +7,47 @@ import { readFile } from "@tauri-apps/plugin-fs";
 export default function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
+  // Initialize the WASM module
   useEffect(() => {
     init().then(() => {
       console.log("WASM module initialized");
     });
+  }, []);
+
+  // Sync canvas size with its displayed size
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const resize = () => {
+      const dpr = window.devicePixelRatio || 1;
+
+      // Get the size the canvas is being displayed
+      const rect = canvas.getBoundingClientRect();
+      const displayWidth = rect.width;
+      const displayHeight = rect.height;
+
+      // If the canvas size already matches, do nothing
+      const wantedWidth = Math.round(displayWidth * dpr);
+      const wantedHeight = Math.round(displayHeight * dpr);
+      if (canvas.width !== wantedWidth || canvas.height !== wantedHeight) {
+        canvas.width = wantedWidth;
+        canvas.height = wantedHeight;
+
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          // Scaling to make logical coordinates relative to CSS pixels
+          ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset any existing transforms
+          ctx.scale(dpr, dpr);
+        }
+      }
+    };
+
+    resize();
+    window.addEventListener("resize", resize);
+    return () => {
+      window.removeEventListener("resize", resize);
+    };
   }, []);
 
   // Add listener for "open-image" event from Tauri backend
@@ -81,7 +118,7 @@ export default function App() {
 
   return (
     <div className="flex items-center justify-center h-screen">
-      <canvas width={800} height={600} ref={canvasRef}></canvas>
+      <canvas className="w-screen h-screen" ref={canvasRef}></canvas>
     </div>
   );
 }
