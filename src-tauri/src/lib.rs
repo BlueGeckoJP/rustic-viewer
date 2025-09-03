@@ -4,23 +4,24 @@ use tauri::menu::{Menu, MenuItem, Submenu};
 use tauri_plugin_dialog::DialogExt;
 
 #[tauri::command]
-fn open_image(path: &str) {
+fn open_image(path: &str) -> Result<(), String> {
     let p = fs::canonicalize(path).unwrap_or_default();
 
     // Validate the path
     if path.is_empty() {
         println!("No image path provided");
-        return;
+        return Err("No image path provided".into());
     } else if !p.exists() {
         println!("Image path does not exist: {path}");
-        return;
+        return Err("Image path does not exist".into());
     } else if !p.is_file() {
         println!("Path is not a file: {path}");
-        return;
+        return Err("Path is not a file".into());
     }
 
     println!("Open image at path: {path}");
     // Implement image opening logic here
+    Ok(())
 }
 
 fn open_image_from_any_path<T: AsRef<Path>>(path: Option<T>) {
@@ -28,7 +29,9 @@ fn open_image_from_any_path<T: AsRef<Path>>(path: Option<T>) {
         .as_ref()
         .map(|p| p.as_ref().to_string_lossy())
         .unwrap_or_default();
-    open_image(&path_str);
+    if open_image(&path_str).is_err() {
+        println!("Failed to open image from path: {path_str}");
+    }
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
