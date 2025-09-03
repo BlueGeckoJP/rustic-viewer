@@ -1,5 +1,5 @@
 import { listen } from "@tauri-apps/api/event";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import init, { decode_image_to_image_data } from "../src-wasm/pkg/src_wasm";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { readFile } from "@tauri-apps/plugin-fs";
@@ -7,12 +7,65 @@ import { readFile } from "@tauri-apps/plugin-fs";
 export default function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
+  const [currentImage, setCurrentImage] = useState<ImageData | null>(null);
+
   // Initialize the WASM module
   useEffect(() => {
     init().then(() => {
       console.log("WASM module initialized");
     });
   }, []);
+
+  // Draw the current image on the canvas
+  const drawCurrentImage = useCallback(() => {
+    const img = currentImage;
+    if (!img) return;
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    // Calculate aspect ratio and resize canvas
+    const canvasRatio = canvas.width / canvas.height;
+    const imgRatio = img.width / img.height;
+    let drawWidth, drawHeight, offsetX, offsetY;
+
+    if (imgRatio > canvasRatio) {
+      drawWidth = canvas.width;
+      drawHeight = canvas.width / imgRatio;
+      offsetX = 0;
+      offsetY = (canvas.height - drawHeight) / 2;
+    } else {
+      drawHeight = canvas.height;
+      drawWidth = canvas.height * imgRatio;
+      offsetX = (canvas.width - drawWidth) / 2;
+      offsetY = 0;
+    }
+
+    // Offscreen canvas to convert ImageData to CanvasImageSource
+    const srcCanvas = document.createElement("canvas");
+    srcCanvas.width = img.width;
+    srcCanvas.height = img.height;
+    const srcCtx = srcCanvas.getContext("2d");
+    if (!srcCtx) return;
+    srcCtx.putImageData(img, 0, 0);
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(
+      srcCanvas,
+      0,
+      0,
+      img.width,
+      img.height,
+      offsetX,
+      offsetY,
+      drawWidth,
+      drawHeight
+    );
+    console.log("Image drawn on canvas");
+  }, [currentImage]);
 
   // Sync canvas size with its displayed size
   useEffect(() => {
@@ -40,6 +93,8 @@ export default function App() {
           ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset any existing transforms
           ctx.scale(dpr, dpr);
         }
+
+        drawCurrentImage();
       }
     };
 
@@ -48,7 +103,12 @@ export default function App() {
     return () => {
       window.removeEventListener("resize", resize);
     };
-  }, []);
+  }, [drawCurrentImage]);
+
+  // Redraw the image whenever it changes
+  useEffect(() => {
+    drawCurrentImage();
+  }, [currentImage, drawCurrentImage]);
 
   // Add listener for "open-image" event from Tauri backend
   useEffect(() => {
@@ -64,49 +124,7 @@ export default function App() {
         const img = decode_image_to_image_data(content);
         if (!img) return;
 
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-
-        const ctx = canvas.getContext("2d");
-        if (!ctx) return;
-
-        // Calculate aspect ratio and resize canvas
-        const canvasRatio = canvas.width / canvas.height;
-        const imgRatio = img.width / img.height;
-        let drawWidth, drawHeight, offsetX, offsetY;
-
-        if (imgRatio > canvasRatio) {
-          drawWidth = canvas.width;
-          drawHeight = canvas.width / imgRatio;
-          offsetX = 0;
-          offsetY = (canvas.height - drawHeight) / 2;
-        } else {
-          drawHeight = canvas.height;
-          drawWidth = canvas.height * imgRatio;
-          offsetX = (canvas.width - drawWidth) / 2;
-          offsetY = 0;
-        }
-
-        // Offscreen canvas to convert ImageData to CanvasImageSource
-        const srcCanvas = document.createElement("canvas");
-        srcCanvas.width = img.width;
-        srcCanvas.height = img.height;
-        const srcCtx = srcCanvas.getContext("2d");
-        if (!srcCtx) return;
-        srcCtx.putImageData(img, 0, 0);
-
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(
-          srcCanvas,
-          0,
-          0,
-          img.width,
-          img.height,
-          offsetX,
-          offsetY,
-          drawWidth,
-          drawHeight
-        );
+        setCurrentImage(img);
       });
     }).then((fn) => {
       unlisten = fn;
