@@ -29,20 +29,24 @@ const TabBar = (_props: TabBarProps) => {
         tabs.map((tab) => (
           <div
             key={tab.id}
-            className={
+            className={`${
               tab.id === activeTabId
                 ? "bg-white text-black"
                 : "bg-gray-800 text-white"
             }
+                flex items-center`}
           >
-            <span onClick={() => setActiveTab(tab.id)}>
-              {tab.imageList.length > 0
-                ? tab.imageList[tab.currentIndex].split("/").pop()
-                : "New Tab"}
-            </span>
-            <button className="ml-2" onClick={() => removeTab(tab.id)}>
-              x
-            </button>
+            <div className="flex-1 overflow-hidden text-nowrap">
+              <span
+                className="cursor-pointer"
+                onClick={() => setActiveTab(tab.id)}
+              >
+                {tab.imageList.length > 0
+                  ? tab.imageList[tab.currentIndex].split("/").pop()
+                  : "New Tab"}
+              </span>
+            </div>
+            <button onClick={() => removeTab(tab.id)}>x</button>
           </div>
         ))}
     </div>
