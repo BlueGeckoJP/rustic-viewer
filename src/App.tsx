@@ -136,7 +136,12 @@ export default function App() {
             (e) => e.isFile && e.name.match(/\.(png|jpg|jpeg|gif|bmp|webp)$/i)
           )
           .map((e) => `${dir}/${e.name}`)
-          .sort();
+          .sort((a, b) =>
+            a.localeCompare(b, undefined, {
+              numeric: true,
+              sensitivity: "base",
+            })
+          );
         setImageList(files);
         const idx = files.findIndex((p) => p === rawPath);
         setCurrentIndex(idx >= 0 ? idx : 0);
