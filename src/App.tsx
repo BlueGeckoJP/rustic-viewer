@@ -7,7 +7,9 @@ import { useTabStore } from "./store";
 import TabBar from "./components/TabBar";
 
 export default function App() {
+  const didAddListeners = useRef(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const openImageRef = useRef<(rawPath: string) => void>(() => {});
 
   const tab = useTabStore((s) => {
     const id = s.activeTabId;
@@ -128,6 +130,10 @@ export default function App() {
     [tab, addTab, setActiveTab, updateTab, loadImageByPath]
   );
 
+  useEffect(() => {
+    openImageRef.current = openImage;
+  }, [openImage]);
+
   // Initialize Web Worker for decoding
   useEffect(() => {
     workerRef.current = new ImageWorker();
@@ -172,6 +178,8 @@ export default function App() {
 
   // Add listener for events from Tauri backend
   useEffect(() => {
+    if (didAddListeners.current) return;
+
     const unlisteners: Array<() => void> = [];
 
     listen("open-image", (event) => {
@@ -181,7 +189,7 @@ export default function App() {
           ? event.payload
           : String(event.payload);
 
-      openImage(rawPath);
+      openImageRef.current(rawPath);
     }).then((fn) => {
       unlisteners.push(fn);
     });
@@ -193,6 +201,8 @@ export default function App() {
     }).then((fn) => {
       unlisteners.push(fn);
     });
+
+    didAddListeners.current = true;
 
     return () => {
       unlisteners.forEach((fn) => fn());
