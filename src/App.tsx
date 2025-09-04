@@ -177,6 +177,11 @@ export default function App() {
           Loading...
         </div>
       )}
+      {imageList.length > 0 && (
+        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-50 text-white px-3 py-1 rounded">
+          {`[${currentIndex + 1}/${imageList.length}]`}
+        </div>
+      )}
     </div>
   );
 }
