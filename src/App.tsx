@@ -9,13 +9,25 @@ import TabBar from "./components/TabBar";
 export default function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
+  const tab = useTabStore((s) => {
+    const id = s.activeTabId;
+    return id ? s.getTab(id) : null;
+  });
   const addTab = useTabStore((s) => s.addTab);
+  const setActiveTab = useTabStore((s) => s.setActiveTab);
+  const updateTab = useTabStore((s) => s.updateTab);
+  const setCurrentIndex = useTabStore((s) => s.setCurrentIndex);
+  const activeTabId = useTabStore((s) => s.activeTabId);
 
   const [currentImage, setCurrentImage] = useState<ImageData | null>(null);
-  const [imageList, setImageList] = useState<string[]>([]);
-  const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const workerRef = useRef<Worker | null>(null);
+
+  useEffect(() => {
+    console.log("Active tab changed:", activeTabId);
+    if (!tab || tab.directory === "" || tab.imageList.length === 0) return;
+    openImage(tab.imageList[tab.currentIndex]);
+  }, [activeTabId]);
 
   // Draw the current image on the canvas
   const drawCurrentImage = useCallback(() => {
@@ -81,6 +93,41 @@ export default function App() {
       });
   }, []);
 
+  const openImage = useCallback(
+    (rawPath: string) => {
+      // List all images in the same directory
+      const dir = rawPath.substring(0, rawPath.lastIndexOf("/"));
+      readDir(dir).then((entries) => {
+        const files = entries
+          .filter(
+            (e) => e.isFile && e.name.match(/\.(png|jpg|jpeg|gif|bmp|webp)$/i)
+          )
+          .map((e) => `${dir}/${e.name}`)
+          .sort((a, b) =>
+            a.localeCompare(b, undefined, {
+              numeric: true,
+              sensitivity: "base",
+            })
+          );
+        const idx = files.findIndex((p) => p === rawPath);
+
+        if (!tab) {
+          const id = addTab(dir, files);
+          setActiveTab(id);
+        } else {
+          updateTab(tab.id, {
+            directory: dir,
+            imageList: files,
+            currentIndex: idx >= 0 ? idx : 0,
+          });
+        }
+      });
+      // Load and display the selected image
+      loadImageByPath(rawPath);
+    },
+    [tab, addTab, setActiveTab, updateTab, loadImageByPath]
+  );
+
   // Initialize Web Worker for decoding
   useEffect(() => {
     workerRef.current = new ImageWorker();
@@ -133,26 +180,8 @@ export default function App() {
         typeof event.payload === "string"
           ? event.payload
           : String(event.payload);
-      // List all images in the same directory
-      const dir = rawPath.substring(0, rawPath.lastIndexOf("/"));
-      readDir(dir).then((entries) => {
-        const files = entries
-          .filter(
-            (e) => e.isFile && e.name.match(/\.(png|jpg|jpeg|gif|bmp|webp)$/i)
-          )
-          .map((e) => `${dir}/${e.name}`)
-          .sort((a, b) =>
-            a.localeCompare(b, undefined, {
-              numeric: true,
-              sensitivity: "base",
-            })
-          );
-        setImageList(files);
-        const idx = files.findIndex((p) => p === rawPath);
-        setCurrentIndex(idx >= 0 ? idx : 0);
-      });
-      // Load and display the selected image
-      loadImageByPath(rawPath);
+
+      openImage(rawPath);
     }).then((fn) => {
       unlisteners.push(fn);
     });
@@ -173,20 +202,23 @@ export default function App() {
   // Key navigation: left/right arrows to switch images
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (!tab) return;
+      const { imageList, currentIndex } = tab;
+
       if (imageList.length === 0) return;
       if (e.key === "ArrowRight") {
         const next = (currentIndex + 1) % imageList.length;
-        setCurrentIndex(next);
+        setCurrentIndex(tab.id, next);
         loadImageByPath(imageList[next]);
       } else if (e.key === "ArrowLeft") {
         const prev = (currentIndex - 1 + imageList.length) % imageList.length;
-        setCurrentIndex(prev);
+        setCurrentIndex(tab.id, prev);
         loadImageByPath(imageList[prev]);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [imageList, currentIndex, loadImageByPath]);
+  }, [tab?.imageList, tab?.currentIndex, loadImageByPath]);
 
   return (
     <div className="relative flex items-center justify-center h-screen">
@@ -196,9 +228,9 @@ export default function App() {
           Loading...
         </div>
       )}
-      {imageList.length > 0 && (
+      {(tab?.imageList.length ?? 0) > 0 && (
         <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-50 text-white px-3 py-1 rounded">
-          {`[${currentIndex + 1}/${imageList.length}]`}
+          {`[${(tab?.currentIndex ?? -1) + 1}/${tab?.imageList.length}]`}
         </div>
       )}
       <TabBar />

@@ -12,13 +12,15 @@ type TabStore = {
   tabs: Tab[];
   activeTabId: string | null;
   // actions
-  addTab: (directory: string | null, imageList: string[]) => void;
+  addTab: (directory: string | null, imageList: string[]) => string;
   removeTab: (id: string) => void;
+  getTab: (id: string) => Tab | null;
+  updateTab: (id: string, tab: Partial<Tab>) => void;
   setActiveTab: (id: string) => void;
   setCurrentIndex: (id: string, index: number) => void;
 };
 
-export const useTabStore = create<TabStore>((set, _get) => ({
+export const useTabStore = create<TabStore>((set, get) => ({
   tabs: [],
   activeTabId: null,
 
@@ -28,6 +30,7 @@ export const useTabStore = create<TabStore>((set, _get) => ({
       tabs: [...state.tabs, { id, directory, imageList, currentIndex: 0 }],
       activeTabId: id,
     }));
+    return id;
   },
 
   removeTab: (id) => {
@@ -41,6 +44,17 @@ export const useTabStore = create<TabStore>((set, _get) => ({
           : state.activeTabId;
       return { tabs, activeTabId };
     });
+  },
+
+  getTab: (id) => {
+    const tab = get().tabs.find((t) => t.id === id);
+    return tab || null;
+  },
+
+  updateTab: (id, tab) => {
+    set((state) => ({
+      tabs: state.tabs.map((t) => (t.id === id ? { ...t, ...tab } : t)),
+    }));
   },
 
   setActiveTab: (id) => {
