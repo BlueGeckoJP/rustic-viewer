@@ -1,8 +1,8 @@
 import { listen } from "@tauri-apps/api/event";
 import { useCallback, useEffect, useRef, useState } from "react";
-import init, { decode_image_to_image_data } from "../src-wasm/pkg/src_wasm";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { readFile, readDir } from "@tauri-apps/plugin-fs";
+import ImageWorker from "./imageWorker.ts?worker";
 
 export default function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -10,13 +10,8 @@ export default function App() {
   const [currentImage, setCurrentImage] = useState<ImageData | null>(null);
   const [imageList, setImageList] = useState<string[]>([]);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
-
-  // Initialize the WASM module
-  useEffect(() => {
-    init().then(() => {
-      console.log("WASM module initialized");
-    });
-  }, []);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const workerRef = useRef<Worker | null>(null);
 
   // Draw the current image on the canvas
   const drawCurrentImage = useCallback(() => {
@@ -66,55 +61,57 @@ export default function App() {
       drawWidth,
       drawHeight
     );
-    console.log("Image drawn on canvas");
   }, [currentImage]);
 
   // Helper to load and decode an image by raw file path
   const loadImageByPath = useCallback((rawPath: string) => {
+    if (!workerRef.current) return;
+    setIsLoading(true);
     const fileUrl = convertFileSrc(rawPath);
-    readFile(fileUrl).then((content) => {
-      const img = decode_image_to_image_data(content);
-      if (!img) return;
-      setCurrentImage(img);
-    });
+    readFile(fileUrl)
+      .then((content) => {
+        workerRef.current!.postMessage({ content });
+      })
+      .catch(() => {
+        setIsLoading(false);
+      });
+  }, []);
+
+  // Initialize Web Worker for decoding
+  useEffect(() => {
+    workerRef.current = new ImageWorker();
+    workerRef.current.onmessage = (e: MessageEvent) => {
+      setCurrentImage(e.data.img);
+      setIsLoading(false);
+    };
+    return () => {
+      workerRef.current?.terminate();
+    };
   }, []);
 
   // Sync canvas size with its displayed size
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-
     const resize = () => {
       const dpr = window.devicePixelRatio || 1;
-
-      // Get the size the canvas is being displayed
       const rect = canvas.getBoundingClientRect();
-      const displayWidth = rect.width;
-      const displayHeight = rect.height;
-
-      // If the canvas size already matches, do nothing
-      const wantedWidth = Math.round(displayWidth * dpr);
-      const wantedHeight = Math.round(displayHeight * dpr);
+      const wantedWidth = Math.round(rect.width * dpr);
+      const wantedHeight = Math.round(rect.height * dpr);
       if (canvas.width !== wantedWidth || canvas.height !== wantedHeight) {
         canvas.width = wantedWidth;
         canvas.height = wantedHeight;
-
         const ctx = canvas.getContext("2d");
         if (ctx) {
-          // Scaling to make logical coordinates relative to CSS pixels
-          ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset any existing transforms
+          ctx.setTransform(1, 0, 0, 1, 0, 0);
           ctx.scale(dpr, dpr);
         }
-
         drawCurrentImage();
       }
     };
-
     resize();
     window.addEventListener("resize", resize);
-    return () => {
-      window.removeEventListener("resize", resize);
-    };
+    return () => window.removeEventListener("resize", resize);
   }, [drawCurrentImage]);
 
   // Redraw the image whenever it changes
@@ -126,7 +123,7 @@ export default function App() {
   useEffect(() => {
     let unlisten: (() => void) | undefined;
     listen("open-image", (event) => {
-      console.log("Received event:", event.payload);
+      console.log("Received open-image event:", event.payload);
       const rawPath =
         typeof event.payload === "string"
           ? event.payload
@@ -173,8 +170,13 @@ export default function App() {
   }, [imageList, currentIndex, loadImageByPath]);
 
   return (
-    <div className="flex items-center justify-center h-screen">
+    <div className="relative flex items-center justify-center h-screen">
       <canvas className="w-screen h-screen" ref={canvasRef}></canvas>
+      {isLoading && (
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-50 text-white px-4 py-2 rounded">
+          Loading...
+        </div>
+      )}
     </div>
   );
 }
