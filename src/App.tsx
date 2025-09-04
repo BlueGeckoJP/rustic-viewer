@@ -3,9 +3,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { readFile, readDir } from "@tauri-apps/plugin-fs";
 import ImageWorker from "./imageWorker.ts?worker";
+import { useTabStore } from "./store";
+import TabBar from "./components/TabBar";
 
 export default function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  const addTab = useTabStore((s) => s.addTab);
 
   const [currentImage, setCurrentImage] = useState<ImageData | null>(null);
   const [imageList, setImageList] = useState<string[]>([]);
@@ -119,9 +123,10 @@ export default function App() {
     drawCurrentImage();
   }, [currentImage, drawCurrentImage]);
 
-  // Add listener for "open-image" event from Tauri backend
+  // Add listener for events from Tauri backend
   useEffect(() => {
-    let unlisten: (() => void) | undefined;
+    const unlisteners: Array<() => void> = [];
+
     listen("open-image", (event) => {
       console.log("Received open-image event:", event.payload);
       const rawPath =
@@ -149,12 +154,21 @@ export default function App() {
       // Load and display the selected image
       loadImageByPath(rawPath);
     }).then((fn) => {
-      unlisten = fn;
+      unlisteners.push(fn);
     });
+
+    listen("new-tab", (event) => {
+      console.log("Received new-tab event:", event.payload);
+
+      addTab(null, []);
+    }).then((fn) => {
+      unlisteners.push(fn);
+    });
+
     return () => {
-      if (unlisten) unlisten();
+      unlisteners.forEach((fn) => fn());
     };
-  }, [loadImageByPath]);
+  }, [loadImageByPath, addTab]);
 
   // Key navigation: left/right arrows to switch images
   useEffect(() => {
@@ -187,6 +201,7 @@ export default function App() {
           {`[${currentIndex + 1}/${imageList.length}]`}
         </div>
       )}
+      <TabBar />
     </div>
   );
 }

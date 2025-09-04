@@ -3,8 +3,7 @@ import { v4 as uuid } from "uuid";
 
 export type Tab = {
   id: string;
-  title: string;
-  directory: string;
+  directory: string | null;
   imageList: string[];
   currentIndex: number;
 };
@@ -13,7 +12,7 @@ type TabStore = {
   tabs: Tab[];
   activeTabId: string | null;
   // actions
-  addTab: (title: string, directory: string, imageList: string[]) => void;
+  addTab: (directory: string | null, imageList: string[]) => void;
   removeTab: (id: string) => void;
   setActiveTab: (id: string) => void;
   setCurrentIndex: (id: string, index: number) => void;
@@ -23,13 +22,10 @@ export const useTabStore = create<TabStore>((set, _get) => ({
   tabs: [],
   activeTabId: null,
 
-  addTab: (title, directory, imageList) => {
+  addTab: (directory, imageList) => {
     const id = uuid();
     set((state) => ({
-      tabs: [
-        ...state.tabs,
-        { id, title, directory, imageList, currentIndex: 0 },
-      ],
+      tabs: [...state.tabs, { id, directory, imageList, currentIndex: 0 }],
       activeTabId: id,
     }));
   },

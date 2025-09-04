@@ -1,5 +1,5 @@
 use tauri::{
-    menu::{Menu, MenuItem, Submenu},
+    menu::{Menu, MenuItem, PredefinedMenuItem, Submenu},
     Emitter,
 };
 use tauri_plugin_dialog::DialogExt;
@@ -11,16 +11,30 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .menu(|app| {
+            let new_item = MenuItem::with_id(app, "new", "New", true, Some("Ctrl+N"))?;
             let open_item = MenuItem::with_id(app, "open", "Open", true, Some("Ctrl+O"))?;
             let quit_item = MenuItem::with_id(app, "quit", "Quit", true, Some("Ctrl+Q"))?;
 
-            let file_menu = Submenu::with_items(app, "File", true, &[&open_item, &quit_item])?;
+            let file_menu = Submenu::with_items(
+                app,
+                "File",
+                true,
+                &[
+                    &new_item,
+                    &open_item,
+                    &PredefinedMenuItem::separator(app)?,
+                    &quit_item,
+                ],
+            )?;
 
             Menu::with_items(app, &[&file_menu])
         })
         .on_menu_event(|app, event| {
             println!("Menu event: {:?}", event.id());
             match event.id().as_ref() {
+                "new" => {
+                    app.emit("new-tab", ()).unwrap();
+                }
                 "open" => {
                     let inner_app = app.clone();
                     app.dialog().file().pick_file(move |path| {
