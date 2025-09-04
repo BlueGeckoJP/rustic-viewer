@@ -21,7 +21,11 @@ const TabBar = (_props: TabBarProps) => {
 
   return (
     <div
-      className={`absolute left-0 flex flex-col bg-slate-950 text-gray-200 shadow-lg transition-all duration-200 z-20 ${
+      style={{
+        WebkitBackdropFilter: "blur(12px)",
+        backdropFilter: "blur(12px)",
+      }}
+      className={`absolute left-0 flex flex-col text-[#D3DAD9] shadow-lg transition-all duration-200 z-20 bg-[#37353E]/88 backdrop-blur-md ${
         isOpen
           ? "top-0 bottom-0 w-64 p-3 space-y-2 overflow-y-auto"
           : "top-1/2 -translate-y-1/2 h-8 w-4 p-1"
@@ -29,7 +33,7 @@ const TabBar = (_props: TabBarProps) => {
     >
       <button
         aria-label={isOpen ? "Collapse sidebar" : "Expand sidebar"}
-        className="self-end mb-2 text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-indigo-400 rounded"
+        className="self-end mb-2 text-[#D3DAD9] hover:text-[#D3DAD9] focus:outline-none focus:ring-2 focus:ring-[#715A5A] rounded"
         onClick={() => setIsOpen(!isOpen)}
       >
         {isOpen ? "«" : "»"}
@@ -54,8 +58,8 @@ const TabBar = (_props: TabBarProps) => {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-3 cursor-pointer select-none px-2 transition-colors duration-150 min-w-0 ${
                   active
-                    ? "bg-gradient-to-r bg-slate-700 text-white rounded-xl shadow-md"
-                    : "text-gray-200 hover:bg-slate-800 hover:text-white rounded-xl"
+                    ? "bg-gradient-to-r bg-[#715A5A] text-[#D3DAD9] rounded-xl shadow-md"
+                    : "text-[#D3DAD9] hover:bg-[#44444E] hover:text-[#D3DAD9] rounded-xl"
                 }`}
               >
                 <div className="flex-1 min-w-0">
@@ -71,7 +75,7 @@ const TabBar = (_props: TabBarProps) => {
                   }}
                   aria-label={`Close ${label}`}
                   title={`Close ${label}`}
-                  className="ml-2 text-gray-300 hover:text-white p-1 rounded focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                  className="ml-2 text-[#D3DAD9] hover:text-[#D3DAD9] p-1 rounded focus:outline-none focus:ring-2 focus:ring-[#715A5A]"
                 >
                   ✕
                 </button>
