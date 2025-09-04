@@ -173,7 +173,7 @@ export default function App() {
     <div className="relative flex items-center justify-center h-screen">
       <canvas className="w-screen h-screen" ref={canvasRef}></canvas>
       {isLoading && (
-        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-50 text-white px-4 py-2 rounded">
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-50 text-white px-3 py-1 rounded">
           Loading...
         </div>
       )}
