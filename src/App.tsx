@@ -27,20 +27,27 @@ export default function App() {
 
   useEffect(() => {
     console.log("Active tab changed:", activeTabId);
-    if (!tab || tab.directory === "" || tab.imageList.length === 0) return;
+    if (!tab || tab.directory === "" || tab.imageList.length === 0) {
+      setCurrentImage(null);
+      drawCurrentImage();
+      return;
+    }
     openImage(tab.imageList[tab.currentIndex]);
   }, [activeTabId]);
 
   // Draw the current image on the canvas
   const drawCurrentImage = useCallback(() => {
-    const img = currentImage;
-    if (!img) return;
-
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
+
+    const img = currentImage;
+    if (!img) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      return;
+    }
 
     // Calculate aspect ratio and resize canvas
     const canvasRatio = canvas.width / canvas.height;
