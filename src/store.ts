@@ -27,15 +27,15 @@ type TabStore = {
     imageList: string[],
     currentIndex: number
   ) => string;
-  addComparisonTab(children: SingleTab[], activeSlotIndex: number): string;
+  addComparisonTab: (children: SingleTab[], activeSlotIndex: number) => string;
   removeTab: (id: string) => void;
   getSingleTab: (id: string) => SingleTab | null;
   getComparisonTab: (id: string) => ComparisonTab | null;
   setCurrentIndex: (id: string, index: number) => void;
   setActiveTab: (id: string) => void;
-  setActiveSlotIndex(id: string, slotIndex: number): void;
+  setActiveSlotIndex: (id: string, slotIndex: number) => void;
   updateSingleTab: (id: string, tab: Partial<SingleTab>) => void;
-  updateComparisonChildren(id: string, children: SingleTab[]): void;
+  updateComparisonChildren: (id: string, children: SingleTab[]) => void;
 };
 
 export const isSingleTab = (tab: Tab): tab is SingleTab =>
@@ -96,9 +96,24 @@ export const useTabStore = create<TabStore>((set, get) => ({
 
   setCurrentIndex: (id, index) => {
     set((state) => ({
-      tabs: state.tabs.map((t) =>
-        t.id === id ? { ...t, currentIndex: index } : t
-      ),
+      tabs: state.tabs.map((t) => {
+        if (t.type === "single") {
+          return t.id === id ? { ...t, currentIndex: index } : t;
+        }
+        if (t.type === "comparison") {
+          // only update if this comparison contains the child
+          if (t.children.some((child) => child.id === id)) {
+            return {
+              ...t,
+              children: t.children.map((child) =>
+                child.id === id ? { ...child, currentIndex: index } : child
+              ),
+            };
+          }
+          return t;
+        }
+        return t;
+      }),
     }));
   },
 
