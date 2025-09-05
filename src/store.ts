@@ -12,7 +12,11 @@ type TabStore = {
   tabs: Tab[];
   activeTabId: string | null;
   // actions
-  addTab: (directory: string | null, imageList: string[]) => string;
+  addTab: (
+    directory: string | null,
+    imageList: string[],
+    currentIndex: number
+  ) => string;
   removeTab: (id: string) => void;
   getTab: (id: string) => Tab | null;
   updateTab: (id: string, tab: Partial<Tab>) => void;
@@ -24,10 +28,10 @@ export const useTabStore = create<TabStore>((set, get) => ({
   tabs: [],
   activeTabId: null,
 
-  addTab: (directory, imageList) => {
+  addTab: (directory, imageList, currentIndex) => {
     const id = uuid();
     set((state) => ({
-      tabs: [...state.tabs, { id, directory, imageList, currentIndex: 0 }],
+      tabs: [...state.tabs, { id, directory, imageList, currentIndex }],
       activeTabId: id,
     }));
     return id;

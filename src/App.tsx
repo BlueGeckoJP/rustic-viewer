@@ -114,7 +114,7 @@ export default function App() {
         const idx = files.findIndex((p) => p === rawPath);
 
         if (!tab) {
-          const id = addTab(dir, files);
+          const id = addTab(dir, files, idx >= 0 ? idx : 0);
           setActiveTab(id);
         } else {
           updateTab(tab.id, {
@@ -197,7 +197,7 @@ export default function App() {
     listen("new-tab", (event) => {
       console.log("Received new-tab event:", event.payload);
 
-      addTab(null, []);
+      addTab(null, [], 0);
     }).then((fn) => {
       unlisteners.push(fn);
     });
