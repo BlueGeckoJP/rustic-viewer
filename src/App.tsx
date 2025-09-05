@@ -6,9 +6,12 @@ import ImageWorker from "./imageWorker.ts?worker";
 import { useTabStore } from "./store";
 import TabBar from "./components/TabBar";
 
+// Main App component: manages tab state, image loading, canvas rendering, and Tauri events
 export default function App() {
   const didAddListeners = useRef(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  // Ref to store the function for opening images
+  // Reason: prevent the tab from being null-checked inside the function when using the old function
   const openImageRef = useRef<(rawPath: string) => void>(() => {});
 
   const tab = useTabStore((s) => {
@@ -26,6 +29,7 @@ export default function App() {
   const workerRef = useRef<Worker | null>(null);
 
   useEffect(() => {
+    // When active tab changes, load the corresponding image or clear the canvas
     console.log("Active tab changed:", activeTabId);
     if (!tab || tab.directory === "" || tab.imageList.length === 0) {
       setCurrentImage(null);
@@ -35,7 +39,7 @@ export default function App() {
     openImage(tab.imageList[tab.currentIndex]);
   }, [activeTabId]);
 
-  // Draw the current image on the canvas
+  // Draw the current image onto the canvas with proper scaling and centering
   const drawCurrentImage = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -88,7 +92,7 @@ export default function App() {
     );
   }, [currentImage]);
 
-  // Helper to load and decode an image by raw file path
+  // Load image content from filesystem and post it to the worker for decoding
   const loadImageByPath = useCallback((rawPath: string) => {
     if (!workerRef.current) return;
     setIsLoading(true);
@@ -102,6 +106,7 @@ export default function App() {
       });
   }, []);
 
+  // Open an image: update or create a tab, list images, and start loading
   const openImage = useCallback(
     (rawPath: string) => {
       // List all images in the same directory
@@ -141,7 +146,7 @@ export default function App() {
     openImageRef.current = openImage;
   }, [openImage]);
 
-  // Initialize Web Worker for decoding
+  // Initialize Web Worker for image decoding and handle decoded messages
   useEffect(() => {
     workerRef.current = new ImageWorker();
     workerRef.current.onmessage = (e: MessageEvent) => {
@@ -153,7 +158,7 @@ export default function App() {
     };
   }, []);
 
-  // Sync canvas size with its displayed size
+  // Sync canvas resolution with display size to handle high-DPI devices
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -178,12 +183,12 @@ export default function App() {
     return () => window.removeEventListener("resize", resize);
   }, [drawCurrentImage]);
 
-  // Redraw the image whenever it changes
+  // Redraw the canvas whenever the image data changes
   useEffect(() => {
     drawCurrentImage();
   }, [currentImage, drawCurrentImage]);
 
-  // Add listener for events from Tauri backend
+  // Add Tauri event listeners for 'open-image' and 'new-tab' events
   useEffect(() => {
     if (didAddListeners.current) return;
 
@@ -216,7 +221,7 @@ export default function App() {
     };
   }, [loadImageByPath, addTab]);
 
-  // Key navigation: left/right arrows to switch images
+  // Handle arrow key navigation to switch between images in the tab
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!tab) return;
