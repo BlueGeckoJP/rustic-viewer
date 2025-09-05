@@ -16,11 +16,11 @@ export default function App() {
 
   const tab = useTabStore((s) => {
     const id = s.activeTabId;
-    return id ? s.getTab(id) : null;
+    return id ? s.getSingleTab(id) : null;
   });
-  const addTab = useTabStore((s) => s.addTab);
+  const addTab = useTabStore((s) => s.addSingleTab);
   const setActiveTab = useTabStore((s) => s.setActiveTab);
-  const updateTab = useTabStore((s) => s.updateTab);
+  const updateTab = useTabStore((s) => s.updateSingleTab);
   const setCurrentIndex = useTabStore((s) => s.setCurrentIndex);
   const activeTabId = useTabStore((s) => s.activeTabId);
 
