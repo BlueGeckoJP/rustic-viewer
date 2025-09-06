@@ -253,6 +253,16 @@ export default function App() {
         {activeTab && isSingleTab(activeTab) && (
           <div className="w-full h-full flex items-center justify-center">
             <canvas className="w-screen h-screen" ref={canvasRef}></canvas>
+            {isLoading && (
+              <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-50 text-white px-3 py-1 rounded">
+                Loading...
+              </div>
+            )}
+            {(tab?.imageList.length ?? 0) > 0 && (
+              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-50 text-white px-3 py-1 rounded">
+                {`[${(tab?.currentIndex ?? -1) + 1}/${tab?.imageList.length}]`}
+              </div>
+            )}
           </div>
         )}
 
@@ -260,16 +270,6 @@ export default function App() {
           <ComparisonView tabId={activeTab.id} />
         )}
       </div>
-      {isLoading && (
-        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-50 text-white px-3 py-1 rounded">
-          Loading...
-        </div>
-      )}
-      {(tab?.imageList.length ?? 0) > 0 && (
-        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-50 text-white px-3 py-1 rounded">
-          {`[${(tab?.currentIndex ?? -1) + 1}/${tab?.imageList.length}]`}
-        </div>
-      )}
     </div>
   );
 }
