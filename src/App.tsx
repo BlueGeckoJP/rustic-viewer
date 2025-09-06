@@ -1,8 +1,7 @@
 import { listen } from "@tauri-apps/api/event";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { convertFileSrc } from "@tauri-apps/api/core";
-import { readFile, readDir } from "@tauri-apps/plugin-fs";
-import ImageWorker from "./imageWorker.ts?worker";
+import { readDir } from "@tauri-apps/plugin-fs";
+import { decodeImageFromPath } from "./utils/imageDecoder";
 import { isComparisonTab, isSingleTab, useTabStore } from "./store";
 import TabBar from "./components/TabBar";
 import ComparisonView from "./components/ComparisonView";
@@ -31,7 +30,7 @@ export default function App() {
 
   const [currentImage, setCurrentImage] = useState<ImageData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const workerRef = useRef<Worker | null>(null);
+  // Shared decoder worker (see utils/imageDecoder) removes need for local worker ref
 
   useEffect(() => {
     // When active tab changes, load the corresponding image or clear the canvas
@@ -52,16 +51,12 @@ export default function App() {
 
   // Load image content from filesystem and post it to the worker for decoding
   const loadImageByPath = useCallback((rawPath: string) => {
-    if (!workerRef.current) return;
     setIsLoading(true);
-    const fileUrl = convertFileSrc(rawPath);
-    readFile(fileUrl)
-      .then((content) => {
-        workerRef.current!.postMessage({ content });
+    decodeImageFromPath(rawPath)
+      .then((img) => {
+        setCurrentImage(img);
       })
-      .catch(() => {
-        setIsLoading(false);
-      });
+      .finally(() => setIsLoading(false));
   }, []);
 
   // Open an image: update or create a tab, list images, and start loading
@@ -104,17 +99,8 @@ export default function App() {
     openImageRef.current = openImage;
   }, [openImage]);
 
-  // Initialize Web Worker for image decoding and handle decoded messages
-  useEffect(() => {
-    workerRef.current = new ImageWorker();
-    workerRef.current.onmessage = (e: MessageEvent) => {
-      setCurrentImage(e.data.img);
-      setIsLoading(false);
-    };
-    return () => {
-      workerRef.current?.terminate();
-    };
-  }, []);
+  // Local worker initialization no longer needed (handled in shared utility)
+  useEffect(() => {}, []);
 
   // Sync canvas resolution with display size to handle high-DPI devices
   useEffect(() => {

@@ -1,8 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useTabStore, isComparisonTab } from "../store";
-import ImageWorker from "../imageWorker.ts?worker";
-import { convertFileSrc } from "@tauri-apps/api/core";
-import { readFile } from "@tauri-apps/plugin-fs";
+import { decodeImageFromPath } from "../utils/imageDecoder";
 import ImageCanvas from "./ImageCanvas";
 
 type ComparisonViewProps = {
@@ -57,7 +55,7 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ tabId }) => {
             {/* Canvas-based image rendering (matches SingleTab canvas behavior) */}
             <div className="flex-1 flex items-center justify-center">
               {file ? (
-                <SlotCanvas key={child.id} rawPath={file} slotId={child.id} />
+                <SlotCanvas key={child.id} rawPath={file} />
               ) : (
                 <span className="text-[#888]">No Image</span>
               )}
@@ -97,48 +95,24 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ tabId }) => {
 };
 
 // --- SlotCanvas component -------------------------------------------------
-type SlotCanvasProps = {
-  rawPath: string;
-  slotId: string;
-};
+type SlotCanvasProps = { rawPath: string };
 
-// Shared worker singleton so multiple slots can reuse the same decoder worker
-const getSharedWorker = (() => {
-  let w: Worker | null = null;
-  return () => {
-    if (!w) w = new ImageWorker();
-    return w!;
-  };
-})();
-
-const SlotCanvas: React.FC<SlotCanvasProps> = ({ rawPath, slotId }) => {
+// Shared worker now encapsulated by decodeImageFromPath utility
+const SlotCanvas: React.FC<SlotCanvasProps> = ({ rawPath }) => {
   const [imgData, setImgData] = useState<ImageData | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
-    const worker = getSharedWorker();
-    const handler = (e: MessageEvent) => {
-      const data = e.data as { img?: ImageData; slotId?: string };
-      if (data && data.slotId === slotId && data.img) setImgData(data.img);
-    };
-    worker.addEventListener("message", handler);
-    return () => worker.removeEventListener("message", handler);
-  }, [slotId]);
-
-  useEffect(() => {
-    const worker = getSharedWorker();
-    let cancelled = false;
-    const fileUrl = convertFileSrc(rawPath);
-    readFile(fileUrl)
-      .then((content) => {
-        if (cancelled) return;
-        worker.postMessage({ content, slotId });
+    let alive = true;
+    decodeImageFromPath(rawPath)
+      .then((img) => {
+        if (alive) setImgData(img);
       })
       .catch(() => {});
     return () => {
-      cancelled = true;
+      alive = false;
     };
-  }, [rawPath, slotId]);
+  }, [rawPath]);
 
   return (
     <ImageCanvas
