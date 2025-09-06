@@ -1,5 +1,6 @@
 import { useTabStore } from "../store";
-import { useRef, useState, useCallback, useEffect } from "react";
+import React, { useRef, useState, useCallback, useEffect } from "react";
+import ContextMenu, { ContextMenuItem } from "./ContextMenu";
 
 export type TabBarProps = {};
 
@@ -13,6 +14,9 @@ const TabBar = (_props: TabBarProps) => {
   const removeTab = useTabStore((s) => s.removeTab);
   const reorderTab = useTabStore((s) => s.reorderTab);
   const [isOpen, setIsOpen] = useState(true);
+  // Context menu state
+  const [menuOpenFor, setMenuOpenFor] = useState<string | null>(null);
+  const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
 
   // Drag state
   const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -259,6 +263,12 @@ const TabBar = (_props: TabBarProps) => {
                   // Prevent click action from firing after drag (if moved significantly)
                   if (draggingId) e.preventDefault();
                 }}
+                onContextMenu={(e: React.MouseEvent<HTMLDivElement>) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setMenuOpenFor(tab.id);
+                  setMenuPos({ x: e.clientX, y: e.clientY });
+                }}
                 className={`flex items-center gap-3 cursor-pointer select-none px-2 transition-colors duration-150 min-w-0 ${
                   active
                     ? "bg-gradient-to-r bg-[#715A5A] text-[#D3DAD9] rounded-xl shadow-md"
@@ -294,6 +304,51 @@ const TabBar = (_props: TabBarProps) => {
             );
           })}
         </div>
+      )}
+
+      {menuOpenFor && menuPos && (
+        <ContextMenu
+          x={menuPos.x}
+          y={menuPos.y}
+          items={(
+            [
+              { id: "close", label: "Close" },
+              { id: "close-others", label: "Close Others" },
+              { id: "close-right", label: "Close Tabs to Right" },
+            ] as ContextMenuItem[]
+          ).map((it) => ({
+            ...it,
+            disabled: false,
+          }))}
+          onSelect={(id) => {
+            const targetId = menuOpenFor;
+            if (!targetId) return;
+            if (id === "close") {
+              removeTab(targetId);
+            } else if (id === "close-others") {
+              // keep only this tab
+              const remaining = tabs.filter((t) => t.id === targetId);
+              // remove others
+              tabs
+                .filter((t) => t.id !== targetId)
+                .forEach((t) => removeTab(t.id));
+              // set active to remaining
+              if (remaining.length) setActiveTab(remaining[0].id);
+            } else if (id === "close-right") {
+              const idx = tabs.findIndex((t) => t.id === targetId);
+              if (idx >= 0) {
+                const toClose = tabs.slice(idx + 1).map((t) => t.id);
+                toClose.forEach((id) => removeTab(id));
+              }
+            }
+            setMenuOpenFor(null);
+            setMenuPos(null);
+          }}
+          onClose={() => {
+            setMenuOpenFor(null);
+            setMenuPos(null);
+          }}
+        />
       )}
     </div>
   );
