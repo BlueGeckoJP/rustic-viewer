@@ -56,7 +56,7 @@ const ContextMenu = ({ x, y, items, onSelect, onClose }: ContextMenuProps) => {
           aria-disabled={it.disabled}
           onClick={() => !it.disabled && onSelect(it.id)}
           style={{
-            padding: "8px 12px",
+            padding: "4px 12px",
             cursor: it.disabled ? "not-allowed" : "pointer",
             opacity: it.disabled ? 0.5 : 1,
             borderRadius: 4,
