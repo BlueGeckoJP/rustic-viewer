@@ -36,6 +36,7 @@ type TabStore = {
   setActiveSlotIndex: (id: string, slotIndex: number) => void;
   updateSingleTab: (id: string, tab: Partial<SingleTab>) => void;
   updateComparisonChildren: (id: string, children: SingleTab[]) => void;
+  reorderTab: (fromIndex: number, toIndex: number) => void;
 };
 
 export const isSingleTab = (tab: Tab): tab is SingleTab =>
@@ -145,5 +146,15 @@ export const useTabStore = create<TabStore>((set, get) => ({
         t.id === id && t.type === "comparison" ? { ...t, children } : t
       ),
     }));
+  },
+
+  reorderTab: (fromIndex, toIndex) => {
+    set((state) => {
+      const tabs = Array.from(state.tabs);
+      const [movedTab] = tabs.splice(fromIndex, 1);
+      const adjustedToIndex = fromIndex < toIndex ? toIndex - 1 : toIndex;
+      tabs.splice(adjustedToIndex, 0, movedTab);
+      return { tabs };
+    });
   },
 }));
