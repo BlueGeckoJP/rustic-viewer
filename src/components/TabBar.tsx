@@ -1,11 +1,9 @@
 import { useTabStore } from "../store";
 import React, { useRef, useState, useCallback, useEffect } from "react";
 import ContextMenu, { ContextMenuItem } from "./ContextMenu";
+import { isComparisonTab, isSingleTab } from "../store";
 
-export type TabBarProps = {};
-
-// Modern vertical tab bar — styled like browser tabs but stacked vertically.
-const TabBar = (_props: TabBarProps) => {
+const TabBar = () => {
   const tabBarRef = useRef<HTMLDivElement>(null);
   const tabRefs = useRef<Map<string, HTMLElement>>(new Map());
   const tabs = useTabStore((s) => s.tabs);
@@ -13,19 +11,50 @@ const TabBar = (_props: TabBarProps) => {
   const setActiveTab = useTabStore((s) => s.setActiveTab);
   const removeTab = useTabStore((s) => s.removeTab);
   const reorderTab = useTabStore((s) => s.reorderTab);
+  const createComparison = useTabStore((s) => s.createComparisonFromSingleIds);
   const [isOpen, setIsOpen] = useState(true);
-  // Context menu state
+
+  // Multi-selection state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const lastClickedIndexRef = useRef<number | null>(null);
+
+  const toggleSelect = (tabId: string, index: number, e: React.MouseEvent) => {
+    // Ctrl/Cmd toggles the selection
+    if (e.metaKey || e.ctrlKey) {
+      setSelectedIds((prev) => {
+        const n = new Set(prev);
+        if (n.has(tabId)) n.delete(tabId);
+        else n.add(tabId);
+        return n;
+      });
+      lastClickedIndexRef.current = index;
+      return;
+    }
+    // Shift selects a range
+    if (e.shiftKey && lastClickedIndexRef.current != null) {
+      const start = Math.min(lastClickedIndexRef.current, index);
+      const end = Math.max(lastClickedIndexRef.current, index);
+      const ids = tabs.slice(start, end + 1).map((t) => t.id);
+      setSelectedIds(new Set(ids));
+      return;
+    }
+    // Normal click resets to only this tab
+    setSelectedIds(new Set([tabId]));
+    lastClickedIndexRef.current = index;
+  };
+
+  // Context menu
   const [menuOpenFor, setMenuOpenFor] = useState<string | null>(null);
   const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
 
-  // Drag state
+  // Drag state (kept from original implementation)
   const [draggingId, setDraggingId] = useState<string | null>(null);
-  const dragStartYRef = useRef(0); // pointer down Y
+  const dragStartYRef = useRef(0);
   const originIndexRef = useRef<number | null>(null);
-  const currentIndexRef = useRef<number | null>(null); // provisional index while dragging
-  const dragOffsetRef = useRef(0); // current translateY in px for dragged element
+  const currentIndexRef = useRef<number | null>(null);
+  const dragOffsetRef = useRef(0);
   const tabHeightsRef = useRef<Map<string, number>>(new Map());
-  const gap = 8; // Tailwind gap-2 => 0.5rem => 8px
+  const gap = 8;
 
   const measureTabs = useCallback(() => {
     tabRefs.current.forEach((el, id) => {
@@ -35,7 +64,6 @@ const TabBar = (_props: TabBarProps) => {
 
   useEffect(() => {
     if (isOpen) {
-      // measure after open or tabs change
       requestAnimationFrame(measureTabs);
     }
   }, [tabs, isOpen, measureTabs]);
@@ -67,15 +95,6 @@ const TabBar = (_props: TabBarProps) => {
     clearDragVisuals();
   };
 
-  // Prerequisite retained information
-  // draggingId: Currently dragged tab ID. Stop processing if this is falsy
-  // dragStartYRef.current: clientY at the start of drag (on mousedown)
-  // originIndexRef.current: Index where the tab was before the drag started
-  // currentIndexRef.current: Temporary target index (visual placeholder position)
-  // tabHeightsRef.current: Cache mapping each tab ID to its height (px)
-  // gap: Space between tabs (8px). Fixed to match Tailwind's `gap-2`
-  // tabRefs.current: For retrieving each tab's DOM element
-  // dragOffsetRef.current: translateY applied to the currently dragged tab (kept accessible for other features as needed)
   const onMouseMove = useCallback(
     (e: MouseEvent) => {
       if (!draggingId) return;
@@ -84,11 +103,9 @@ const TabBar = (_props: TabBarProps) => {
       if (!barEl || !draggedEl) return;
 
       const startY = dragStartYRef.current;
-      // Distance moved up or down from the reference position
-      // positive means moving down
       let delta = e.clientY - startY;
 
-      // Clamp delta: upper limit 0 relative to initial position such that top of dragged can't go above bar top
+      // Compute constraints
       const origIndex = originIndexRef.current!;
       const preHeights = tabs
         .slice(0, origIndex)
@@ -101,51 +118,48 @@ const TabBar = (_props: TabBarProps) => {
         );
       const draggedHeight =
         tabHeightsRef.current.get(draggingId) || draggedEl.offsetHeight;
-      const currentTopRelative = preHeights + delta; // position from bar top candidate
-      const minTop = 0; // can't go above bar
 
-      // Compute lower limit: total height of all tabs minus dragged height
       const totalHeight = tabs.reduce(
         (acc, t) =>
           acc +
           (tabHeightsRef.current.get(t.id) || draggedEl.offsetHeight) +
           gap,
         -gap
-      ); // last adds no gap
-      const maxTop = totalHeight - draggedHeight; // last valid top position
+      );
+      const maxTop = totalHeight - draggedHeight;
+      const minTop = 0;
+
+      const currentTopRelative = preHeights + delta;
       const clampedTop = Math.min(Math.max(currentTopRelative, minTop), maxTop);
       delta = clampedTop - preHeights;
-      dragOffsetRef.current = delta;
 
-      // Apply transform to dragged element
+      dragOffsetRef.current = delta;
+      draggedEl.style.transform = `translateY(${delta}px)`;
       draggedEl.style.zIndex = "10";
       draggedEl.style.pointerEvents = "none";
       draggedEl.style.transition = "none";
-      draggedEl.style.transform = `translateY(${delta}px)`;
       draggedEl.style.opacity = "0.9";
 
-      // Determine provisional index based on midpoint of dragged element
-      const draggedMid = preHeights + delta + draggedHeight / 2;
-      let newIndex = 0;
-      let cursor = 0;
+      // Determine new index based on midpoint crossing
+      let newIndex = origIndex;
+      let cumulative = 0;
       for (let i = 0; i < tabs.length; i++) {
-        const t = tabs[i];
-        const h = tabHeightsRef.current.get(t.id) || draggedHeight;
-        const mid = cursor + h / 2;
-        // Use <= so that when exactly aligned with first tab mid, it counts as insertion before.
-        if (draggedMid <= mid) {
-          newIndex = i; // place before this tab
+        if (tabs[i].id === draggingId) continue;
+        const h =
+          tabHeightsRef.current.get(tabs[i].id) || draggedEl.offsetHeight;
+        const midpoint = cumulative + h / 2;
+        if (preHeights + delta + draggedHeight / 2 < midpoint) {
+          newIndex = i <= origIndex ? i : i - 1;
           break;
         }
-        cursor += h + gap;
-        newIndex = i + 1; // after last loop if not broken
+        cumulative += h + gap;
+        newIndex = i + 1;
       }
 
-      const oldIndex = originIndexRef.current!;
-
+      const oldIndex = origIndex;
       currentIndexRef.current = newIndex;
 
-      // Shift other tabs visually to make space
+      // Shift other tabs visually to show insertion point
       tabs.forEach((t, idx) => {
         if (t.id === draggingId) return;
         const el = tabRefs.current.get(t.id);
@@ -153,11 +167,9 @@ const TabBar = (_props: TabBarProps) => {
         el.style.transition = "transform 120ms";
         let translate = 0;
         if (oldIndex < newIndex) {
-          // dragging downward: items between (oldIndex+1 ... newIndex) shift up
           if (idx > oldIndex && idx <= newIndex)
             translate = -draggedHeight - gap;
         } else if (newIndex < oldIndex) {
-          // dragging upward: items between (newIndex ... oldIndex-1) shift down
           if (idx >= newIndex && idx < oldIndex)
             translate = draggedHeight + gap;
         }
@@ -204,12 +216,33 @@ const TabBar = (_props: TabBarProps) => {
   }, [draggingId, onMouseMove, onMouseUp, onMouseLeaveWindow]);
 
   const getLabel = (tab: any) => {
-    if (tab.imageList && tab.imageList.length > 0) {
+    if (isComparisonTab(tab)) {
+      return `Compare (${tab.children.length})`;
+    }
+    if (isSingleTab(tab) && tab.imageList?.length > 0) {
       const base = tab.imageList[tab.currentIndex]?.split("/").pop();
       return base || "Untitled";
     }
     return "New Tab";
   };
+
+  const contextItems = (() => {
+    const items: ContextMenuItem[] = [
+      { id: "close", label: "Close" },
+      { id: "close-others", label: "Close Others" },
+      { id: "close-right", label: "Close Tabs to Right" },
+    ];
+    const singleSelectedCount = tabs.filter(
+      (t) => t.type === "single" && selectedIds.has(t.id)
+    ).length;
+    if (singleSelectedCount >= 2) {
+      items.unshift({
+        id: "create-comparison",
+        label: `Create Comparison (${singleSelectedCount})`,
+      });
+    }
+    return items;
+  })();
 
   return (
     <div
@@ -226,22 +259,22 @@ const TabBar = (_props: TabBarProps) => {
     >
       <button
         aria-label={isOpen ? "Collapse sidebar" : "Expand sidebar"}
-        className="self-end mb-2 text-[#D3DAD9] hover:text-[#D3DAD9] focus:outline-none focus:ring-2 focus:ring-[#715A5A] rounded"
+        className="self-end mb-2 text-[#D3DAD9]"
         onClick={() => setIsOpen(!isOpen)}
       >
         {isOpen ? "«" : "»"}
       </button>
 
-      {/* Tab list (vertical). Keep semantics for accessibility */}
       {isOpen && (
         <div
           role="tablist"
           aria-orientation="vertical"
           className="flex flex-col gap-2"
         >
-          {tabs.map((tab: any) => {
+          {tabs.map((tab, idx) => {
             const label = getLabel(tab);
             const active = tab.id === activeTabId;
+            const selected = selectedIds.has(tab.id);
             return (
               <div
                 key={tab.id}
@@ -249,38 +282,38 @@ const TabBar = (_props: TabBarProps) => {
                 aria-selected={active}
                 aria-label={label}
                 onMouseDown={(e) => {
-                  if (e.button !== 0) return; // left click only
+                  if (e.button !== 0) return;
                   setActiveTab(tab.id);
-                  setDraggingId(tab.id);
+                  toggleSelect(tab.id, idx, e);
+                  // Start drag
                   dragStartYRef.current = e.clientY;
                   originIndexRef.current = tabs.findIndex(
                     (t) => t.id === tab.id
                   );
                   currentIndexRef.current = originIndexRef.current;
+                  setDraggingId(tab.id);
                   measureTabs();
                 }}
                 onClick={(e) => {
-                  // Prevent click action from firing after drag (if moved significantly)
+                  // Prevent accidental click after drag
                   if (draggingId) e.preventDefault();
                 }}
-                onContextMenu={(e: React.MouseEvent<HTMLDivElement>) => {
+                onContextMenu={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
                   setMenuOpenFor(tab.id);
                   setMenuPos({ x: e.clientX, y: e.clientY });
                 }}
-                className={`flex items-center gap-3 cursor-pointer select-none px-2 transition-colors duration-150 min-w-0 ${
-                  active
-                    ? "bg-gradient-to-r bg-[#715A5A] text-[#D3DAD9] rounded-xl shadow-md"
-                    : "text-[#D3DAD9] hover:bg-[#44444E] hover:text-[#D3DAD9] rounded-xl"
+                className={`flex items-center gap-3 cursor-pointer select-none px-2 transition-colors duration-150 min-w-0 rounded-xl ${
+                  selected
+                    ? "ring-2 ring-[#715A5A] bg-[#44444E]"
+                    : active
+                    ? "bg-[#715A5A] text-[#D3DAD9] shadow-md"
+                    : "text-[#D3DAD9] hover:bg-[#44444E]"
                 }`}
                 ref={(el) => {
                   if (el) tabRefs.current.set(tab.id, el);
                   else tabRefs.current.delete(tab.id);
-                }}
-                style={{
-                  cursor: draggingId === tab.id ? "grabbing" : "grab",
-                  userSelect: "none",
                 }}
               >
                 <div className="flex-1 min-w-0">
@@ -288,15 +321,19 @@ const TabBar = (_props: TabBarProps) => {
                     {label}
                   </span>
                 </div>
-
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     removeTab(tab.id);
+                    setSelectedIds((prev) => {
+                      if (!prev.has(tab.id)) return prev;
+                      const n = new Set(prev);
+                      n.delete(tab.id);
+                      return n;
+                    });
                   }}
                   aria-label={`Close ${label}`}
-                  title={`Close ${label}`}
-                  className="ml-2 text-[#D3DAD9] hover:text-[#D3DAD9] p-1 rounded focus:outline-none focus:ring-2 focus:ring-[#715A5A]"
+                  className="ml-2 text-[#D3DAD9] hover:text-white p-1 rounded"
                 >
                   ✕
                 </button>
@@ -310,35 +347,37 @@ const TabBar = (_props: TabBarProps) => {
         <ContextMenu
           x={menuPos.x}
           y={menuPos.y}
-          items={(
-            [
-              { id: "close", label: "Close" },
-              { id: "close-others", label: "Close Others" },
-              { id: "close-right", label: "Close Tabs to Right" },
-            ] as ContextMenuItem[]
-          ).map((it) => ({
-            ...it,
-            disabled: false,
-          }))}
+          items={contextItems.map((it) => ({ ...it, disabled: false }))}
           onSelect={(id) => {
             const targetId = menuOpenFor;
             if (!targetId) return;
-            if (id === "close") {
+
+            if (id === "create-comparison") {
+              const singleIds = tabs
+                .filter((t) => t.type === "single" && selectedIds.has(t.id))
+                .map((t) => t.id);
+              if (singleIds.length >= 2) {
+                createComparison(singleIds);
+              }
+              setSelectedIds(new Set());
+            } else if (id === "close") {
               removeTab(targetId);
+              setSelectedIds((prev) => {
+                if (!prev.has(targetId)) return prev;
+                const n = new Set(prev);
+                n.delete(targetId);
+                return n;
+              });
             } else if (id === "close-others") {
-              // keep only this tab
-              const remaining = tabs.filter((t) => t.id === targetId);
-              // remove others
               tabs
                 .filter((t) => t.id !== targetId)
                 .forEach((t) => removeTab(t.id));
-              // set active to remaining
-              if (remaining.length) setActiveTab(remaining[0].id);
+              setSelectedIds(new Set([targetId]));
+              setActiveTab(targetId);
             } else if (id === "close-right") {
               const idx = tabs.findIndex((t) => t.id === targetId);
               if (idx >= 0) {
-                const toClose = tabs.slice(idx + 1).map((t) => t.id);
-                toClose.forEach((id) => removeTab(id));
+                tabs.slice(idx + 1).forEach((t) => removeTab(t.id));
               }
             }
             setMenuOpenFor(null);

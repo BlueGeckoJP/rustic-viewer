@@ -3,8 +3,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { readFile, readDir } from "@tauri-apps/plugin-fs";
 import ImageWorker from "./imageWorker.ts?worker";
-import { useTabStore } from "./store";
+import { isComparisonTab, isSingleTab, useTabStore } from "./store";
 import TabBar from "./components/TabBar";
+import ComparisonView from "./components/ComparisonView";
 
 // Main App component: manages tab state, image loading, canvas rendering, and Tauri events
 export default function App() {
@@ -23,6 +24,9 @@ export default function App() {
   const updateTab = useTabStore((s) => s.updateSingleTab);
   const setCurrentIndex = useTabStore((s) => s.setCurrentIndex);
   const activeTabId = useTabStore((s) => s.activeTabId);
+  const activeTab = useTabStore((s) =>
+    activeTabId ? s.tabs.find((t) => t.id === activeTabId) : null
+  );
 
   const [currentImage, setCurrentImage] = useState<ImageData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -243,8 +247,19 @@ export default function App() {
   }, [tab?.imageList, tab?.currentIndex, loadImageByPath]);
 
   return (
-    <div className="relative flex items-center justify-center h-screen">
-      <canvas className="w-screen h-screen" ref={canvasRef}></canvas>
+    <div className="w-screen h-screen overflow-hidden bg-[#27262B] text-[#D3DAD9]">
+      <TabBar />
+      <div className="h-full relative">
+        {activeTab && isSingleTab(activeTab) && (
+          <div className="w-full h-full flex items-center justify-center">
+            <canvas className="w-screen h-screen" ref={canvasRef}></canvas>
+          </div>
+        )}
+
+        {activeTab && isComparisonTab(activeTab) && (
+          <ComparisonView tabId={activeTab.id} />
+        )}
+      </div>
       {isLoading && (
         <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-50 text-white px-3 py-1 rounded">
           Loading...
@@ -255,7 +270,6 @@ export default function App() {
           {`[${(tab?.currentIndex ?? -1) + 1}/${tab?.imageList.length}]`}
         </div>
       )}
-      <TabBar />
     </div>
   );
 }
