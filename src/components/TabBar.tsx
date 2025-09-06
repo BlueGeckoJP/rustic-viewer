@@ -1,10 +1,12 @@
 import { useTabStore } from "../store";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 export type TabBarProps = {};
 
 // Modern vertical tab bar — styled like browser tabs but stacked vertically.
 const TabBar = (_props: TabBarProps) => {
+  const tabBarRef = useRef<HTMLDivElement>(null);
+  const tabRefs = useRef<Map<string, HTMLElement>>(new Map());
   const tabs = useTabStore((s) => s.tabs);
   const activeTabId = useTabStore((s) => s.activeTabId);
   const setActiveTab = useTabStore((s) => s.setActiveTab);
@@ -30,6 +32,7 @@ const TabBar = (_props: TabBarProps) => {
           ? "top-0 bottom-0 w-64 p-3 space-y-2 overflow-y-auto"
           : "top-1/2 -translate-y-1/2 h-8 w-4 p-1"
       }`}
+      ref={tabBarRef}
     >
       <button
         aria-label={isOpen ? "Collapse sidebar" : "Expand sidebar"}
@@ -61,6 +64,10 @@ const TabBar = (_props: TabBarProps) => {
                     ? "bg-gradient-to-r bg-[#715A5A] text-[#D3DAD9] rounded-xl shadow-md"
                     : "text-[#D3DAD9] hover:bg-[#44444E] hover:text-[#D3DAD9] rounded-xl"
                 }`}
+                ref={(el) => {
+                  if (el) tabRefs.current.set(tab.id, el);
+                  else tabRefs.current.delete(tab.id);
+                }}
               >
                 <div className="flex-1 min-w-0">
                   <span className="block truncate" title={label}>
