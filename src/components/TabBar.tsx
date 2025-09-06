@@ -250,10 +250,10 @@ const TabBar = () => {
         WebkitBackdropFilter: "blur(12px)",
         backdropFilter: "blur(12px)",
       }}
-      className={`absolute left-0 flex flex-col text-[#D3DAD9] shadow-lg transition-all duration-200 z-20 bg-[#37353E]/88 backdrop-blur-md ${
+      className={`absolute left-0 flex flex-col text-[#D3DAD9] shadow-md transition-all duration-200 z-20 bg-[#37353E]/88 backdrop-blur-md ${
         isOpen
           ? "top-0 bottom-0 w-64 p-3 space-y-2 overflow-y-auto"
-          : "top-1/2 -translate-y-1/2 h-8 w-4 p-1"
+          : "top-1/2 -translate-y-1/2 h-8 w-4 p-1 rounded-r rounded-b"
       }`}
       ref={tabBarRef}
     >
