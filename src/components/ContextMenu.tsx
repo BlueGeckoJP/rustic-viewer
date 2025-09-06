@@ -61,6 +61,7 @@ const ContextMenu = ({ x, y, items, onSelect, onClose }: ContextMenuProps) => {
             opacity: it.disabled ? 0.5 : 1,
             borderRadius: 4,
           }}
+          className="text-sm text-nowrap"
           onMouseDown={(e) => e.stopPropagation()}
         >
           {it.label}
