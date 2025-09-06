@@ -304,12 +304,10 @@ const TabBar = () => {
                   setMenuOpenFor(tab.id);
                   setMenuPos({ x: e.clientX, y: e.clientY });
                 }}
-                className={`flex items-center gap-3 cursor-pointer select-none px-2 transition-colors duration-150 min-w-0 rounded-xl ${
-                  selected
-                    ? "ring-2 ring-[#715A5A] bg-[#44444E]"
-                    : active
-                    ? "bg-[#715A5A] text-[#D3DAD9] shadow-md"
-                    : "text-[#D3DAD9] hover:bg-[#44444E]"
+                className={`flex items-center gap-3 cursor-pointer select-none px-2 transition-colors duration-150 min-w-0 rounded-xl text-[#D3DAD9] ${
+                  active
+                    ? "shadow-md bg-[#44444E] ring-2 ring-[#715A5A]"
+                    : "hover:bg-[#44444E]"
                 }`}
                 ref={(el) => {
                   if (el) tabRefs.current.set(tab.id, el);
