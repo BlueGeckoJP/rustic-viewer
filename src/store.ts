@@ -150,10 +150,19 @@ export const useTabStore = create<TabStore>((set, get) => ({
 
   reorderTab: (fromIndex, toIndex) => {
     set((state) => {
-      const tabs = Array.from(state.tabs);
+      if (fromIndex === toIndex) return {} as any;
+      const tabs = [...state.tabs];
+      if (
+        fromIndex < 0 ||
+        fromIndex >= tabs.length ||
+        toIndex < 0 ||
+        toIndex > tabs.length // allow insert at end
+      ) {
+        return {} as any; // invalid indices, no-op
+      }
       const [movedTab] = tabs.splice(fromIndex, 1);
-      const adjustedToIndex = fromIndex < toIndex ? toIndex - 1 : toIndex;
-      tabs.splice(adjustedToIndex, 0, movedTab);
+      // toIndex is treated as the final desired index after removal.
+      tabs.splice(toIndex, 0, movedTab);
       return { tabs };
     });
   },

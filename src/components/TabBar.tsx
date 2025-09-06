@@ -129,7 +129,8 @@ const TabBar = (_props: TabBarProps) => {
         if (t.id === draggingId) continue; // skip original spot; will insert relative
         const h = tabHeightsRef.current.get(t.id) || draggedHeight;
         const mid = cursor + h / 2;
-        if (draggedMid < mid) {
+        // Use <= so that when exactly aligned with first tab mid, it counts as insertion before.
+        if (draggedMid <= mid) {
           newIndex = i; // place before this tab
           break;
         }
@@ -137,9 +138,7 @@ const TabBar = (_props: TabBarProps) => {
         newIndex = i + 1; // after last loop if not broken
       }
 
-      // Adjust because we removed the dragged tab's original index when conceptualizing insertion
       const oldIndex = originIndexRef.current!;
-      if (newIndex > oldIndex) newIndex--; // compaction effect
 
       currentIndexRef.current = newIndex;
 
@@ -151,15 +150,13 @@ const TabBar = (_props: TabBarProps) => {
         el.style.transition = "transform 120ms";
         let translate = 0;
         if (oldIndex < newIndex) {
-          // dragging downwards
-          if (idx > oldIndex && idx <= newIndex) {
-            translate = -draggedHeight - gap; // move up
-          }
+          // dragging downward: items between (oldIndex+1 ... newIndex) shift up
+          if (idx > oldIndex && idx <= newIndex)
+            translate = -draggedHeight - gap;
         } else if (newIndex < oldIndex) {
-          // dragging upwards
-          if (idx >= newIndex && idx < oldIndex) {
-            translate = draggedHeight + gap; // move down
-          }
+          // dragging upward: items between (newIndex ... oldIndex-1) shift down
+          if (idx >= newIndex && idx < oldIndex)
+            translate = draggedHeight + gap;
         }
         el.style.transform = translate ? `translateY(${translate}px)` : "";
       });
