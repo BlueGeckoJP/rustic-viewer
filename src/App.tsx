@@ -6,6 +6,7 @@ import ImageWorker from "./imageWorker.ts?worker";
 import { isComparisonTab, isSingleTab, useTabStore } from "./store";
 import TabBar from "./components/TabBar";
 import ComparisonView from "./components/ComparisonView";
+import ImageCanvas from "./components/ImageCanvas";
 
 // Main App component: manages tab state, image loading, canvas rendering, and Tauri events
 export default function App() {
@@ -43,58 +44,11 @@ export default function App() {
     openImage(tab.imageList[tab.currentIndex]);
   }, [activeTabId]);
 
-  // Draw the current image onto the canvas with proper scaling and centering
+  // Draw function now delegated to ImageCanvas component. Keep a wrapper for resize usage.
   const drawCurrentImage = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const img = currentImage;
-    if (!img) {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      return;
-    }
-
-    // Calculate aspect ratio and resize canvas
-    const canvasRatio = canvas.width / canvas.height;
-    const imgRatio = img.width / img.height;
-    let drawWidth, drawHeight, offsetX, offsetY;
-
-    if (imgRatio > canvasRatio) {
-      drawWidth = canvas.width;
-      drawHeight = canvas.width / imgRatio;
-      offsetX = 0;
-      offsetY = (canvas.height - drawHeight) / 2;
-    } else {
-      drawHeight = canvas.height;
-      drawWidth = canvas.height * imgRatio;
-      offsetX = (canvas.width - drawWidth) / 2;
-      offsetY = 0;
-    }
-
-    // Offscreen canvas to convert ImageData to CanvasImageSource
-    const srcCanvas = document.createElement("canvas");
-    srcCanvas.width = img.width;
-    srcCanvas.height = img.height;
-    const srcCtx = srcCanvas.getContext("2d");
-    if (!srcCtx) return;
-    srcCtx.putImageData(img, 0, 0);
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(
-      srcCanvas,
-      0,
-      0,
-      img.width,
-      img.height,
-      offsetX,
-      offsetY,
-      drawWidth,
-      drawHeight
-    );
-  }, [currentImage]);
+    // ImageCanvas handles drawing when image changes & on resize; nothing needed here.
+    // This function remains to satisfy existing effect dependencies.
+  }, []);
 
   // Load image content from filesystem and post it to the worker for decoding
   const loadImageByPath = useCallback((rawPath: string) => {
@@ -187,7 +141,7 @@ export default function App() {
     return () => window.removeEventListener("resize", resize);
   }, [drawCurrentImage]);
 
-  // Redraw the canvas whenever the image data changes
+  // ImageCanvas handles redraw internally; effect retained for dependency consistency (no-op).
   useEffect(() => {
     drawCurrentImage();
   }, [currentImage, drawCurrentImage]);
@@ -252,7 +206,11 @@ export default function App() {
       <div className="h-full relative">
         {activeTab && isSingleTab(activeTab) && (
           <div className="w-full h-full flex items-center justify-center">
-            <canvas className="w-screen h-screen" ref={canvasRef}></canvas>
+            <ImageCanvas
+              image={currentImage}
+              className="w-screen h-screen"
+              onInitCanvas={(c) => (canvasRef.current = c)}
+            />
             {isLoading && (
               <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-50 text-white px-3 py-1 rounded">
                 Loading...
