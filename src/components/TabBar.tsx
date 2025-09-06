@@ -307,6 +307,8 @@ const TabBar = () => {
                 className={`flex items-center gap-3 cursor-pointer select-none px-2 transition-colors duration-150 min-w-0 rounded-xl text-[#D3DAD9] ${
                   active
                     ? "shadow-md bg-[#44444E] ring-2 ring-[#715A5A]"
+                    : selected
+                    ? "bg-[#44444E]"
                     : "hover:bg-[#44444E]"
                 }`}
                 ref={(el) => {
