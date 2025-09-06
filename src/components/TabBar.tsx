@@ -126,7 +126,6 @@ const TabBar = (_props: TabBarProps) => {
       let cursor = 0;
       for (let i = 0; i < tabs.length; i++) {
         const t = tabs[i];
-        if (t.id === draggingId) continue; // skip original spot; will insert relative
         const h = tabHeightsRef.current.get(t.id) || draggedHeight;
         const mid = cursor + h / 2;
         // Use <= so that when exactly aligned with first tab mid, it counts as insertion before.
