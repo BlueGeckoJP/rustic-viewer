@@ -35,7 +35,7 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ tabId }) => {
         return (
           <div
             key={child.id}
-            className={`relative group border rounded-md overflow-hidden flex flex-col bg-[#2F2E33] ${
+            className={`relative group rounded-md overflow-hidden flex flex-col bg-[#2F2E33] ${
               n <= 3 ? "flex-1" : "w-full h-full"
             } ${
               activeSlotIndex === idx
