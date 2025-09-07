@@ -31,6 +31,7 @@ const SingleView: React.FC<SingleViewProps> = (_props: SingleViewProps) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [currentImage, setCurrentImage] = useState<ImageData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [fileName, setFileName] = useState<string | null>(null);
 
   // Draw wrapper kept for possible future extensions (zoom/pan etc.)
   const drawCurrentImage = useCallback(() => {
@@ -40,7 +41,10 @@ const SingleView: React.FC<SingleViewProps> = (_props: SingleViewProps) => {
   const loadImageByPath = useCallback((rawPath: string) => {
     setIsLoading(true);
     decodeImageFromPath(rawPath)
-      .then((img) => setCurrentImage(img))
+      .then((img) => {
+        setCurrentImage(img);
+        setFileName(rawPath);
+      })
       .finally(() => setIsLoading(false));
   }, []);
 
@@ -118,24 +122,60 @@ const SingleView: React.FC<SingleViewProps> = (_props: SingleViewProps) => {
   if (!activeTab || !isSingleTab(activeTab)) return null;
 
   return (
-    <div className="w-full h-full flex items-center justify-center">
-      <ImageCanvas
-        image={currentImage}
-        className="w-screen h-screen"
-        onInitCanvas={(c) => (canvasRef.current = c)}
-      />
-      {isLoading && (
-        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-50 text-white px-3 py-1 rounded">
-          Loading...
+    <div className="group overflow-hidden flex flex-col bg-[#2F2E33] h-full w-full">
+      <div className="text-xs px-2 py-1 bg-[#44444E] text-[#D3DAD9] flex items-center gap-2">
+        <span className="truncate" title={fileName ? fileName : "(empty)"}>
+          {fileName ? fileName.split("/").pop() : "(empty)"}
+        </span>
+        <span className="opacity-60">
+          {activeTab.currentIndex + 1}/{activeTab.imageList.length}
+        </span>
+      </div>
+      <div className="flex-1 flex items-center justify-center">
+        {currentImage ? (
+          <ImageCanvas
+            image={currentImage}
+            className="w-screen h-screen"
+            onInitCanvas={(c) => (canvasRef.current = c)}
+          />
+        ) : (
+          <span className="text-[#888]">No Image</span>
+        )}
+
+        {/* Loading overlay */}
+        {isLoading && (
+          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-50 text-white px-3 py-1 rounded">
+            Loading...
+          </div>
+        )}
+
+        {/* Simple per-child navigation controls (optional) */}
+        <div className="absolute bottom-1 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition">
+          <button
+            className="px-2 py-1 bg-[#44444E] rounded text-xs hover:bg-[#555]"
+            onClick={(e) => {
+              e.stopPropagation();
+              const next =
+                (activeTab.currentIndex - 1 + activeTab.imageList.length) %
+                activeTab.imageList.length;
+              setCurrentIndex(activeTab.id, next);
+            }}
+          >
+            ◀
+          </button>
+          <button
+            className="px-2 py-1 bg-[#44444E] rounded text-xs hover:bg-[#555]"
+            onClick={(e) => {
+              e.stopPropagation();
+              const next =
+                (activeTab.currentIndex + 1) % activeTab.imageList.length;
+              setCurrentIndex(activeTab.id, next);
+            }}
+          >
+            ▶
+          </button>
         </div>
-      )}
-      {(singleTab?.imageList.length ?? 0) > 0 && (
-        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-50 text-white px-3 py-1 rounded">
-          {`[${(singleTab?.currentIndex ?? -1) + 1}/${
-            singleTab?.imageList.length
-          }]`}
-        </div>
-      )}
+      </div>
     </div>
   );
 };
