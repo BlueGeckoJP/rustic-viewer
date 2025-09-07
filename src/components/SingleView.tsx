@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { readDir } from "@tauri-apps/plugin-fs";
 import { decodeImageFromPath } from "../utils/imageDecoder";
 import ImageCanvas from "./ImageCanvas";
 import { isSingleTab, useTabStore } from "../store";
@@ -15,21 +14,14 @@ import { isSingleTab, useTabStore } from "../store";
  *  - High DPI canvas rendering via ImageCanvas
  *  - Expose openImage(rawPath) through provided ref for external triggers (e.g., Tauri events)
  */
-export interface SingleViewProps {
-  openImageRef: React.RefObject<(rawPath: string) => void>;
-}
+export type SingleViewProps = {};
 
-const imageFileRegex = /\.(png|jpg|jpeg|gif|bmp|webp)$/i;
-
-const SingleView: React.FC<SingleViewProps> = ({ openImageRef }) => {
+const SingleView: React.FC<SingleViewProps> = (_props: SingleViewProps) => {
   // Store selectors
   const activeTabId = useTabStore((s) => s.activeTabId);
   const singleTab = useTabStore((s) =>
     s.activeTabId ? s.getSingleTab(s.activeTabId) : null
   );
-  const addTab = useTabStore((s) => s.addSingleTab);
-  const setActiveTab = useTabStore((s) => s.setActiveTab);
-  const updateTab = useTabStore((s) => s.updateSingleTab);
   const setCurrentIndex = useTabStore((s) => s.setCurrentIndex);
   const activeTab = useTabStore((s) =>
     activeTabId ? s.tabs.find((t) => t.id === activeTabId) : null
@@ -52,47 +44,6 @@ const SingleView: React.FC<SingleViewProps> = ({ openImageRef }) => {
       .finally(() => setIsLoading(false));
   }, []);
 
-  const openImage = useCallback(
-    (rawPath: string) => {
-      // Determine directory
-      const lastSlash = rawPath.lastIndexOf("/");
-      const dir = lastSlash >= 0 ? rawPath.substring(0, lastSlash) : "";
-
-      readDir(dir).then((entries) => {
-        const files = entries
-          .filter((e) => e.isFile && !!e.name && imageFileRegex.test(e.name))
-          .map((e) => `${dir}/${e.name}`)
-          .sort((a, b) =>
-            a.localeCompare(b, undefined, {
-              numeric: true,
-              sensitivity: "base",
-            })
-          );
-        const idx = files.findIndex((p) => p === rawPath);
-
-        if (!singleTab) {
-          const id = addTab(dir, files, idx >= 0 ? idx : 0);
-          // Ensure this new tab becomes active (addTab already sets active but explicit for clarity)
-          setActiveTab(id);
-        } else {
-          updateTab(singleTab.id, {
-            directory: dir,
-            imageList: files,
-            currentIndex: idx >= 0 ? idx : 0,
-          });
-        }
-      });
-
-      loadImageByPath(rawPath);
-    },
-    [singleTab, addTab, setActiveTab, updateTab, loadImageByPath]
-  );
-
-  // Expose openImage through ref for parent (App) to call from Tauri events
-  useEffect(() => {
-    openImageRef.current = openImage;
-  }, [openImageRef, openImage]);
-
   // When active single tab changes, load its current image
   useEffect(() => {
     if (
@@ -106,7 +57,12 @@ const SingleView: React.FC<SingleViewProps> = ({ openImageRef }) => {
     }
     const path = singleTab.imageList[singleTab.currentIndex];
     loadImageByPath(path);
-  }, [activeTabId]);
+  }, [
+    singleTab?.id,
+    singleTab?.directory,
+    singleTab?.currentIndex,
+    singleTab?.imageList,
+  ]);
 
   // Canvas resize sync (delegated mostly to ImageCanvas, but keep for potential extra logic)
   useEffect(() => {
