@@ -14,7 +14,6 @@ export default function App() {
   // Exposed by SingleView to allow Tauri events to open images
   // As a countermeasure for the issue where all internal conditional branches become null when using the old openImage
   const openImageRef = useRef<(rawPath: string) => void>(() => {});
-  const addTab = useTabStore((s) => s.addSingleTab); // still needed for new-tab event
   const activeTabId = useTabStore((s) => s.activeTabId);
   const activeTab = useTabStore((s) =>
     activeTabId ? s.tabs.find((t) => t.id === activeTabId) : null
@@ -45,7 +44,7 @@ export default function App() {
         const idx = files.findIndex((p) => p === rawPath);
 
         if (!activeTab) {
-          const id = addTab(dir, files, idx >= 0 ? idx : 0);
+          const id = addSingleTab(dir, files, idx >= 0 ? idx : 0);
           // Ensure this new tab becomes active (addTab already sets active but explicit for clarity)
           setActiveTab(id);
         } else if (isSingleTab(activeTab)) {
@@ -104,7 +103,7 @@ export default function App() {
     listen("new-tab", (event) => {
       console.log("Received new-tab event:", event.payload);
 
-      addTab(null, [], 0);
+      addSingleTab(null, [], 0);
     }).then((fn) => {
       unlisteners.push(fn);
     });
@@ -114,7 +113,7 @@ export default function App() {
     return () => {
       unlisteners.forEach((fn) => fn());
     };
-  }, [addTab]);
+  }, [addSingleTab]);
 
   // Arrow key navigation handled inside SingleView
 

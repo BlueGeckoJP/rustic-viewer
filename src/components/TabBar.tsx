@@ -12,6 +12,7 @@ const TabBar = () => {
   const removeTab = useTabStore((s) => s.removeTab);
   const reorderTab = useTabStore((s) => s.reorderTab);
   const createComparison = useTabStore((s) => s.createComparisonFromSingleIds);
+  const addSingleTab = useTabStore((s) => s.addSingleTab);
   const [isOpen, setIsOpen] = useState(true);
 
   // Multi-selection state
@@ -228,6 +229,7 @@ const TabBar = () => {
 
   const contextItems = (() => {
     const items: ContextMenuItem[] = [
+      { id: "new", label: "New Tab" },
       { id: "close", label: "Close" },
       { id: "close-others", label: "Close Others" },
       { id: "close-right", label: "Close Tabs to Right" },
@@ -360,6 +362,8 @@ const TabBar = () => {
                 createComparison(singleIds);
               }
               setSelectedIds(new Set());
+            } else if (id === "new") {
+              addSingleTab(null, [], 0);
             } else if (id === "close") {
               removeTab(targetId);
               setSelectedIds((prev) => {
