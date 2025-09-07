@@ -56,6 +56,7 @@ const SingleView: React.FC<SingleViewProps> = (_props: SingleViewProps) => {
       singleTab.imageList.length === 0
     ) {
       setCurrentImage(null);
+      setFileName(null);
       drawCurrentImage();
       return;
     }
@@ -128,7 +129,9 @@ const SingleView: React.FC<SingleViewProps> = (_props: SingleViewProps) => {
           {fileName ? fileName.split("/").pop() : "(empty)"}
         </span>
         <span className="opacity-60">
-          {activeTab.currentIndex + 1}/{activeTab.imageList.length}
+          {activeTab.imageList.length <= 0
+            ? "No Images"
+            : `${activeTab.currentIndex + 1}/${activeTab.imageList.length}`}
         </span>
       </div>
       <div className="flex-1 flex items-center justify-center">
