@@ -3,10 +3,12 @@ use tauri::{
     Emitter,
 };
 use tauri_plugin_dialog::DialogExt;
+use tauri_plugin_log::log;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_log::Builder::new().build())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
@@ -30,7 +32,7 @@ pub fn run() {
             Menu::with_items(app, &[&file_menu])
         })
         .on_menu_event(|app, event| {
-            println!("Menu event: {:?}", event.id());
+            log::debug!("Received the event: {}", event.id().as_ref());
             match event.id().as_ref() {
                 "new" => {
                     app.emit("new-tab", ()).unwrap();
@@ -40,8 +42,6 @@ pub fn run() {
                     app.dialog().file().pick_file(move |path| {
                         if let Some(path) = path {
                             inner_app.emit("open-image", path.to_string()).unwrap();
-                        } else {
-                            println!("No file selected");
                         }
                     });
                 }
