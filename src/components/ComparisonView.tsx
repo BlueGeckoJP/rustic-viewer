@@ -7,16 +7,14 @@ type ComparisonViewProps = {
 };
 
 const ComparisonView: React.FC<ComparisonViewProps> = ({ tabId }) => {
-  const tab = useTabStore((s) =>
-    s.tabs.find((t) => t.id === tabId && t.type === "comparison")
-  );
+  const tab = useTabStore((s) => s.tabs[tabId] ?? null);
   const setActiveSlotIndex = useTabStore((s) => s.setActiveSlotIndex);
   const setCurrentIndex = useTabStore((s) => s.setCurrentIndex);
 
   if (!tab || !isComparisonTab(tab)) return null;
 
-  const { children, activeSlotIndex } = tab;
-  const n = children.length;
+  const { children, childrenOrder, activeSlotIndex } = tab;
+  const n = childrenOrder.length;
 
   // Basic layout rules (auto by number of children)
   let containerClass = "";
@@ -28,7 +26,8 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ tabId }) => {
 
   return (
     <div className={`p-2 box-border w-full h-full ${containerClass}`}>
-      {children.map((child, idx) => {
+      {childrenOrder.map((cid, idx) => {
+        const child = children[cid];
         const file = child.imageList[child.currentIndex];
         return (
           <div

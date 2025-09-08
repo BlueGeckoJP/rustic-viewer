@@ -24,7 +24,7 @@ const SingleView: React.FC<SingleViewProps> = (_props: SingleViewProps) => {
   );
   const setCurrentIndex = useTabStore((s) => s.setCurrentIndex);
   const activeTab = useTabStore((s) =>
-    activeTabId ? s.tabs.find((t) => t.id === activeTabId) : null
+    activeTabId ? s.tabs[activeTabId] ?? null : null
   );
 
   // Local view state

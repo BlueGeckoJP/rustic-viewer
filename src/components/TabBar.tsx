@@ -8,7 +8,9 @@ const CHILD_PREFIX = "::child::";
 const TabBar = () => {
   const tabBarRef = useRef<HTMLDivElement>(null);
   const tabRefs = useRef<Map<string, HTMLElement>>(new Map());
-  const tabs = useTabStore((s) => s.tabs);
+  const tabsMap = useTabStore((s) => s.tabs);
+  const tabOrder = useTabStore((s) => s.tabOrder);
+  const tabs = tabOrder.map((id) => tabsMap[id]).filter(Boolean) as any[];
   const activeTabId = useTabStore((s) => s.activeTabId);
   const setActiveTab = useTabStore((s) => s.setActiveTab);
   const removeTab = useTabStore((s) => s.removeTab);
@@ -231,7 +233,7 @@ const TabBar = () => {
 
   const getLabel = (tab: any) => {
     if (isComparisonTab(tab)) {
-      return `Compare (${tab.children.length})`;
+      return `Compare (${tab.childrenOrder.length})`;
     }
     if (isSingleTab(tab) && tab.imageList?.length > 0) {
       const base = tab.imageList[tab.currentIndex]?.split("/").pop();
@@ -261,7 +263,7 @@ const TabBar = () => {
     }
     // Add comparison-specific actions if target is a comparison
     if (menuOpenFor) {
-      const target = tabs.find((t) => t.id === menuOpenFor);
+      const target = tabsMap[menuOpenFor];
       if (target && isComparisonTab(target)) {
         contextItems.push({ id: "detach-all", label: "Detach All Children" });
         contextItems.push({
@@ -392,7 +394,8 @@ const TabBar = () => {
                 </div>
                 {isComp && expanded && (
                   <div className="flex flex-col gap-1 pl-6 pr-1">
-                    {tab.children.map((child, cIdx) => {
+                    {tab.childrenOrder.map((childId, cIdx) => {
+                      const child = tab.children[childId];
                       const file = child.imageList[child.currentIndex];
                       const childActive =
                         active && tab.activeSlotIndex === cIdx;
@@ -483,10 +486,10 @@ const TabBar = () => {
             } else {
               // Child actions
               const [parentId, childId] = targetId.split(CHILD_PREFIX);
-              const parent = tabs.find((t) => t.id === parentId);
+              const parent = tabsMap[parentId];
               if (!parent || !isComparisonTab(parent)) return;
-              const childIndex = parent.children.findIndex(
-                (c) => c.id === childId
+              const childIndex = parent.childrenOrder.findIndex(
+                (c) => c === childId
               );
               if (childIndex < 0) return;
 
@@ -497,7 +500,7 @@ const TabBar = () => {
                 if (childIndex > 0)
                   reorderChildren(parent.id, childIndex, childIndex - 1);
               } else if (id === "move-down") {
-                if (childIndex < parent.children.length - 1)
+                if (childIndex < parent.childrenOrder.length - 1)
                   reorderChildren(parent.id, childIndex, childIndex + 1);
               } else if (id === "detach") {
                 detachChild(parent.id, childId, true);

@@ -16,7 +16,7 @@ export default function App() {
   const openImageRef = useRef<(rawPath: string) => void>(() => {});
   const activeTabId = useTabStore((s) => s.activeTabId);
   const activeTab = useTabStore((s) =>
-    activeTabId ? s.tabs.find((t) => t.id === activeTabId) : null
+    activeTabId ? s.tabs[activeTabId] : null
   );
   const addSingleTab = useTabStore((s) => s.addSingleTab);
   const setActiveTab = useTabStore((s) => s.setActiveTab);
@@ -54,17 +54,21 @@ export default function App() {
             currentIndex: idx >= 0 ? idx : 0,
           });
         } else if (isComparisonTab(activeTab)) {
-          const oldChild = activeTab.children[activeTab.activeSlotIndex];
+          const childId = activeTab.childrenOrder[activeTab.activeSlotIndex];
+          const oldChild = activeTab.children[childId];
           const modified: SingleTab = {
             ...oldChild,
             directory: dir,
             imageList: files,
             currentIndex: idx >= 0 ? idx : 0,
           };
-          const newChildren = [...activeTab.children];
-          newChildren[activeTab.activeSlotIndex] = modified;
+          const newChildrenMap: Record<string, SingleTab> = {};
+          activeTab.childrenOrder.forEach((cid) => {
+            newChildrenMap[cid] =
+              cid === childId ? modified : activeTab.children[cid];
+          });
           //updateSingleTab(oldChild.id, modified); // Update the moved child's data
-          updateComparisonChildren(activeTab.id, newChildren);
+          updateComparisonChildren(activeTab.id, newChildrenMap);
         }
       });
     },
