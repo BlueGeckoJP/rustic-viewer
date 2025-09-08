@@ -389,7 +389,9 @@ export const useTabStore = create<TabStore>((set, get) => ({
       if (childIndex < 0) return {} as any;
       const child = comp.children[childId];
 
-      const newChildrenOrder = comp.childrenOrder.filter((cid) => cid !== childId);
+      const newChildrenOrder = comp.childrenOrder.filter(
+        (cid) => cid !== childId
+      );
       const newChildren = { ...comp.children };
       delete newChildren[childId];
 
@@ -420,7 +422,9 @@ export const useTabStore = create<TabStore>((set, get) => ({
       if (!comp || comp.type !== "comparison") return {} as any;
       const childIndex = comp.childrenOrder.findIndex((cid) => cid === childId);
       if (childIndex < 0) return {} as any;
-      const newChildrenOrder = comp.childrenOrder.filter((cid) => cid !== childId);
+      const newChildrenOrder = comp.childrenOrder.filter(
+        (cid) => cid !== childId
+      );
       const newChildren = { ...comp.children };
       delete newChildren[childId];
       const newTabs = { ...state.tabs };
