@@ -9,7 +9,7 @@ import { readFile } from "@tauri-apps/plugin-fs";
 
 type Pending = {
   resolve: (img: ImageData) => void;
-  reject: (err: any) => void;
+  reject: (err: Error | ErrorEvent) => void;
 };
 
 let worker: Worker | null = null;

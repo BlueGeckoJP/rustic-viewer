@@ -23,5 +23,5 @@ self.onmessage = async (e: MessageEvent<MessageEventData>) => {
   const { content, slotId, requestId } = e.data;
   const img = decode_image_to_image_data(content);
   // Post the decoded ImageData back to the main thread and echo slotId if provided
-  (self as any).postMessage({ img, slotId, requestId } as ResponseData);
+  self.postMessage({ img, slotId, requestId } as ResponseData);
 };

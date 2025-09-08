@@ -1,4 +1,4 @@
-import { useTabStore } from "../store";
+import { Tab, useTabStore } from "../store";
 import React, { useRef, useState, useCallback, useEffect } from "react";
 import ContextMenu, { ContextMenuItem } from "./ContextMenu";
 import { isComparisonTab, isSingleTab } from "../store";
@@ -10,7 +10,7 @@ const TabBar = () => {
   const tabRefs = useRef<Map<string, HTMLElement>>(new Map());
   const tabsMap = useTabStore((s) => s.tabs);
   const tabOrder = useTabStore((s) => s.tabOrder);
-  const tabs = tabOrder.map((id) => tabsMap[id]).filter(Boolean) as any[];
+  const tabs = tabOrder.map((id) => tabsMap[id]).filter(Boolean) as Tab[];
   const activeTabId = useTabStore((s) => s.activeTabId);
   const setActiveTab = useTabStore((s) => s.setActiveTab);
   const removeTab = useTabStore((s) => s.removeTab);
@@ -231,7 +231,7 @@ const TabBar = () => {
     }
   }, [draggingId, onMouseMove, onMouseUp, onMouseLeaveWindow]);
 
-  const getLabel = (tab: any) => {
+  const getLabel = (tab: Tab) => {
     if (isComparisonTab(tab)) {
       return `Compare (${tab.childrenOrder.length})`;
     }
