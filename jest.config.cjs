@@ -1,8 +1,15 @@
-import type { Config } from "jest";
-import { pathsToModuleNameMapper } from "ts-jest";
-import { compilerOptions } from "./tsconfig.json";
+const { readFileSync } = require("fs");
+const { pathsToModuleNameMapper } = require("ts-jest");
 
-const config: Config = {
+const path = require("path");
+// tsconfig.json may contain comments (JSONC). Remove common comment patterns before parsing.
+const rawTs = readFileSync(path.join(__dirname, "tsconfig.json"), "utf8");
+const stripComments = (s) =>
+  s.replace(/\/\*[^]*?\*\//g, "").replace(/\/\/.*$/gm, "");
+const tsconfig = JSON.parse(stripComments(rawTs));
+const compilerOptions = tsconfig.compilerOptions || {};
+
+module.exports = {
   preset: "ts-jest",
   testEnvironment: "jsdom",
   roots: ["<rootDir>/src"],
@@ -19,19 +26,13 @@ const config: Config = {
   ],
   moduleNameMapper: Object.assign(
     {
-      // CSS modules and style imports -> mock
       "^.+\\.(css|less|sass|scss)$": "<rootDir>/src/__mocks__/styleMock.ts",
-      // Static assets -> mock
       "^.+\\.(png|jpg|jpeg|svg|gif|webp|avif|ico)$":
         "<rootDir>/src/__mocks__/fileMock.ts",
     },
-    // Map TS path aliases from tsconfig if present (guarded)
-    ((): Record<string, string> => {
-      const paths = (compilerOptions as any).paths;
-      if (!paths) return {};
-      return (pathsToModuleNameMapper(paths, { prefix: "<rootDir>/" }) ||
-        {}) as Record<string, string>;
-    })()
+    pathsToModuleNameMapper(compilerOptions.paths || {}, {
+      prefix: "<rootDir>/",
+    }) || {}
   ),
   collectCoverageFrom: [
     "src/**/*.{ts,tsx}",
@@ -41,5 +42,3 @@ const config: Config = {
   testRegex: "(/__tests__/.*|(\\.|/)(test|spec))\\.(ts|tsx|js)$",
   verbose: true,
 };
-
-export default config;
