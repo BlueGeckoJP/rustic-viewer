@@ -56,10 +56,7 @@ type TabStore = {
     childId: string,
     insertAfterParent?: boolean
   ) => void;
-  removeChildFromComparison: (
-    comparisonId: string,
-    childId: string
-  ) => void;
+  removeChildFromComparison: (comparisonId: string, childId: string) => void;
   detachAllChildren: (comparisonId: string) => void;
 };
 
@@ -299,9 +296,7 @@ export const useTabStore = create<TabStore>((set, get) => ({
       const newChildren = comp.children.filter((c) => c.id !== childId);
 
       // Insert new top-level single tab after parent or at end
-      const insertIndex = insertAfterParent
-        ? compIndex + 1
-        : tabs.length;
+      const insertIndex = insertAfterParent ? compIndex + 1 : tabs.length;
       tabs.splice(insertIndex, 0, child);
 
       // If only 0 or 1 child left, decide policy

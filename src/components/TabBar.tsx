@@ -22,11 +22,14 @@ const TabBar = () => {
   const detachAllChildren = useTabStore((s) => s.detachAllChildren);
 
   const [isOpen, setIsOpen] = useState(true);
-  const [expandedComparisonIds, setExpandedComparisonIds] = useState<Set<string>>(new Set());
+  const [expandedComparisonIds, setExpandedComparisonIds] = useState<
+    Set<string>
+  >(new Set());
   const toggleExpanded = (id: string) => {
     setExpandedComparisonIds((prev) => {
       const n = new Set(prev);
-      if (n.has(id)) n.delete(id); else n.add(id);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
       return n;
     });
   };
@@ -39,7 +42,8 @@ const TabBar = () => {
     if (e.metaKey || e.ctrlKey) {
       setSelectedIds((prev) => {
         const n = new Set(prev);
-        if (n.has(tabId)) n.delete(tabId); else n.add(tabId);
+        if (n.has(tabId)) n.delete(tabId);
+        else n.add(tabId);
         return n;
       });
       lastClickedIndexRef.current = index;
@@ -236,7 +240,8 @@ const TabBar = () => {
     return "New Tab";
   };
 
-  const isChildContext = (menuOpenFor && menuOpenFor.includes(CHILD_PREFIX)) || false;
+  const isChildContext =
+    (menuOpenFor && menuOpenFor.includes(CHILD_PREFIX)) || false;
   let contextItems: ContextMenuItem[] = [];
   if (!isChildContext) {
     contextItems = [
@@ -259,7 +264,10 @@ const TabBar = () => {
       const target = tabs.find((t) => t.id === menuOpenFor);
       if (target && isComparisonTab(target)) {
         contextItems.push({ id: "detach-all", label: "Detach All Children" });
-        contextItems.push({ id: "toggle-expand", label: expandedComparisonIds.has(target.id) ? "Collapse" : "Expand" });
+        contextItems.push({
+          id: "toggle-expand",
+          label: expandedComparisonIds.has(target.id) ? "Collapse" : "Expand",
+        });
       }
     }
   } else {
@@ -317,12 +325,16 @@ const TabBar = () => {
                     setActiveTab(tab.id);
                     toggleSelect(tab.id, idx, e);
                     dragStartYRef.current = e.clientY;
-                    originIndexRef.current = tabs.findIndex((t) => t.id === tab.id);
+                    originIndexRef.current = tabs.findIndex(
+                      (t) => t.id === tab.id
+                    );
                     currentIndexRef.current = originIndexRef.current;
                     setDraggingId(tab.id);
                     measureTabs();
                   }}
-                  onClick={(e) => { if (draggingId) e.preventDefault(); }}
+                  onClick={(e) => {
+                    if (draggingId) e.preventDefault();
+                  }}
                   onContextMenu={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -344,15 +356,22 @@ const TabBar = () => {
                   {isComp && (
                     <button
                       className="text-xs px-1 py-0.5 rounded hover:bg-[#555]"
-                      onClick={(e) => { e.stopPropagation(); toggleExpanded(tab.id); }}
-                      aria-label={expanded ? "Collapse comparison" : "Expand comparison"}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleExpanded(tab.id);
+                      }}
+                      aria-label={
+                        expanded ? "Collapse comparison" : "Expand comparison"
+                      }
                     >
                       {expanded ? "▼" : "▶"}
                     </button>
                   )}
                   {!isComp && <span className="text-xs opacity-50">•</span>}
                   <div className="flex-1 min-w-0">
-                    <span className="block truncate" title={label}>{label}</span>
+                    <span className="block truncate" title={label}>
+                      {label}
+                    </span>
                   </div>
                   <button
                     onClick={(e) => {
@@ -375,7 +394,8 @@ const TabBar = () => {
                   <div className="flex flex-col gap-1 pl-6 pr-1">
                     {tab.children.map((child, cIdx) => {
                       const file = child.imageList[child.currentIndex];
-                      const childActive = active && tab.activeSlotIndex === cIdx;
+                      const childActive =
+                        active && tab.activeSlotIndex === cIdx;
                       return (
                         <div
                           key={child.id}
@@ -392,12 +412,18 @@ const TabBar = () => {
                           onContextMenu={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            setMenuOpenFor(`${tab.id}${CHILD_PREFIX}${child.id}`);
+                            setMenuOpenFor(
+                              `${tab.id}${CHILD_PREFIX}${child.id}`
+                            );
                             setMenuPos({ x: e.clientX, y: e.clientY });
                           }}
                         >
-                          <span className="truncate flex-1" title={file}>{file ? file.split('/').pop() : '(empty)'}</span>
-                          <span className="opacity-50 text-[10px]">{child.currentIndex + 1}/{child.imageList.length}</span>
+                          <span className="truncate flex-1" title={file}>
+                            {file ? file.split("/").pop() : "(empty)"}
+                          </span>
+                          <span className="opacity-50 text-[10px]">
+                            {child.currentIndex + 1}/{child.imageList.length}
+                          </span>
                         </div>
                       );
                     })}
@@ -459,14 +485,17 @@ const TabBar = () => {
               const [parentId, childId] = targetId.split(CHILD_PREFIX);
               const parent = tabs.find((t) => t.id === parentId);
               if (!parent || !isComparisonTab(parent)) return;
-              const childIndex = parent.children.findIndex((c) => c.id === childId);
+              const childIndex = parent.children.findIndex(
+                (c) => c.id === childId
+              );
               if (childIndex < 0) return;
 
               if (id === "activate") {
                 setActiveTab(parent.id);
                 setActiveSlotIndex(parent.id, childIndex);
               } else if (id === "move-up") {
-                if (childIndex > 0) reorderChildren(parent.id, childIndex, childIndex - 1);
+                if (childIndex > 0)
+                  reorderChildren(parent.id, childIndex, childIndex - 1);
               } else if (id === "move-down") {
                 if (childIndex < parent.children.length - 1)
                   reorderChildren(parent.id, childIndex, childIndex + 1);
