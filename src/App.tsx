@@ -1,4 +1,4 @@
-import { listen } from "@tauri-apps/api/event";
+import { emit, listen } from "@tauri-apps/api/event";
 import { useCallback, useEffect, useRef } from "react";
 import { isComparisonTab, isSingleTab, SingleTab, useTabStore } from "./store";
 import TabBar from "./components/TabBar";
@@ -85,30 +85,30 @@ export default function App() {
   // Add Tauri event listeners for 'open-image' and 'new-tab' events
   useEffect(() => {
     if (didAddListeners.current) return;
+    didAddListeners.current = true;
 
     const unlisteners: Array<() => void> = [];
 
-    listen("open-image", (event) => {
-      console.log("Received open-image event:", event.payload);
-      const rawPath =
-        typeof event.payload === "string"
-          ? event.payload
-          : String(event.payload);
+    (async () => {
+      const openImageListener = await listen("open-image", (event) => {
+        console.log("Received open-image event:", event.payload);
+        const rawPath =
+          typeof event.payload === "string"
+            ? event.payload
+            : String(event.payload);
 
-      openImageRef.current(rawPath);
-    }).then((fn) => {
-      unlisteners.push(fn);
-    });
+        openImageRef.current(rawPath);
+      });
 
-    listen("new-tab", (event) => {
-      console.log("Received new-tab event:", event.payload);
+      const newTabListener = await listen("new-tab", (event) => {
+        console.log("Received new-tab event:", event.payload);
 
-      addSingleTab(null, [], 0);
-    }).then((fn) => {
-      unlisteners.push(fn);
-    });
+        addSingleTab(null, [], 0);
+      });
 
-    didAddListeners.current = true;
+      unlisteners.push(openImageListener, newTabListener);
+      await emit("frontend-ready", null); // Notify backend that frontend is ready
+    })();
 
     return () => {
       unlisteners.forEach((fn) => fn());
