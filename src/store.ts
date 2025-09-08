@@ -45,6 +45,22 @@ type TabStore = {
   setActiveSlotIndex: (id: string, slotIndex: number) => void;
   updateComparisonChildren: (id: string, children: SingleTab[]) => void;
   reorderTab: (fromIndex: number, toIndex: number) => void;
+  // --- New child management APIs (Level 2) ---
+  reorderComparisonChildren: (
+    comparisonId: string,
+    fromIndex: number,
+    toIndex: number
+  ) => void;
+  detachChildToTopLevel: (
+    comparisonId: string,
+    childId: string,
+    insertAfterParent?: boolean
+  ) => void;
+  removeChildFromComparison: (
+    comparisonId: string,
+    childId: string
+  ) => void;
+  detachAllChildren: (comparisonId: string) => void;
 };
 
 export const useTabStore = create<TabStore>((set, get) => ({
@@ -229,6 +245,137 @@ export const useTabStore = create<TabStore>((set, get) => ({
       const [moved] = tabs.splice(fromIndex, 1);
       tabs.splice(toIndex, 0, moved);
       return { tabs };
+    });
+  },
+
+  // --- New child management implementations ---
+  reorderComparisonChildren: (comparisonId, fromIndex, toIndex) => {
+    if (fromIndex === toIndex) return;
+    set((state) => ({
+      tabs: state.tabs.map((t) => {
+        if (t.id === comparisonId && t.type === "comparison") {
+          if (
+            fromIndex < 0 ||
+            toIndex < 0 ||
+            fromIndex >= t.children.length ||
+            toIndex >= t.children.length
+          ) {
+            return t;
+          }
+          const children = [...t.children];
+          const [moved] = children.splice(fromIndex, 1);
+          children.splice(toIndex, 0, moved);
+          let newActive = t.activeSlotIndex;
+          if (t.activeSlotIndex === fromIndex) newActive = toIndex;
+          else if (
+            fromIndex < t.activeSlotIndex &&
+            toIndex >= t.activeSlotIndex
+          )
+            newActive = t.activeSlotIndex - 1;
+          else if (
+            fromIndex > t.activeSlotIndex &&
+            toIndex <= t.activeSlotIndex
+          )
+            newActive = t.activeSlotIndex + 1;
+          return { ...t, children, activeSlotIndex: newActive };
+        }
+        return t;
+      }),
+    }));
+  },
+
+  detachChildToTopLevel: (comparisonId, childId, insertAfterParent = true) => {
+    set((state) => {
+      const tabs = [...state.tabs];
+      const compIndex = tabs.findIndex(
+        (t) => t.id === comparisonId && t.type === "comparison"
+      );
+      if (compIndex < 0) return {} as any;
+      const comp = tabs[compIndex] as ComparisonTab;
+      const childIdx = comp.children.findIndex((c) => c.id === childId);
+      if (childIdx < 0) return {} as any;
+      const child = comp.children[childIdx];
+
+      const newChildren = comp.children.filter((c) => c.id !== childId);
+
+      // Insert new top-level single tab after parent or at end
+      const insertIndex = insertAfterParent
+        ? compIndex + 1
+        : tabs.length;
+      tabs.splice(insertIndex, 0, child);
+
+      // If only 0 or 1 child left, decide policy
+      if (newChildren.length === 1) {
+        // Promote remaining single as its own tab and remove comparison
+        const remaining = newChildren[0];
+        tabs.splice(compIndex, 1, remaining);
+        return {
+          tabs,
+          activeTabId: remaining.id,
+        };
+      } else if (newChildren.length === 0) {
+        // Remove comparison entirely
+        tabs.splice(compIndex, 1);
+        return { tabs };
+      } else {
+        tabs[compIndex] = {
+          ...comp,
+          children: newChildren,
+          activeSlotIndex: Math.min(
+            comp.activeSlotIndex >= childIdx
+              ? comp.activeSlotIndex - 1
+              : comp.activeSlotIndex,
+            newChildren.length - 1
+          ),
+        };
+      }
+      return { tabs };
+    });
+  },
+
+  removeChildFromComparison: (comparisonId, childId) => {
+    set((state) => {
+      const tabs = [...state.tabs];
+      const compIndex = tabs.findIndex(
+        (t) => t.id === comparisonId && t.type === "comparison"
+      );
+      if (compIndex < 0) return {} as any;
+      const comp = tabs[compIndex] as ComparisonTab;
+      const newChildren = comp.children.filter((c) => c.id !== childId);
+      if (newChildren.length === 1) {
+        const remaining = newChildren[0];
+        tabs.splice(compIndex, 1, remaining);
+        return { tabs, activeTabId: remaining.id };
+      } else if (newChildren.length === 0) {
+        tabs.splice(compIndex, 1);
+        return { tabs };
+      } else {
+        tabs[compIndex] = {
+          ...comp,
+          children: newChildren,
+          activeSlotIndex: Math.min(
+            comp.activeSlotIndex >= newChildren.length
+              ? newChildren.length - 1
+              : comp.activeSlotIndex,
+            newChildren.length - 1
+          ),
+        };
+      }
+      return { tabs };
+    });
+  },
+
+  detachAllChildren: (comparisonId) => {
+    set((state) => {
+      const tabs = [...state.tabs];
+      const compIndex = tabs.findIndex(
+        (t) => t.id === comparisonId && t.type === "comparison"
+      );
+      if (compIndex < 0) return {} as any;
+      const comp = tabs[compIndex] as ComparisonTab;
+      // Replace comparison with its children preserving order
+      tabs.splice(compIndex, 1, ...comp.children);
+      return { tabs, activeTabId: comp.children[0]?.id || null };
     });
   },
 }));
