@@ -28,6 +28,53 @@ export const isSingleTab = (tab: Tab): tab is SingleTab =>
 export const isComparisonTab = (tab: Tab): tab is ComparisonTab =>
   tab.type === "comparison";
 
+// Helper: centralize the logic for updating a comparison tab after its children change
+// Works with the store's map-based tabs and childrenOrder representation.
+function normalizeComparisonAfterChildrenChangeMap(
+  tabs: Record<string, Tab>,
+  tabOrder: string[],
+  comparisonId: string,
+  comp: ComparisonTab,
+  newChildren: Record<string, SingleTab>,
+  newChildrenOrder: string[],
+  removedChildIndex?: number
+): { tabs: Record<string, Tab>; tabOrder: string[]; activeTabId?: string } {
+  const outTabs = { ...tabs };
+  const outOrder = [...tabOrder];
+
+  if (newChildrenOrder.length === 1) {
+    const remainingId = newChildrenOrder[0];
+    const remaining = newChildren[remainingId];
+    // Replace comparison with remaining single
+    delete outTabs[comparisonId];
+    outTabs[remainingId] = remaining;
+    const idx = outOrder.indexOf(comparisonId);
+    if (idx >= 0) outOrder.splice(idx, 1, remainingId);
+    else outOrder.push(remainingId);
+    return { tabs: outTabs, tabOrder: outOrder, activeTabId: remainingId };
+  } else if (newChildrenOrder.length === 0) {
+    // Remove comparison entirely
+    delete outTabs[comparisonId];
+    const filtered = outOrder.filter((tid) => tid !== comparisonId);
+    return { tabs: outTabs, tabOrder: filtered };
+  } else {
+    const adjustedActive = Math.min(
+      comp.activeSlotIndex >= (removedChildIndex ?? 0)
+        ? comp.activeSlotIndex - 1
+        : comp.activeSlotIndex,
+      newChildrenOrder.length - 1
+    );
+    const newComp: ComparisonTab = {
+      ...comp,
+      children: { ...newChildren },
+      childrenOrder: [...newChildrenOrder],
+      activeSlotIndex: adjustedActive,
+    };
+    outTabs[comparisonId] = newComp;
+    return { tabs: outTabs, tabOrder: outOrder };
+  }
+}
+
 type TabStore = {
   // tabs keyed by id
   tabs: Record<string, Tab>;
@@ -342,9 +389,7 @@ export const useTabStore = create<TabStore>((set, get) => ({
       if (childIndex < 0) return {} as any;
       const child = comp.children[childId];
 
-      const newChildrenOrder = comp.childrenOrder.filter(
-        (cid) => cid !== childId
-      );
+      const newChildrenOrder = comp.childrenOrder.filter((cid) => cid !== childId);
       const newChildren = { ...comp.children };
       delete newChildren[childId];
 
@@ -357,36 +402,15 @@ export const useTabStore = create<TabStore>((set, get) => ({
       newOrder.splice(insertPos, 0, childId);
       newTabs[childId] = child;
 
-      if (newChildrenOrder.length === 1) {
-        const remainingId = newChildrenOrder[0];
-        const remaining = newChildren[remainingId];
-        // replace comparison with remaining single
-        delete newTabs[comparisonId];
-        newTabs[remainingId] = remaining;
-        // replace comparisonId in order with remainingId
-        const idx = newOrder.indexOf(comparisonId);
-        if (idx >= 0) newOrder.splice(idx, 1, remainingId);
-        else newOrder.push(remainingId);
-        return { tabs: newTabs, tabOrder: newOrder, activeTabId: remainingId };
-      } else if (newChildrenOrder.length === 0) {
-        // remove comparison entirely
-        delete newTabs[comparisonId];
-        const filtered = newOrder.filter((tid) => tid !== comparisonId);
-        return { tabs: newTabs, tabOrder: filtered };
-      } else {
-        newTabs[comparisonId] = {
-          ...comp,
-          children: newChildren,
-          childrenOrder: newChildrenOrder,
-          activeSlotIndex: Math.min(
-            comp.activeSlotIndex >= childIndex
-              ? comp.activeSlotIndex - 1
-              : comp.activeSlotIndex,
-            newChildrenOrder.length - 1
-          ),
-        };
-      }
-      return { tabs: newTabs, tabOrder: newOrder };
+      return normalizeComparisonAfterChildrenChangeMap(
+        newTabs,
+        newOrder,
+        comparisonId,
+        comp,
+        newChildren,
+        newChildrenOrder,
+        childIndex
+      );
     });
   },
 
@@ -394,41 +418,23 @@ export const useTabStore = create<TabStore>((set, get) => ({
     set((state) => {
       const comp = state.tabs[comparisonId];
       if (!comp || comp.type !== "comparison") return {} as any;
-      const newChildrenOrder = comp.childrenOrder.filter(
-        (cid) => cid !== childId
-      );
+      const childIndex = comp.childrenOrder.findIndex((cid) => cid === childId);
+      if (childIndex < 0) return {} as any;
+      const newChildrenOrder = comp.childrenOrder.filter((cid) => cid !== childId);
       const newChildren = { ...comp.children };
       delete newChildren[childId];
       const newTabs = { ...state.tabs };
       const newOrder = [...state.tabOrder];
-      if (newChildrenOrder.length === 1) {
-        const remainingId = newChildrenOrder[0];
-        const remaining = newChildren[remainingId];
-        // replace comparison with remaining single
-        delete newTabs[comparisonId];
-        newTabs[remainingId] = remaining;
-        const idx = newOrder.indexOf(comparisonId);
-        if (idx >= 0) newOrder.splice(idx, 1, remainingId);
-        else newOrder.push(remainingId);
-        return { tabs: newTabs, tabOrder: newOrder, activeTabId: remainingId };
-      } else if (newChildrenOrder.length === 0) {
-        delete newTabs[comparisonId];
-        const filtered = newOrder.filter((tid) => tid !== comparisonId);
-        return { tabs: newTabs, tabOrder: filtered };
-      } else {
-        newTabs[comparisonId] = {
-          ...comp,
-          children: newChildren,
-          childrenOrder: newChildrenOrder,
-          activeSlotIndex: Math.min(
-            comp.activeSlotIndex >= newChildrenOrder.length
-              ? newChildrenOrder.length - 1
-              : comp.activeSlotIndex,
-            newChildrenOrder.length - 1
-          ),
-        };
-      }
-      return { tabs: newTabs, tabOrder: newOrder };
+
+      return normalizeComparisonAfterChildrenChangeMap(
+        newTabs,
+        newOrder,
+        comparisonId,
+        comp,
+        newChildren,
+        newChildrenOrder,
+        childIndex
+      );
     });
   },
 
