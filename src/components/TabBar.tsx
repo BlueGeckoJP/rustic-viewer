@@ -248,6 +248,7 @@ const TabBar = () => {
   if (!isChildContext) {
     contextItems = [
       { id: "new", label: "New Tab" },
+      { id: "clone", label: "Clone Tab" },
       { id: "close", label: "Close" },
       { id: "close-others", label: "Close Others" },
       { id: "close-right", label: "Close Tabs to Right" },
@@ -459,6 +460,14 @@ const TabBar = () => {
                 setSelectedIds(new Set());
               } else if (id === "new") {
                 addSingleTab(null, [], 0);
+              } else if (id === "clone") {
+                const oldTab = tabsMap[targetId];
+                if (oldTab && isSingleTab(oldTab)) {
+                  const newDirectory = oldTab.directory;
+                  const newImageList = [...oldTab.imageList];
+                  const newIndex = oldTab.currentIndex;
+                  addSingleTab(newDirectory, newImageList, newIndex);
+                }
               } else if (id === "close") {
                 removeTab(targetId);
                 setSelectedIds((prev) => {
