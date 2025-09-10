@@ -13,7 +13,11 @@ jest.mock("../SlotCanvas", () => ({
 
 describe("ComparisonView", () => {
   beforeEach(() => {
-    useTabStore.setState({ tabs: {}, tabOrder: [], activeTabId: null } as any);
+    useTabStore.setState({
+      tabs: new Map(),
+      tabOrder: [],
+      activeTabId: null,
+    } as any);
     // mock canvas getContext globally so any nested ImageCanvas tests won't error
     const fakeCtx = {
       clearRect: jest.fn(),
@@ -55,7 +59,7 @@ describe("ComparisonView", () => {
     // clicking second slot sets activeSlotIndex on the comparison tab
     const secondSlot = screen.getByText("b.png");
     await userEvent.click(secondSlot);
-    const tab = useTabStore.getState().tabs[compId] as any;
+    const tab = useTabStore.getState().tabs.get(compId) as any;
     expect(tab.activeSlotIndex).toBe(1);
   });
 
@@ -81,8 +85,8 @@ describe("ComparisonView", () => {
     await userEvent.click(nextButtons[1]);
 
     // child's currentIndex inside the comparison should now be 1
-    const comp = useTabStore.getState().tabs[compId] as any;
+    const comp = useTabStore.getState().tabs.get(compId) as any;
     const bId = comp.childrenOrder[1];
-    expect(comp.children[bId].currentIndex).toBe(1);
+    expect(comp.children.get(bId).currentIndex).toBe(1);
   });
 });

@@ -14,9 +14,9 @@ export type SingleTab = {
 export type ComparisonTab = {
   id: string;
   type: "comparison";
-  // children stored as a map keyed by child id
-  children: Record<string, SingleTab>;
-  // ordering for children
+  // children stored in insertion-ordered Map keyed by child id
+  children: Map<string, SingleTab>;
+  // ordering for children (explicit order kept – Map preserves insertion but this stays authoritative)
   childrenOrder: string[];
   activeSlotIndex: number;
   // Future: layoutMode?: 'auto' | 'row' | 'grid2x2';
@@ -28,33 +28,37 @@ export const isSingleTab = (tab: Tab): tab is SingleTab =>
 export const isComparisonTab = (tab: Tab): tab is ComparisonTab =>
   tab.type === "comparison";
 
+// Convenience selector helpers (non-breaking additions)
+export const getAllTabsArray = (tabs: Map<string, Tab>): Tab[] =>
+  Array.from(tabs.values());
+
 // Helper: centralize the logic for updating a comparison tab after its children change
 // Works with the store's map-based tabs and childrenOrder representation.
 function normalizeComparisonAfterChildrenChangeMap(
-  tabs: Record<string, Tab>,
+  tabs: Map<string, Tab>,
   tabOrder: string[],
   comparisonId: string,
   comp: ComparisonTab,
-  newChildren: Record<string, SingleTab>,
+  newChildren: Map<string, SingleTab>,
   newChildrenOrder: string[],
   removedChildIndex?: number
-): { tabs: Record<string, Tab>; tabOrder: string[]; activeTabId?: string } {
-  const outTabs = { ...tabs };
+): { tabs: Map<string, Tab>; tabOrder: string[]; activeTabId?: string } {
+  const outTabs = new Map(tabs);
   const outOrder = [...tabOrder];
 
   if (newChildrenOrder.length === 1) {
     const remainingId = newChildrenOrder[0];
-    const remaining = newChildren[remainingId];
+    const remaining = newChildren.get(remainingId)!;
     // Replace comparison with remaining single
-    delete outTabs[comparisonId];
-    outTabs[remainingId] = remaining;
+    outTabs.delete(comparisonId);
+    outTabs.set(remainingId, remaining);
     const idx = outOrder.indexOf(comparisonId);
     if (idx >= 0) outOrder.splice(idx, 1, remainingId);
     else outOrder.push(remainingId);
     return { tabs: outTabs, tabOrder: outOrder, activeTabId: remainingId };
   } else if (newChildrenOrder.length === 0) {
     // Remove comparison entirely
-    delete outTabs[comparisonId];
+    outTabs.delete(comparisonId);
     const filtered = outOrder.filter((tid) => tid !== comparisonId);
     return { tabs: outTabs, tabOrder: filtered };
   } else {
@@ -66,18 +70,18 @@ function normalizeComparisonAfterChildrenChangeMap(
     );
     const newComp: ComparisonTab = {
       ...comp,
-      children: { ...newChildren },
+      children: new Map(newChildren),
       childrenOrder: [...newChildrenOrder],
       activeSlotIndex: adjustedActive,
     };
-    outTabs[comparisonId] = newComp;
+    outTabs.set(comparisonId, newComp);
     return { tabs: outTabs, tabOrder: outOrder };
   }
 }
 
 type TabStore = {
   // tabs keyed by id
-  tabs: Record<string, Tab>;
+  tabs: Map<string, Tab>;
   // ordering for top-level tabs
   tabOrder: string[];
   activeTabId: string | null;
@@ -98,7 +102,7 @@ type TabStore = {
   setActiveSlotIndex: (id: string, slotIndex: number) => void;
   updateComparisonChildren: (
     id: string,
-    children: Record<string, SingleTab>
+    children: Map<string, SingleTab>
   ) => void;
   reorderTab: (fromIndex: number, toIndex: number) => void;
   // --- New child management APIs (Level 2) ---
@@ -117,7 +121,7 @@ type TabStore = {
 };
 
 export const useTabStore = create<TabStore>((set, get) => ({
-  tabs: {},
+  tabs: new Map(),
   tabOrder: [],
   activeTabId: null,
 
@@ -130,20 +134,24 @@ export const useTabStore = create<TabStore>((set, get) => ({
       imageList,
       currentIndex,
     };
-    set((state) => ({
-      tabs: { ...state.tabs, [id]: tab },
-      tabOrder: [...state.tabOrder, id],
-      activeTabId: id,
-    }));
+    set((state) => {
+      const newTabs = new Map(state.tabs);
+      newTabs.set(id, tab);
+      return {
+        tabs: newTabs,
+        tabOrder: [...state.tabOrder, id],
+        activeTabId: id,
+      };
+    });
     return id;
   },
 
   addComparisonTab: (children, activeSlotIndex) => {
     const id = uuid();
-    const childrenMap: Record<string, SingleTab> = {};
+    const childrenMap = new Map<string, SingleTab>();
     const childrenOrder: string[] = [];
     children.forEach((c) => {
-      childrenMap[c.id] = c;
+      childrenMap.set(c.id, c);
       childrenOrder.push(c.id);
     });
     const tab: ComparisonTab = {
@@ -153,11 +161,15 @@ export const useTabStore = create<TabStore>((set, get) => ({
       childrenOrder,
       activeSlotIndex,
     };
-    set((state) => ({
-      tabs: { ...state.tabs, [id]: tab },
-      tabOrder: [...state.tabOrder, id],
-      activeTabId: id,
-    }));
+    set((state) => {
+      const newTabs = new Map(state.tabs);
+      newTabs.set(id, tab);
+      return {
+        tabs: newTabs,
+        tabOrder: [...state.tabOrder, id],
+        activeTabId: id,
+      };
+    });
     return id;
   },
 
@@ -171,7 +183,7 @@ export const useTabStore = create<TabStore>((set, get) => ({
       const orderedSingles: SingleTab[] = [];
       const remainingOrder: string[] = [];
       state.tabOrder.forEach((tid) => {
-        const t = state.tabs[tid];
+        const t = state.tabs.get(tid);
         if (t && t.type === "single" && uniq.includes(t.id)) {
           orderedSingles.push(t);
         } else if (t) {
@@ -184,10 +196,10 @@ export const useTabStore = create<TabStore>((set, get) => ({
       const limited = orderedSingles.slice(0, 4);
 
       const comparisonId = uuid();
-      const childrenMap: Record<string, SingleTab> = {};
+      const childrenMap = new Map<string, SingleTab>();
       const childrenOrder: string[] = [];
       limited.forEach((c) => {
-        childrenMap[c.id] = c;
+        childrenMap.set(c.id, c);
         childrenOrder.push(c.id);
       });
 
@@ -199,32 +211,29 @@ export const useTabStore = create<TabStore>((set, get) => ({
         activeSlotIndex: 0,
       };
 
-      // Find the first index in tabOrder where one of the selected singles appeared
       const firstIndexInOld = state.tabOrder.findIndex((tid) => {
-        const t = state.tabs[tid];
+        const t = state.tabs.get(tid);
         return t?.type === "single" && uniq.includes(t.id);
       });
 
-      // Build new tabs map and order: remove moved singles, insert comparison at firstIndexInOld
-      const newTabs = { ...state.tabs };
-      // delete moved singles
-      limited.forEach((c) => delete newTabs[c.id]);
+      const newTabs = new Map(state.tabs);
+      limited.forEach((c) => newTabs.delete(c.id));
 
       const newOrder: string[] = [];
       let inserted = false;
       for (let i = 0; i < state.tabOrder.length; i++) {
         if (i === firstIndexInOld) {
-          newTabs[comparisonId] = comparison;
+          newTabs.set(comparisonId, comparison);
           newOrder.push(comparisonId);
           inserted = true;
         }
         const tid = state.tabOrder[i];
-        const t = state.tabs[tid];
-        if (t?.type === "single" && uniq.includes(t.id)) continue; // skip moved
+        const t = state.tabs.get(tid);
+        if (t?.type === "single" && uniq.includes(t.id)) continue;
         newOrder.push(tid);
       }
       if (!inserted) {
-        newTabs[comparisonId] = comparison;
+        newTabs.set(comparisonId, comparison);
         newOrder.push(comparisonId);
       }
 
@@ -240,8 +249,8 @@ export const useTabStore = create<TabStore>((set, get) => ({
 
   removeTab: (id) => {
     set((state) => {
-      const newTabs = { ...state.tabs };
-      delete newTabs[id];
+      const newTabs = new Map(state.tabs);
+      newTabs.delete(id);
       const newOrder = state.tabOrder.filter((tid) => tid !== id);
       const activeTabId =
         state.activeTabId === id
@@ -254,21 +263,23 @@ export const useTabStore = create<TabStore>((set, get) => ({
   },
 
   getSingleTab: (id) => {
-    const t = get().tabs[id];
+    const t = get().tabs.get(id);
     return t && isSingleTab(t) ? t : null;
   },
 
   getComparisonTab: (id) => {
-    const t = get().tabs[id];
+    const t = get().tabs.get(id);
     return t && isComparisonTab(t) ? t : null;
   },
 
   updateSingleTab: (id, patch) => {
     set((state) => {
-      const existing = state.tabs[id];
+      const existing = state.tabs.get(id);
       if (!existing || existing.type !== "single") return state;
       const updated = { ...existing, ...patch } as SingleTab;
-      return { tabs: { ...state.tabs, [id]: updated } };
+      const newTabs = new Map(state.tabs);
+      newTabs.set(id, updated);
+      return { tabs: newTabs };
     });
   },
 
@@ -278,23 +289,24 @@ export const useTabStore = create<TabStore>((set, get) => ({
 
   setCurrentIndex: (id, index) => {
     set((state) => {
-      const tabs = { ...state.tabs };
-      const t = tabs[id];
-      if (t && t.type === "single") {
-        tabs[id] = { ...t, currentIndex: index };
-        return { tabs };
+      const currentTabs = state.tabs;
+      const direct = currentTabs.get(id);
+      if (direct && direct.type === "single") {
+        const newTabs = new Map(currentTabs);
+        newTabs.set(id, { ...direct, currentIndex: index });
+        return { tabs: newTabs };
       }
       // search comparisons for child
       for (const tid of state.tabOrder) {
-        const tab = tabs[tid];
-        if (tab && tab.type === "comparison") {
-          if (tab.children[id]) {
-            const child = tab.children[id];
-            const newChild = { ...child, currentIndex: index };
-            const newChildren = { ...tab.children, [id]: newChild };
-            tabs[tid] = { ...tab, children: newChildren };
-            return { tabs };
-          }
+        const tab = currentTabs.get(tid);
+        if (tab && tab.type === "comparison" && tab.children.has(id)) {
+          const child = tab.children.get(id)!;
+          const newChild = { ...child, currentIndex: index };
+          const newChildren = new Map(tab.children);
+          newChildren.set(id, newChild);
+          const newTabs = new Map(currentTabs);
+          newTabs.set(tid, { ...tab, children: newChildren });
+          return { tabs: newTabs };
         }
       }
       return state;
@@ -303,26 +315,28 @@ export const useTabStore = create<TabStore>((set, get) => ({
 
   setActiveSlotIndex: (id, slotIndex) => {
     set((state) => {
-      const tab = state.tabs[id];
+      const tab = state.tabs.get(id);
       if (!tab || tab.type !== "comparison") return state;
-      return {
-        tabs: { ...state.tabs, [id]: { ...tab, activeSlotIndex: slotIndex } },
-      };
+      const newTabs = new Map(state.tabs);
+      newTabs.set(id, { ...tab, activeSlotIndex: slotIndex });
+      return { tabs: newTabs };
     });
   },
 
   updateComparisonChildren: (id, children) => {
     set((state) => {
-      const tab = state.tabs[id];
-      if (!tab || tab.type !== "comparison") return state
-      const childrenOrder = Object.keys(children);
-      const childrenMap: Record<string, SingleTab> = { ...children };
-      return {
-        tabs: {
-          ...state.tabs,
-          [id]: { ...tab, children: childrenMap, childrenOrder },
-        },
-      };
+      const tab = state.tabs.get(id);
+      if (!tab || tab.type !== "comparison") return state;
+      const childrenOrder = tab.childrenOrder.filter((cid) =>
+        children.has(cid)
+      );
+      // ensure order includes any new ids in insertion order
+      for (const key of children.keys()) {
+        if (!childrenOrder.includes(key)) childrenOrder.push(key);
+      }
+      const newTabs = new Map(state.tabs);
+      newTabs.set(id, { ...tab, children: new Map(children), childrenOrder });
+      return { tabs: newTabs };
     });
   },
 
@@ -348,7 +362,7 @@ export const useTabStore = create<TabStore>((set, get) => ({
   reorderComparisonChildren: (comparisonId, fromIndex, toIndex) => {
     if (fromIndex === toIndex) return;
     set((state) => {
-      const comp = state.tabs[comparisonId];
+      const comp = state.tabs.get(comparisonId);
       if (!comp || comp.type !== "comparison") return state;
       const order = [...comp.childrenOrder];
       if (
@@ -377,32 +391,34 @@ export const useTabStore = create<TabStore>((set, get) => ({
         childrenOrder: order,
         activeSlotIndex: newActive,
       };
-      return { tabs: { ...state.tabs, [comparisonId]: newComp } };
+      const newTabs = new Map(state.tabs);
+      newTabs.set(comparisonId, newComp);
+      return { tabs: newTabs };
     });
   },
 
   detachChildToTopLevel: (comparisonId, childId, insertAfterParent = true) => {
     set((state) => {
-      const comp = state.tabs[comparisonId];
+      const comp = state.tabs.get(comparisonId);
       if (!comp || comp.type !== "comparison") return state;
       const childIndex = comp.childrenOrder.findIndex((cid) => cid === childId);
       if (childIndex < 0) return state;
-      const child = comp.children[childId];
+      const child = comp.children.get(childId)!;
 
       const newChildrenOrder = comp.childrenOrder.filter(
         (cid) => cid !== childId
       );
-      const newChildren = { ...comp.children };
-      delete newChildren[childId];
+      const newChildren = new Map(comp.children);
+      newChildren.delete(childId);
 
-      const newTabs = { ...state.tabs };
+      const newTabs = new Map(state.tabs);
       // Insert child as top-level tab at position
       const insertPos = insertAfterParent
         ? state.tabOrder.indexOf(comparisonId) + 1
         : state.tabOrder.length;
       const newOrder = [...state.tabOrder];
       newOrder.splice(insertPos, 0, childId);
-      newTabs[childId] = child;
+      newTabs.set(childId, child);
 
       return normalizeComparisonAfterChildrenChangeMap(
         newTabs,
@@ -418,16 +434,16 @@ export const useTabStore = create<TabStore>((set, get) => ({
 
   removeChildFromComparison: (comparisonId, childId) => {
     set((state) => {
-      const comp = state.tabs[comparisonId];
+      const comp = state.tabs.get(comparisonId);
       if (!comp || comp.type !== "comparison") return state;
       const childIndex = comp.childrenOrder.findIndex((cid) => cid === childId);
       if (childIndex < 0) return state;
       const newChildrenOrder = comp.childrenOrder.filter(
         (cid) => cid !== childId
       );
-      const newChildren = { ...comp.children };
-      delete newChildren[childId];
-      const newTabs = { ...state.tabs };
+      const newChildren = new Map(comp.children);
+      newChildren.delete(childId);
+      const newTabs = new Map(state.tabs);
       const newOrder = [...state.tabOrder];
 
       return normalizeComparisonAfterChildrenChangeMap(
@@ -444,10 +460,10 @@ export const useTabStore = create<TabStore>((set, get) => ({
 
   detachAllChildren: (comparisonId) => {
     set((state) => {
-      const comp = state.tabs[comparisonId];
+      const comp = state.tabs.get(comparisonId);
       if (!comp || comp.type !== "comparison") return state;
-      const newTabs = { ...state.tabs };
-      delete newTabs[comparisonId];
+      const newTabs = new Map(state.tabs);
+      newTabs.delete(comparisonId);
       const newOrder = [...state.tabOrder];
       const compIndex = newOrder.indexOf(comparisonId);
       if (compIndex < 0) return state;
@@ -455,7 +471,7 @@ export const useTabStore = create<TabStore>((set, get) => ({
       newOrder.splice(compIndex, 1, ...comp.childrenOrder);
       // add children to map
       comp.childrenOrder.forEach((cid) => {
-        newTabs[cid] = comp.children[cid];
+        newTabs.set(cid, comp.children.get(cid)!);
       });
       return {
         tabs: newTabs,

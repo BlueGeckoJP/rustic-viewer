@@ -11,7 +11,11 @@ jest.mock("../../utils/imageDecoder", () => ({
 describe("SingleView", () => {
   beforeEach(() => {
     // reset store
-    useTabStore.setState({ tabs: {}, tabOrder: [], activeTabId: null } as any);
+    useTabStore.setState({
+      tabs: new Map(),
+      tabOrder: [],
+      activeTabId: null,
+    } as any);
     // mock canvas context to avoid jsdom not-implemented errors
     const fakeCtx = {
       clearRect: jest.fn(),
@@ -59,7 +63,7 @@ describe("SingleView", () => {
     await userEvent.keyboard("{ArrowRight}");
 
     // setCurrentIndex should have updated store
-    expect((useTabStore.getState().tabs[id] as any).currentIndex).toBe(1);
+    expect((useTabStore.getState().tabs.get(id) as any).currentIndex).toBe(1);
 
     // decode should be called again for the new image (at least one new call)
     await waitFor(() =>

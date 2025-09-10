@@ -10,7 +10,7 @@ const TabBar = () => {
   const tabRefs = useRef<Map<string, HTMLElement>>(new Map());
   const tabsMap = useTabStore((s) => s.tabs);
   const tabOrder = useTabStore((s) => s.tabOrder);
-  const tabs = tabOrder.map((id) => tabsMap[id]).filter(Boolean) as Tab[];
+  const tabs = tabOrder.map((id) => tabsMap.get(id)).filter(Boolean) as Tab[];
   const activeTabId = useTabStore((s) => s.activeTabId);
   const setActiveTab = useTabStore((s) => s.setActiveTab);
   const removeTab = useTabStore((s) => s.removeTab);
@@ -264,7 +264,7 @@ const TabBar = () => {
     }
     // Add comparison-specific actions if target is a comparison
     if (menuOpenFor) {
-      const target = tabsMap[menuOpenFor];
+      const target = tabsMap.get(menuOpenFor);
       if (target && isComparisonTab(target)) {
         contextItems.push({ id: "detach-all", label: "Detach All Children" });
         contextItems.push({
@@ -396,7 +396,7 @@ const TabBar = () => {
                 {isComp && expanded && (
                   <div className="flex flex-col gap-1 pl-6 pr-1">
                     {tab.childrenOrder.map((childId, cIdx) => {
-                      const child = tab.children[childId];
+                      const child = tab.children.get(childId)!;
                       const file = child.imageList[child.currentIndex];
                       const childActive =
                         active && tab.activeSlotIndex === cIdx;
@@ -461,7 +461,7 @@ const TabBar = () => {
               } else if (id === "new") {
                 addSingleTab(null, [], 0);
               } else if (id === "clone") {
-                const oldTab = tabsMap[targetId];
+                const oldTab = tabsMap.get(targetId);
                 if (oldTab && isSingleTab(oldTab)) {
                   const newDirectory = oldTab.directory;
                   const newImageList = [...oldTab.imageList];
@@ -495,7 +495,7 @@ const TabBar = () => {
             } else {
               // Child actions
               const [parentId, childId] = targetId.split(CHILD_PREFIX);
-              const parent = tabsMap[parentId];
+              const parent = tabsMap.get(parentId);
               if (!parent || !isComparisonTab(parent)) return;
               const childIndex = parent.childrenOrder.findIndex(
                 (c) => c === childId

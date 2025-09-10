@@ -7,7 +7,7 @@ type ComparisonViewProps = {
 };
 
 const ComparisonView: React.FC<ComparisonViewProps> = ({ tabId }) => {
-  const tab = useTabStore((s) => s.tabs[tabId] ?? null);
+  const tab = useTabStore((s) => s.tabs.get(tabId) ?? null);
   const setActiveSlotIndex = useTabStore((s) => s.setActiveSlotIndex);
   const setCurrentIndex = useTabStore((s) => s.setCurrentIndex);
 
@@ -27,7 +27,7 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ tabId }) => {
   return (
     <div className={`p-2 box-border w-full h-full ${containerClass}`}>
       {childrenOrder.map((cid, idx) => {
-        const child = children[cid];
+        const child = children.get(cid)!;
         const file = child.imageList[child.currentIndex];
         return (
           <div
