@@ -1,20 +1,19 @@
 import { Tab, useTabStore } from "../store";
-import React, { useRef, useState, useCallback, useEffect } from "react";
+import React, { useRef, useState } from "react";
 import ContextMenu, { ContextMenuItem } from "./ContextMenu";
 import { isComparisonTab, isSingleTab } from "../store";
+import useTabMove from "../hooks/useTabMove";
 
 const CHILD_PREFIX = "::child::";
 
 const TabBar = () => {
-  const tabBarRef = useRef<HTMLDivElement>(null);
-  const tabRefs = useRef<Map<string, HTMLElement>>(new Map());
+  const tabBarRef = useRef<HTMLDivElement | null>(null);
   const tabsMap = useTabStore((s) => s.tabs);
   const tabOrder = useTabStore((s) => s.tabOrder);
   const tabs = tabOrder.map((id) => tabsMap.get(id)).filter(Boolean) as Tab[];
   const activeTabId = useTabStore((s) => s.activeTabId);
   const setActiveTab = useTabStore((s) => s.setActiveTab);
   const removeTab = useTabStore((s) => s.removeTab);
-  const reorderTab = useTabStore((s) => s.reorderTab);
   const createComparison = useTabStore((s) => s.createComparisonFromSingleIds);
   const addSingleTab = useTabStore((s) => s.addSingleTab);
   const detachChild = useTabStore((s) => s.detachChildToTopLevel);
@@ -35,6 +34,7 @@ const TabBar = () => {
       return n;
     });
   };
+  const tabMove = useTabMove({ tabBarRef, gap: 8, isOpen });
 
   // Multi-selection state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -65,171 +65,6 @@ const TabBar = () => {
   // Context menu
   const [menuOpenFor, setMenuOpenFor] = useState<string | null>(null);
   const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
-
-  // Drag state
-  const [draggingId, setDraggingId] = useState<string | null>(null);
-  const dragStartYRef = useRef(0);
-  const originIndexRef = useRef<number | null>(null);
-  const currentIndexRef = useRef<number | null>(null);
-  const dragOffsetRef = useRef(0);
-  const tabHeightsRef = useRef<Map<string, number>>(new Map());
-  const gap = 8;
-
-  const measureTabs = useCallback(() => {
-    tabRefs.current.forEach((el, id) => {
-      tabHeightsRef.current.set(id, el.getBoundingClientRect().height);
-    });
-  }, []);
-
-  useEffect(() => {
-    if (isOpen) {
-      requestAnimationFrame(measureTabs);
-    }
-  }, [tabs, isOpen, measureTabs]);
-
-  const clearDragVisuals = () => {
-    tabRefs.current.forEach((el) => {
-      el.style.transform = "";
-      el.style.transition = "";
-      el.style.zIndex = "";
-      el.style.opacity = "";
-      el.style.pointerEvents = "";
-    });
-  };
-
-  const endDrag = (commit: boolean) => {
-    if (
-      draggingId &&
-      commit &&
-      originIndexRef.current != null &&
-      currentIndexRef.current != null &&
-      originIndexRef.current !== currentIndexRef.current
-    ) {
-      reorderTab(originIndexRef.current, currentIndexRef.current);
-    }
-    setDraggingId(null);
-    originIndexRef.current = null;
-    currentIndexRef.current = null;
-    dragOffsetRef.current = 0;
-    clearDragVisuals();
-  };
-
-  const onMouseMove = useCallback(
-    (e: MouseEvent) => {
-      if (!draggingId) return;
-      const barEl = tabBarRef.current;
-      const draggedEl = tabRefs.current.get(draggingId);
-      if (!barEl || !draggedEl) return;
-
-      const startY = dragStartYRef.current;
-      let delta = e.clientY - startY;
-
-      const origIndex = originIndexRef.current!;
-      const preHeights = tabs
-        .slice(0, origIndex)
-        .reduce(
-          (acc, t) =>
-            acc +
-            (tabHeightsRef.current.get(t.id) || draggedEl.offsetHeight) +
-            gap,
-          0
-        );
-      const draggedHeight =
-        tabHeightsRef.current.get(draggingId) || draggedEl.offsetHeight;
-
-      const totalHeight = tabs.reduce(
-        (acc, t) =>
-          acc +
-          (tabHeightsRef.current.get(t.id) || draggedEl.offsetHeight) +
-          gap,
-        -gap
-      );
-      const maxTop = totalHeight - draggedHeight;
-      const minTop = 0;
-
-      const currentTopRelative = preHeights + delta;
-      const clampedTop = Math.min(Math.max(currentTopRelative, minTop), maxTop);
-      delta = clampedTop - preHeights;
-
-      dragOffsetRef.current = delta;
-      draggedEl.style.transform = `translateY(${delta}px)`;
-      draggedEl.style.zIndex = "10";
-      draggedEl.style.pointerEvents = "none";
-      draggedEl.style.transition = "none";
-      draggedEl.style.opacity = "0.9";
-
-      let newIndex = origIndex;
-      let cumulative = 0;
-      for (let i = 0; i < tabs.length; i++) {
-        if (tabs[i].id === draggingId) continue;
-        const h =
-          tabHeightsRef.current.get(tabs[i].id) || draggedEl.offsetHeight;
-        const midpoint = cumulative + h / 2;
-        if (preHeights + delta + draggedHeight / 2 < midpoint) {
-          newIndex = i <= origIndex ? i : i - 1;
-          break;
-        }
-        cumulative += h + gap;
-        newIndex = i + 1;
-      }
-
-      const oldIndex = origIndex;
-      currentIndexRef.current = newIndex;
-
-      tabs.forEach((t, idx) => {
-        if (t.id === draggingId) return;
-        const el = tabRefs.current.get(t.id);
-        if (!el) return;
-        el.style.transition = "transform 120ms";
-        let translate = 0;
-        if (oldIndex < newIndex) {
-          if (idx > oldIndex && idx <= newIndex)
-            translate = -draggedHeight - gap;
-        } else if (newIndex < oldIndex) {
-          if (idx >= newIndex && idx < oldIndex)
-            translate = draggedHeight + gap;
-        }
-        el.style.transform = translate ? `translateY(${translate}px)` : "";
-      });
-    },
-    [draggingId, tabs]
-  );
-
-  const onMouseUp = useCallback(
-    (e: MouseEvent) => {
-      if (!draggingId) return;
-      const barEl = tabBarRef.current;
-      if (barEl) {
-        const rect = barEl.getBoundingClientRect();
-        const inside =
-          e.clientX >= rect.left &&
-          e.clientX <= rect.right &&
-          e.clientY >= rect.top &&
-          e.clientY <= rect.bottom;
-        endDrag(inside);
-      } else {
-        endDrag(false);
-      }
-    },
-    [draggingId]
-  );
-
-  const onMouseLeaveWindow = useCallback(() => {
-    if (draggingId) endDrag(false);
-  }, [draggingId]);
-
-  useEffect(() => {
-    if (draggingId) {
-      window.addEventListener("mousemove", onMouseMove);
-      window.addEventListener("mouseup", onMouseUp);
-      window.addEventListener("mouseleave", onMouseLeaveWindow);
-      return () => {
-        window.removeEventListener("mousemove", onMouseMove);
-        window.removeEventListener("mouseup", onMouseUp);
-        window.removeEventListener("mouseleave", onMouseLeaveWindow);
-      };
-    }
-  }, [draggingId, onMouseMove, onMouseUp, onMouseLeaveWindow]);
 
   const getLabel = (tab: Tab) => {
     if (isComparisonTab(tab)) {
@@ -324,19 +159,11 @@ const TabBar = () => {
                   aria-selected={active}
                   aria-label={label}
                   onMouseDown={(e) => {
-                    if (e.button !== 0) return;
-                    setActiveTab(tab.id);
                     toggleSelect(tab.id, idx, e);
-                    dragStartYRef.current = e.clientY;
-                    originIndexRef.current = tabs.findIndex(
-                      (t) => t.id === tab.id
-                    );
-                    currentIndexRef.current = originIndexRef.current;
-                    setDraggingId(tab.id);
-                    measureTabs();
+                    tabMove.onTabMouseDown(e, tab.id);
                   }}
                   onClick={(e) => {
-                    if (draggingId) e.preventDefault();
+                    if (tabMove.draggingId) e.preventDefault();
                   }}
                   onContextMenu={(e) => {
                     e.preventDefault();
@@ -351,10 +178,7 @@ const TabBar = () => {
                       ? "bg-[#44444E]"
                       : "hover:bg-[#44444E]"
                   }`}
-                  ref={(el) => {
-                    if (el) tabRefs.current.set(tab.id, el);
-                    else tabRefs.current.delete(tab.id);
-                  }}
+                  ref={(el) => tabMove.registerTabRef(tab.id, el)}
                 >
                   {isComp && (
                     <button
