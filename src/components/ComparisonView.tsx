@@ -1,5 +1,5 @@
-import React from "react";
-import { useTabStore, isComparisonTab } from "../store";
+import type React from "react";
+import { isComparisonTab, useTabStore } from "../store";
 import SlotCanvas from "./SlotCanvas";
 
 type ComparisonViewProps = {
@@ -27,10 +27,11 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ tabId }) => {
   return (
     <div className={`p-2 box-border w-full h-full ${containerClass}`}>
       {childrenOrder.map((cid, idx) => {
-        const child = children.get(cid)!;
+        const child = children.get(cid);
+        if (!child) return null;
         const file = child.imageList[child.currentIndex];
         return (
-          <div
+          <button
             key={child.id}
             className={`relative group rounded-md overflow-hidden flex flex-col bg-[#2F2E33] ${
               n <= 3 ? "flex-1" : "w-full h-full"
@@ -40,6 +41,7 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ tabId }) => {
                 : "outline-1 outline-transparent"
             }`}
             onClick={() => setActiveSlotIndex(tab.id, idx)}
+            type="button"
           >
             <div className="text-xs px-2 py-1 bg-[#44444E] text-[#D3DAD9] flex items-center gap-2">
               <span className="truncate" title={file}>
@@ -70,6 +72,7 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ tabId }) => {
                     child.imageList.length;
                   setCurrentIndex(child.id, next);
                 }}
+                type="button"
               >
                 ◀
               </button>
@@ -81,11 +84,12 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ tabId }) => {
                     (child.currentIndex + 1) % child.imageList.length;
                   setCurrentIndex(child.id, next);
                 }}
+                type="button"
               >
                 ▶
               </button>
             </div>
-          </div>
+          </button>
         );
       })}
     </div>

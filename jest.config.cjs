@@ -1,11 +1,11 @@
-const { readFileSync } = require("fs");
+const { readFileSync } = require("node:fs");
 const { pathsToModuleNameMapper } = require("ts-jest");
 
-const path = require("path");
+const path = require("node:path");
 // tsconfig.json may contain comments (JSONC). Remove common comment patterns before parsing.
 const rawTs = readFileSync(path.join(__dirname, "tsconfig.json"), "utf8");
 const stripComments = (s) =>
-  s.replace(/\/\*[^]*?\*\//g, "").replace(/\/\/.*$/gm, "");
+  s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
 const tsconfig = JSON.parse(stripComments(rawTs));
 const compilerOptions = tsconfig.compilerOptions || {};
 

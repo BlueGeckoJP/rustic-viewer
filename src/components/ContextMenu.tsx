@@ -50,9 +50,11 @@ const ContextMenu = ({ x, y, items, onSelect, onClose }: ContextMenuProps) => {
   return (
     <div ref={ref} style={style} role="menu" aria-label="Tab context menu">
       {items.map((it) => (
+        // biome-ignore lint/a11y/useKeyWithClickEvents: Tab focus alone is sufficient for now
         <div
           key={it.id}
           role="menuitem"
+          tabIndex={0}
           aria-disabled={it.disabled}
           onClick={() => !it.disabled && onSelect(it.id)}
           style={{

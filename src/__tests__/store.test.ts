@@ -66,7 +66,7 @@ describe("tab store", () => {
     useTabStore.getState().setCurrentIndex(id, 1);
     expect(
       useTabStore.getState().tabs.get(id) &&
-        (useTabStore.getState().tabs.get(id) as any).currentIndex
+        (useTabStore.getState().tabs.get(id) as any).currentIndex,
     ).toBe(1);
 
     // comparison child

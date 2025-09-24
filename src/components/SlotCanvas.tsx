@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import ImageCanvas from "./ImageCanvas";
 import { decodeImageFromPath } from "../utils/imageDecoder";
+import ImageCanvas from "./ImageCanvas";
 
 export type SlotCanvasProps = { rawPath: string };
 
@@ -25,7 +25,9 @@ const SlotCanvas: React.FC<SlotCanvasProps> = ({ rawPath }) => {
     <ImageCanvas
       image={imgData}
       className="max-w-full max-h-full"
-      onInitCanvas={(c) => (canvasRef.current = c)}
+      onInitCanvas={(c) => {
+        canvasRef.current = c;
+      }}
     />
   );
 };

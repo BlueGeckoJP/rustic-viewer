@@ -1,8 +1,8 @@
-import { Tab, useTabStore } from "../store";
-import React, { useRef, useState } from "react";
-import ContextMenu, { ContextMenuItem } from "./ContextMenu";
-import { isComparisonTab, isSingleTab } from "../store";
+import type React from "react";
+import { useRef, useState } from "react";
 import useTabMove from "../hooks/useTabMove";
+import { isComparisonTab, isSingleTab, type Tab, useTabStore } from "../store";
+import ContextMenu, { type ContextMenuItem } from "./ContextMenu";
 
 const CHILD_PREFIX = "::child::";
 
@@ -77,8 +77,7 @@ const TabBar = () => {
     return "New Tab";
   };
 
-  const isChildContext =
-    (menuOpenFor && menuOpenFor.includes(CHILD_PREFIX)) || false;
+  const isChildContext = menuOpenFor?.includes(CHILD_PREFIX) || false;
   let contextItems: ContextMenuItem[] = [];
   if (!isChildContext) {
     contextItems = [
@@ -136,6 +135,7 @@ const TabBar = () => {
         aria-label={isOpen ? "Collapse sidebar" : "Expand sidebar"}
         className="self-end mb-2 text-[#D3DAD9]"
         onClick={() => setIsOpen(!isOpen)}
+        type="button"
       >
         {isOpen ? "«" : "»"}
       </button>
@@ -154,8 +154,10 @@ const TabBar = () => {
             const expanded = isComp && expandedComparisonIds.has(tab.id);
             return (
               <div key={tab.id} className="flex flex-col gap-1">
+                {/** biome-ignore lint/a11y/useKeyWithClickEvents: Currently only mouse support is available. Key bindings will be added later if needed */}
                 <div
                   role="tab"
+                  tabIndex={0}
                   aria-selected={active}
                   aria-label={label}
                   onMouseDown={(e) => {
@@ -190,6 +192,7 @@ const TabBar = () => {
                       aria-label={
                         expanded ? "Collapse comparison" : "Expand comparison"
                       }
+                      type="button"
                     >
                       {expanded ? "▼" : "▶"}
                     </button>
@@ -213,6 +216,7 @@ const TabBar = () => {
                     }}
                     aria-label={`Close ${label}`}
                     className="ml-1 text-[#D3DAD9] hover:text-white p-1 rounded"
+                    type="button"
                   >
                     ✕
                   </button>
@@ -220,13 +224,14 @@ const TabBar = () => {
                 {isComp && expanded && (
                   <div className="flex flex-col gap-1 pl-6 pr-1">
                     {tab.childrenOrder.map((childId, cIdx) => {
-                      const child = tab.children.get(childId)!;
-                      const file = child.imageList[child.currentIndex];
+                      const child = tab.children.get(childId);
+                      if (!child) return null;
+                      const file = child?.imageList[child?.currentIndex];
                       const childActive =
                         active && tab.activeSlotIndex === cIdx;
                       return (
-                        <div
-                          key={child.id}
+                        <button
+                          key={child?.id}
                           className={`group flex items-center gap-2 text-xs rounded-lg px-2 py-1 cursor-pointer min-w-0 transition-colors ${
                             childActive
                               ? "bg-[#4F4E58] ring-1 ring-[#715A5A]"
@@ -241,18 +246,20 @@ const TabBar = () => {
                             e.preventDefault();
                             e.stopPropagation();
                             setMenuOpenFor(
-                              `${tab.id}${CHILD_PREFIX}${child.id}`
+                              `${tab.id}${CHILD_PREFIX}${child?.id}`
                             );
                             setMenuPos({ x: e.clientX, y: e.clientY });
                           }}
+                          type="button"
                         >
                           <span className="truncate flex-1" title={file}>
                             {file ? file.split("/").pop() : "(empty)"}
                           </span>
                           <span className="opacity-50 text-[10px]">
-                            {child.currentIndex + 1}/{child.imageList.length}
+                            {child?.currentIndex ? child?.currentIndex + 1 : 0}/
+                            {child?.imageList.length}
                           </span>
-                        </div>
+                        </button>
                       );
                     })}
                   </div>
@@ -303,13 +310,13 @@ const TabBar = () => {
               } else if (id === "close-others") {
                 tabs
                   .filter((t) => t.id !== targetId)
-                  .forEach((t) => removeTab(t.id));
+                  .map((t) => removeTab(t.id));
                 setSelectedIds(new Set([targetId]));
                 setActiveTab(targetId);
               } else if (id === "close-right") {
                 const idx = tabs.findIndex((t) => t.id === targetId);
                 if (idx >= 0) {
-                  tabs.slice(idx + 1).forEach((t) => removeTab(t.id));
+                  tabs.slice(idx + 1).map((t) => removeTab(t.id));
                 }
               } else if (id === "detach-all") {
                 detachAllChildren(targetId);
@@ -321,9 +328,7 @@ const TabBar = () => {
               const [parentId, childId] = targetId.split(CHILD_PREFIX);
               const parent = tabsMap.get(parentId);
               if (!parent || !isComparisonTab(parent)) return;
-              const childIndex = parent.childrenOrder.findIndex(
-                (c) => c === childId
-              );
+              const childIndex = parent.childrenOrder.indexOf(childId);
               if (childIndex < 0) return;
 
               if (id === "activate") {

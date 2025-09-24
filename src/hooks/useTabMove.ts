@@ -24,7 +24,6 @@ const useTabMove = ({ tabBarRef, gap = 8, isOpen }: UseTabMoveProps) => {
   const [draggingId, setDraggingId] = useState<string | null>(null);
 
   const reorderTab = useTabStore((s) => s.reorderTab);
-  const tabs = useTabStore((s) => s.tabs);
   const tabOrder = useTabStore((s) => s.tabOrder);
   const setActiveTab = useTabStore((s) => s.setActiveTab);
 
@@ -39,7 +38,7 @@ const useTabMove = ({ tabBarRef, gap = 8, isOpen }: UseTabMoveProps) => {
     });
   }, []);
 
-  const clearDragVisuals = () => {
+  const clearDragVisuals = useCallback(() => {
     tabRefs.current.forEach((element) => {
       element.style.transform = "";
       element.style.transition = "";
@@ -47,24 +46,27 @@ const useTabMove = ({ tabBarRef, gap = 8, isOpen }: UseTabMoveProps) => {
       element.style.opacity = "";
       element.style.pointerEvents = "";
     });
-  };
+  }, []);
 
-  const endDrag = (commit: boolean) => {
-    if (
-      draggingId &&
-      commit &&
-      originIndexRef.current !== null &&
-      currentIndexRef.current !== null &&
-      originIndexRef.current !== currentIndexRef.current
-    ) {
-      reorderTab(originIndexRef.current, currentIndexRef.current);
-    }
-    setDraggingId(null);
-    originIndexRef.current = null;
-    currentIndexRef.current = null;
-    dragOffsetRef.current = 0;
-    clearDragVisuals();
-  };
+  const endDrag = useCallback(
+    (commit: boolean) => {
+      if (
+        draggingId &&
+        commit &&
+        originIndexRef.current !== null &&
+        currentIndexRef.current !== null &&
+        originIndexRef.current !== currentIndexRef.current
+      ) {
+        reorderTab(originIndexRef.current, currentIndexRef.current);
+      }
+      setDraggingId(null);
+      originIndexRef.current = null;
+      currentIndexRef.current = null;
+      dragOffsetRef.current = 0;
+      clearDragVisuals();
+    },
+    [clearDragVisuals, draggingId, reorderTab],
+  );
 
   const onMouseMove = useCallback(
     (e: MouseEvent) => {
@@ -76,7 +78,8 @@ const useTabMove = ({ tabBarRef, gap = 8, isOpen }: UseTabMoveProps) => {
       const startY = dragStartYRef.current;
       let delta = e.clientY - startY;
 
-      const origIndex = originIndexRef.current!;
+      const origIndex = originIndexRef.current;
+      if (origIndex === null) return;
       const preHeights = tabOrder
         .slice(0, origIndex)
         .reduce(
@@ -84,7 +87,7 @@ const useTabMove = ({ tabBarRef, gap = 8, isOpen }: UseTabMoveProps) => {
             acc +
             (tabHeightsRef.current.get(id) || draggedEl.offsetHeight) +
             gap,
-          0
+          0,
         );
       const draggedHeight =
         tabHeightsRef.current.get(draggingId) || draggedEl.offsetHeight;
@@ -92,7 +95,7 @@ const useTabMove = ({ tabBarRef, gap = 8, isOpen }: UseTabMoveProps) => {
       const totalHeight = tabOrder.reduce(
         (acc, id) =>
           acc + (tabHeightsRef.current.get(id) || draggedEl.offsetHeight) + gap,
-        -gap
+        -gap,
       );
       const maxTop = totalHeight - draggedHeight;
       const minTop = 0;
@@ -142,7 +145,7 @@ const useTabMove = ({ tabBarRef, gap = 8, isOpen }: UseTabMoveProps) => {
         el.style.transform = translate ? `translateY(${translate}px)` : "";
       });
     },
-    [draggingId, tabs]
+    [draggingId, gap, tabBarRef, tabOrder],
   );
 
   const onMouseUp = useCallback(
@@ -161,12 +164,12 @@ const useTabMove = ({ tabBarRef, gap = 8, isOpen }: UseTabMoveProps) => {
         endDrag(false);
       }
     },
-    [draggingId]
+    [draggingId, endDrag, tabBarRef],
   );
 
   const onMouseLeaveWindow = useCallback(() => {
     if (draggingId) endDrag(false);
-  }, [draggingId]);
+  }, [draggingId, endDrag]);
 
   const onTabMouseDown = (e: React.MouseEvent, id: string) => {
     if (e.button !== 0) return;
@@ -182,7 +185,7 @@ const useTabMove = ({ tabBarRef, gap = 8, isOpen }: UseTabMoveProps) => {
     if (isOpen) {
       requestAnimationFrame(measureTabs);
     }
-  }, [isOpen, tabs, measureTabs]);
+  }, [isOpen, measureTabs]);
 
   useEffect(() => {
     if (draggingId) {

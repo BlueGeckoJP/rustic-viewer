@@ -1,10 +1,15 @@
 import { emit, listen } from "@tauri-apps/api/event";
+import { readDir } from "@tauri-apps/plugin-fs";
 import { useCallback, useEffect, useRef } from "react";
-import { isComparisonTab, isSingleTab, SingleTab, useTabStore } from "./store";
-import TabBar from "./components/TabBar";
 import ComparisonView from "./components/ComparisonView";
 import SingleView from "./components/SingleView";
-import { readDir } from "@tauri-apps/plugin-fs";
+import TabBar from "./components/TabBar";
+import {
+  isComparisonTab,
+  isSingleTab,
+  type SingleTab,
+  useTabStore,
+} from "./store";
 
 const imageFileRegex = /\.(png|jpg|jpeg|gif|bmp|webp)$/i;
 
@@ -41,7 +46,7 @@ export default function App() {
               sensitivity: "base",
             })
           );
-        const idx = files.findIndex((p) => p === rawPath);
+        const idx = files.indexOf(rawPath);
 
         if (!activeTab) {
           const id = addSingleTab(dir, files, idx >= 0 ? idx : 0);
@@ -55,7 +60,9 @@ export default function App() {
           });
         } else if (isComparisonTab(activeTab)) {
           const childId = activeTab.childrenOrder[activeTab.activeSlotIndex];
-          const oldChild = activeTab.children.get(childId)!;
+          const oldChild = activeTab.children.get(childId);
+          if (!oldChild || !isSingleTab(oldChild)) return;
+          // Update the child tab inside the comparison tab
           const modified: SingleTab = {
             ...oldChild,
             directory: dir,
@@ -66,7 +73,11 @@ export default function App() {
           activeTab.childrenOrder.forEach((cid) => {
             newChildrenMap.set(
               cid,
-              cid === childId ? modified : activeTab.children.get(cid)!
+              cid === childId
+                ? modified
+                : activeTab.children.get(cid)
+                ? (activeTab.children.get(cid) as SingleTab)
+                : oldChild
             );
           });
           updateComparisonChildren(activeTab.id, newChildrenMap);
@@ -85,7 +96,7 @@ export default function App() {
   // Expose openImage through ref for parent (App) to call from Tauri events
   useEffect(() => {
     openImageRef.current = openImage;
-  }, [openImageRef, openImage]);
+  }, [openImage]);
 
   // Add Tauri event listeners for 'open-image' and 'new-tab' events
   useEffect(() => {
@@ -116,7 +127,9 @@ export default function App() {
     })();
 
     return () => {
-      unlisteners.forEach((fn) => fn());
+      unlisteners.forEach((fn) => {
+        fn();
+      });
     };
   }, [addSingleTab]);
 

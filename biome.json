@@ -1,0 +1,24 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.2.4/schema.json",
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space"
+  },
+  "linter": {
+    "enabled": true
+  },
+  "assist": {
+    "enabled": true,
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
+  },
+  "files": {
+    "includes": [
+      "**/*.{js,jsx,ts,tsx,json,css,scss,html,md,mdx}",
+      "!src-wasm/pkg/*"
+    ]
+  }
+}

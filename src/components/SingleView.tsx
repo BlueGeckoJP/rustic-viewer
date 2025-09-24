@@ -1,7 +1,8 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import type React from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { isSingleTab, useTabStore } from "../store";
 import { decodeImageFromPath } from "../utils/imageDecoder";
 import ImageCanvas from "./ImageCanvas";
-import { isSingleTab, useTabStore } from "../store";
 
 /**
  * SingleView: handles all logic & UI for displaying a single image tab.
@@ -14,7 +15,7 @@ import { isSingleTab, useTabStore } from "../store";
  *  - High DPI canvas rendering via ImageCanvas
  *  - Expose openImage(rawPath) through provided ref for external triggers (e.g., Tauri events)
  */
-export type SingleViewProps = {};
+export type SingleViewProps = unknown;
 
 const SingleView: React.FC<SingleViewProps> = (_props: SingleViewProps) => {
   // Store selectors
@@ -62,12 +63,7 @@ const SingleView: React.FC<SingleViewProps> = (_props: SingleViewProps) => {
     }
     const path = singleTab.imageList[singleTab.currentIndex];
     loadImageByPath(path);
-  }, [
-    singleTab?.id,
-    singleTab?.directory,
-    singleTab?.currentIndex,
-    singleTab?.imageList,
-  ]);
+  }, [singleTab, loadImageByPath, drawCurrentImage]);
 
   // Canvas resize sync (delegated mostly to ImageCanvas, but keep for potential extra logic)
   useEffect(() => {
@@ -97,7 +93,7 @@ const SingleView: React.FC<SingleViewProps> = (_props: SingleViewProps) => {
   // Redraw on image change (no-op wrapper)
   useEffect(() => {
     drawCurrentImage();
-  }, [currentImage, drawCurrentImage]);
+  }, [drawCurrentImage]);
 
   // Arrow key navigation
   useEffect(() => {
@@ -117,7 +113,7 @@ const SingleView: React.FC<SingleViewProps> = (_props: SingleViewProps) => {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [singleTab?.imageList, singleTab?.currentIndex, loadImageByPath]);
+  }, [singleTab, setCurrentIndex, loadImageByPath]);
 
   // Render nothing if the active tab is not a single tab
   if (!activeTab || !isSingleTab(activeTab)) return null;
@@ -139,7 +135,9 @@ const SingleView: React.FC<SingleViewProps> = (_props: SingleViewProps) => {
           <ImageCanvas
             image={currentImage}
             className="w-screen h-screen"
-            onInitCanvas={(c) => (canvasRef.current = c)}
+            onInitCanvas={(c) => {
+              canvasRef.current = c;
+            }}
           />
         ) : (
           <span className="text-[#888]">No Image</span>
@@ -163,6 +161,7 @@ const SingleView: React.FC<SingleViewProps> = (_props: SingleViewProps) => {
                 activeTab.imageList.length;
               setCurrentIndex(activeTab.id, next);
             }}
+            type="button"
           >
             ◀
           </button>
@@ -174,6 +173,7 @@ const SingleView: React.FC<SingleViewProps> = (_props: SingleViewProps) => {
                 (activeTab.currentIndex + 1) % activeTab.imageList.length;
               setCurrentIndex(activeTab.id, next);
             }}
+            type="button"
           >
             ▶
           </button>

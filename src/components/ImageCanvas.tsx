@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useRef } from "react";
+import type React from "react";
+import { useCallback, useEffect, useRef } from "react";
 
 /**
  * Generic high-DPI aware canvas component that draws an ImageData using aspect-fit (contain) logic.
@@ -74,7 +75,7 @@ const ImageCanvas: React.FC<ImageCanvasProps> = ({
       offsetX,
       offsetY,
       drawWidth,
-      drawHeight
+      drawHeight,
     );
   }, [image]);
 
@@ -108,7 +109,7 @@ const ImageCanvas: React.FC<ImageCanvasProps> = ({
   // Redraw when image changes
   useEffect(() => {
     draw();
-  }, [image, draw]);
+  }, [draw]);
 
   useEffect(() => {
     if (canvasRef.current && onInitCanvas) onInitCanvas(canvasRef.current);

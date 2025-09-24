@@ -53,7 +53,7 @@ describe("ImageCanvas", () => {
         x: 0,
         y: 0,
         toJSON: () => {},
-      } as any);
+      }) as any;
 
     // Trigger a resize effect manually by calling the resize callback via window.dispatchEvent
     window.dispatchEvent(new Event("resize"));

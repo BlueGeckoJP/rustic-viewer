@@ -1,6 +1,6 @@
-import ImageWorker from "../imageWorker.ts?worker";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { readFile } from "@tauri-apps/plugin-fs";
+import ImageWorker from "../imageWorker.ts?worker";
 
 /**
  * Singleton image decode service.
@@ -32,7 +32,9 @@ function ensureWorker() {
   };
   worker.onerror = (err) => {
     // Fail all pending
-    pending.forEach((p) => p.reject(err));
+    pending.forEach((p) => {
+      p.reject(err);
+    });
     pending.clear();
   };
   return worker;

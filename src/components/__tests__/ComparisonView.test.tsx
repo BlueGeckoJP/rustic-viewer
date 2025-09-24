@@ -42,7 +42,7 @@ describe("ComparisonView", () => {
           useTabStore.getState().getSingleTab(a) as any,
           useTabStore.getState().getSingleTab(b) as any,
         ],
-        0
+        0,
       );
 
     // ensure active tab points to comparison

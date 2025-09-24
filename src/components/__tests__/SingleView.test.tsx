@@ -42,7 +42,7 @@ describe("SingleView", () => {
 
     // Wait for decode to finish and file name to appear
     await waitFor(() =>
-      expect(screen.getByText("img.png")).toBeInTheDocument()
+      expect(screen.getByText("img.png")).toBeInTheDocument(),
     );
   });
 
@@ -68,8 +68,8 @@ describe("SingleView", () => {
     // decode should be called again for the new image (at least one new call)
     await waitFor(() =>
       expect(mockDecode.mock.calls.length).toBeGreaterThanOrEqual(
-        initialCalls + 1
-      )
+        initialCalls + 1,
+      ),
     );
   });
 });
