@@ -18,7 +18,7 @@ export default function App() {
   const didAddListeners = useRef(false);
   // Exposed by SingleView to allow Tauri events to open images
   // As a countermeasure for the issue where all internal conditional branches become null when using the old openImage
-  const openImageRef = useRef<(rawPath: string, newTab: boolean) => void>(
+  const openImageRef = useRef<(rawPath: string, newTab?: boolean) => void>(
     () => {}
   );
   const activeTabId = useTabStore((s) => s.activeTabId);
@@ -115,8 +115,21 @@ export default function App() {
             ? event.payload
             : String(event.payload);
 
-        openImageRef.current(rawPath, true);
+        openImageRef.current(rawPath);
       });
+
+      const openImageNewTabListener = await listen(
+        "open-image-new-tab",
+        (event) => {
+          console.log("Received open-image-new-tab event:", event.payload);
+          const rawPath =
+            typeof event.payload === "string"
+              ? event.payload
+              : String(event.payload);
+
+          openImageRef.current(rawPath, true);
+        }
+      );
 
       const newTabListener = await listen("new-tab", (event) => {
         console.log("Received new-tab event:", event.payload);
@@ -124,7 +137,11 @@ export default function App() {
         addSingleTab(null, [], 0);
       });
 
-      unlisteners.push(openImageListener, newTabListener);
+      unlisteners.push(
+        openImageListener,
+        newTabListener,
+        openImageNewTabListener
+      );
       await emit("frontend-ready", null); // Notify backend that frontend is ready
     })();
 

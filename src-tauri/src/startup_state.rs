@@ -15,8 +15,8 @@ pub struct StartupState {
 impl StartupState {
     pub fn enqueue_or_emit(&self, app: &AppHandle, path: &str) {
         if self.ready.load(Ordering::SeqCst) {
-            if let Err(e) = app.emit("open-image", path) {
-                log::error!("Failed to emit open-image event: {}", e);
+            if let Err(e) = app.emit("open-image-new-tab", path) {
+                log::error!("Failed to emit open-image-new-tab event: {}", e);
             }
         } else {
             self.pending.lock().unwrap().push(path.to_string());
@@ -29,8 +29,8 @@ impl StartupState {
             let mut vec = self.pending.lock().unwrap();
             log::debug!("Flushing {:?} pending paths", vec);
             for p in vec.drain(..) {
-                if let Err(e) = app.emit("open-image", &p) {
-                    log::error!("Failed to emit open-image event: {}", e);
+                if let Err(e) = app.emit("open-image-new-tab", &p) {
+                    log::error!("Failed to emit open-image-new-tab event: {}", e);
                 }
             }
         }
