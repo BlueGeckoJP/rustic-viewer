@@ -75,7 +75,7 @@ const ImageCanvas: React.FC<ImageCanvasProps> = ({
       offsetX,
       offsetY,
       drawWidth,
-      drawHeight,
+      drawHeight
     );
   }, [image]);
 
@@ -86,9 +86,8 @@ const ImageCanvas: React.FC<ImageCanvasProps> = ({
 
     const resize = () => {
       const dpr = window.devicePixelRatio || 1;
-      const rect = canvas.getBoundingClientRect();
-      const wantedWidth = Math.round(rect.width * dpr);
-      const wantedHeight = Math.round(rect.height * dpr);
+      const wantedWidth = Math.round(window.innerWidth * dpr);
+      const wantedHeight = Math.round(window.innerHeight * dpr);
       if (canvas.width !== wantedWidth || canvas.height !== wantedHeight) {
         canvas.width = wantedWidth;
         canvas.height = wantedHeight;
