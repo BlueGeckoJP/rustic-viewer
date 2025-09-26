@@ -22,13 +22,15 @@ const SlotCanvas: React.FC<SlotCanvasProps> = ({ rawPath }) => {
   }, [rawPath]);
 
   return (
-    <ImageCanvas
-      image={imgData}
-      className="max-w-full max-h-full"
-      onInitCanvas={(c) => {
-        canvasRef.current = c;
-      }}
-    />
+    <div className="max-w-[calc(100vw-2rem)] max-h-[calc(100vh-3rem)] w-full h-full block">
+      <ImageCanvas
+        image={imgData}
+        className="w-full h-full max-w-full max-h-full block"
+        onInitCanvas={(c) => {
+          canvasRef.current = c;
+        }}
+      />
+    </div>
   );
 };
 

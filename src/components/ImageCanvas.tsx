@@ -13,14 +13,12 @@ import { useCallback, useEffect, useRef } from "react";
 export interface ImageCanvasProps {
   image: ImageData | null;
   className?: string;
-  style?: React.CSSProperties;
   onInitCanvas?: (canvas: HTMLCanvasElement) => void;
 }
 
 const ImageCanvas: React.FC<ImageCanvasProps> = ({
   image,
-  className = "",
-  style,
+  className,
   onInitCanvas,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -86,8 +84,9 @@ const ImageCanvas: React.FC<ImageCanvasProps> = ({
 
     const resize = () => {
       const dpr = window.devicePixelRatio || 1;
-      const wantedWidth = Math.round(window.innerWidth * dpr);
-      const wantedHeight = Math.round(window.innerHeight * dpr);
+      const rect = canvas.getBoundingClientRect();
+      const wantedWidth = Math.round(rect.width * dpr);
+      const wantedHeight = Math.round(rect.height * dpr);
       if (canvas.width !== wantedWidth || canvas.height !== wantedHeight) {
         canvas.width = wantedWidth;
         canvas.height = wantedHeight;
@@ -114,13 +113,7 @@ const ImageCanvas: React.FC<ImageCanvasProps> = ({
     if (canvasRef.current && onInitCanvas) onInitCanvas(canvasRef.current);
   }, [onInitCanvas]);
 
-  return (
-    <canvas
-      ref={canvasRef}
-      className={className}
-      style={{ width: "100%", height: "100%", ...style }}
-    />
-  );
+  return <canvas ref={canvasRef} className={className} />;
 };
 
 export default ImageCanvas;

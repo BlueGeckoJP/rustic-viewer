@@ -34,11 +34,6 @@ const SingleView: React.FC<SingleViewProps> = (_props: SingleViewProps) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [fileName, setFileName] = useState<string | null>(null);
 
-  // Draw wrapper kept for possible future extensions (zoom/pan etc.)
-  const drawCurrentImage = useCallback(() => {
-    // ImageCanvas handles draw on image/state change.
-  }, []);
-
   const loadImageByPath = useCallback((rawPath: string) => {
     setIsLoading(true);
     decodeImageFromPath(rawPath)
@@ -58,42 +53,11 @@ const SingleView: React.FC<SingleViewProps> = (_props: SingleViewProps) => {
     ) {
       setCurrentImage(null);
       setFileName(null);
-      drawCurrentImage();
       return;
     }
     const path = singleTab.imageList[singleTab.currentIndex];
     loadImageByPath(path);
-  }, [singleTab, loadImageByPath, drawCurrentImage]);
-
-  // Canvas resize sync (delegated mostly to ImageCanvas, but keep for potential extra logic)
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const resize = () => {
-      const dpr = window.devicePixelRatio || 1;
-      const rect = canvas.getBoundingClientRect();
-      const wantedWidth = Math.round(rect.width * dpr);
-      const wantedHeight = Math.round(rect.height * dpr);
-      if (canvas.width !== wantedWidth || canvas.height !== wantedHeight) {
-        canvas.width = wantedWidth;
-        canvas.height = wantedHeight;
-        const ctx = canvas.getContext("2d");
-        if (ctx) {
-          ctx.setTransform(1, 0, 0, 1, 0, 0);
-          ctx.scale(dpr, dpr);
-        }
-        drawCurrentImage();
-      }
-    };
-    resize();
-    window.addEventListener("resize", resize);
-    return () => window.removeEventListener("resize", resize);
-  }, [drawCurrentImage]);
-
-  // Redraw on image change (no-op wrapper)
-  useEffect(() => {
-    drawCurrentImage();
-  }, [drawCurrentImage]);
+  }, [singleTab, loadImageByPath]);
 
   // Arrow key navigation
   useEffect(() => {
@@ -120,7 +84,7 @@ const SingleView: React.FC<SingleViewProps> = (_props: SingleViewProps) => {
 
   return (
     <div className="group overflow-hidden flex flex-col bg-[#2F2E33] h-full w-full">
-      <div className="text-xs px-2 py-1 bg-[#44444E] text-[#D3DAD9] flex items-center gap-2">
+      <div className="text-xs px-2 py-1 bg-[#44444E] text-[#D3DAD9] flex items-center gap-2 h-6">
         <span className="truncate" title={fileName ? fileName : "(empty)"}>
           {fileName ? fileName.split("/").pop() : "(empty)"}
         </span>
@@ -134,7 +98,7 @@ const SingleView: React.FC<SingleViewProps> = (_props: SingleViewProps) => {
         {currentImage ? (
           <ImageCanvas
             image={currentImage}
-            className="w-screen h-screen"
+            className="w-screen h-screen max-w-screen max-h-[calc(100vh-24px)]"
             onInitCanvas={(c) => {
               canvasRef.current = c;
             }}
