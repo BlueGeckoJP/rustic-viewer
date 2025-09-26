@@ -22,6 +22,9 @@ const SlotCanvas: React.FC<SlotCanvasProps> = ({ rawPath }) => {
   }, [rawPath]);
 
   return (
+    // NOTE: I left a 1rem gap with max-h because, without it, when the height is reduced even slightly,
+    // the canvas rendering can’t keep up with the resize.
+    // (Using max-h-[calc(100vh-2rem)] makes the size fit perfectly.)
     <div className="max-w-[calc(100vw-2rem)] max-h-[calc(100vh-3rem)] w-full h-full block">
       <ImageCanvas
         image={imgData}
