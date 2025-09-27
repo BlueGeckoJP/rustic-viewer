@@ -1,4 +1,4 @@
-import init, { decode_image_to_sab } from "../src-wasm/pkg/src_wasm";
+import init, { decode_image_to_image_data } from "../src-wasm/pkg/src_wasm";
 
 type MessageEventData = {
   content: Uint8Array;
@@ -8,38 +8,20 @@ type MessageEventData = {
   requestId?: number;
 };
 
-export type ResponseData = {
-  data: SharedArrayBuffer;
-  width: number;
-  height: number;
+type ResponseData = {
+  img: ImageData;
   slotId?: string;
   requestId?: number;
 };
 
 const initPromise = init().then(() => {
   console.log("WASM initialized");
-  console.log(
-    "[worker] typeof SharedArrayBuffer:",
-    typeof (self as typeof globalThis).SharedArrayBuffer,
-    "[worker] typeof Atomics:",
-    typeof (self as typeof globalThis).Atomics
-  );
 });
 
 self.onmessage = async (e: MessageEvent<MessageEventData>) => {
   await initPromise;
   const { content, slotId, requestId } = e.data;
-  const obj = decode_image_to_sab(content) as {
-    buffer: SharedArrayBuffer;
-    width: number;
-    height: number;
-  };
+  const img = decode_image_to_image_data(content);
   // Post the decoded ImageData back to the main thread and echo slotId if provided
-  self.postMessage({
-    data: obj.buffer,
-    width: obj.width,
-    height: obj.height,
-    slotId,
-    requestId,
-  } as ResponseData);
+  self.postMessage({ img, slotId, requestId } as ResponseData);
 };

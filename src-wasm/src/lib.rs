@@ -1,37 +1,20 @@
-use js_sys::{Reflect, SharedArrayBuffer, Uint8Array};
 use wasm_bindgen::prelude::*;
+use wasm_bindgen::Clamped;
+use web_sys::ImageData;
 
 #[wasm_bindgen(start)]
 pub fn start() {
     console_error_panic_hook::set_once();
 }
 
-/// Convert a image byte slice to a SharedArrayBuffer
+/// Convert a image byte slice to ImageData of RGBA format
 #[wasm_bindgen]
-pub fn decode_image_to_sab(bytes: &[u8]) -> Result<JsValue, JsValue> {
+pub fn decode_image_to_image_data(bytes: &[u8]) -> Result<ImageData, JsValue> {
     // In fail case, It can catch the error in JS side
-    let img = image::load_from_memory(bytes)
-        .map_err(|e| JsValue::from_str(&format!("Failed to decode image: {:?}", e)))?;
+    let img = image::load_from_memory(bytes).map_err(|e| JsValue::from_str(&e.to_string()))?;
     let rgba = img.to_rgba8();
     let (w, h) = rgba.dimensions();
-    let pixels: Vec<u8> = rgba.into_raw();
 
-    // Create SharedArrayBuffer and copy pixel data via Uint8Array
-    let len = pixels.len() as u32;
-    let sab = SharedArrayBuffer::new(len);
-
-    // create a view and copy bytes into it
-    let target_u8 = Uint8Array::new(&sab);
-    let tmp = Uint8Array::from(&pixels[..]);
-    target_u8.set(&tmp, 0);
-
-    // Return an object with sab, width, height
-    let obj = js_sys::Object::new();
-    Reflect::set(&obj, &JsValue::from_str("buffer"), &JsValue::from(sab))
-        .map_err(|e| JsValue::from_str(&format!("Failed to set buffer property: {:?}", e)))?;
-    Reflect::set(&obj, &JsValue::from_str("width"), &JsValue::from(w))
-        .map_err(|e| JsValue::from_str(&format!("Failed to set width property: {:?}", e)))?;
-    Reflect::set(&obj, &JsValue::from_str("height"), &JsValue::from(h))
-        .map_err(|e| JsValue::from_str(&format!("Failed to set height property: {:?}", e)))?;
-    Ok(JsValue::from(obj))
+    // Return ImageData(width, height) to JS side
+    ImageData::new_with_u8_clamped_array_and_sh(Clamped(&rgba.into_raw()), w, h)
 }
