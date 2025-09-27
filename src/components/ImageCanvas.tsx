@@ -11,7 +11,7 @@ import { useCallback, useEffect, useRef } from "react";
  *  - onInitCanvas?: (canvas: HTMLCanvasElement) => void  (for parent to keep a ref if needed)
  */
 export interface ImageCanvasProps {
-  image: ImageData | null;
+  image: ImageBitmap | null;
   className?: string;
   onInitCanvas?: (canvas: HTMLCanvasElement) => void;
 }
@@ -61,7 +61,7 @@ const ImageCanvas: React.FC<ImageCanvasProps> = ({
     srcCanvas.height = image.height;
     const srcCtx = srcCanvas.getContext("2d");
     if (!srcCtx) return;
-    srcCtx.putImageData(image, 0, 0);
+    srcCtx.drawImage(image, 0, 0);
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(
