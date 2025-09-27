@@ -24,16 +24,7 @@ const createImageBitmapFromCacheItem = (
   item: CacheItem,
   path: string
 ): Promise<ImageBitmap> => {
-  const w = item.width;
-  const h = item.height;
-
-  const sab = item.buffer;
-  const pixels = new Uint8ClampedArray(sab);
-
-  const imageData = new ImageData(w, h);
-  imageData.data.set(pixels);
-
-  return window.createImageBitmap(imageData).then((bitmap) => {
+  return window.createImageBitmap(item.image).then((bitmap) => {
     item.bitmap = bitmap;
     imageCache.put(path, item); // Update cache with bitmap
     return bitmap;
@@ -42,15 +33,10 @@ const createImageBitmapFromCacheItem = (
 
 const returnDecodeImagePromise = (path: string) => {
   return decodeImageFromPath(path).then((img) => {
-    const sab = new SharedArrayBuffer(img.data.buffer.byteLength);
-    const pixels = new Uint8ClampedArray(sab);
-    pixels.set(img.data);
-
-    const cacheItem = {
-      buffer: sab,
+    const cacheItem: CacheItem = {
+      image: img,
       width: img.width,
       height: img.height,
-      bitmap: undefined,
     };
     imageCache.put(path, cacheItem);
     return createImageBitmapFromCacheItem(cacheItem, path);

@@ -1,5 +1,5 @@
 export type CacheItem = {
-  buffer: SharedArrayBuffer;
+  image: ImageData;
   width: number;
   height: number;
   bitmap?: ImageBitmap;
