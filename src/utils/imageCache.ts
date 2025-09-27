@@ -48,5 +48,5 @@ export class ImageCache {
   }
 }
 
-const imageCache = new ImageCache(50); // Default capacity
+const imageCache = new ImageCache(500); // Default capacity
 export default imageCache;
