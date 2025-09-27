@@ -1,21 +1,24 @@
 import { useEffect, useRef, useState } from "react";
-import { decodeImageFromPath } from "../utils/imageDecoder";
+import loadImage from "../utils/imageLoader";
 import ImageCanvas from "./ImageCanvas";
 
 export type SlotCanvasProps = { rawPath: string };
 
 // Shared worker now encapsulated by decodeImageFromPath utility
 const SlotCanvas: React.FC<SlotCanvasProps> = ({ rawPath }) => {
-  const [imgData, setImgData] = useState<ImageData | null>(null);
+  const [imgData, setImgData] = useState<ImageBitmap | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
     let alive = true;
-    decodeImageFromPath(rawPath)
+    loadImage(rawPath)
       .then((img) => {
-        if (alive) setImgData(img);
+        if (alive) setImgData(img ?? null);
       })
-      .catch(() => {});
+      .catch((e) => {
+        console.error("Failed to load image:", e);
+        if (alive) setImgData(null);
+      });
     return () => {
       alive = false;
     };

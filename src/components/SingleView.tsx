@@ -1,7 +1,7 @@
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { isSingleTab, useTabStore } from "../store";
-import { decodeImageFromPath } from "../utils/imageDecoder";
+import loadImage from "../utils/imageLoader";
 import ImageCanvas from "./ImageCanvas";
 
 /**
@@ -30,16 +30,21 @@ const SingleView: React.FC<SingleViewProps> = (_props: SingleViewProps) => {
 
   // Local view state
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [currentImage, setCurrentImage] = useState<ImageData | null>(null);
+  const [currentImage, setCurrentImage] = useState<ImageBitmap | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [fileName, setFileName] = useState<string | null>(null);
 
   const loadImageByPath = useCallback((rawPath: string) => {
     setIsLoading(true);
-    decodeImageFromPath(rawPath)
+    loadImage(rawPath)
       .then((img) => {
-        setCurrentImage(img);
+        setCurrentImage(img ?? null);
         setFileName(rawPath);
+      })
+      .catch((e) => {
+        console.error("Failed to load image:", e);
+        setCurrentImage(null);
+        setFileName(null);
       })
       .finally(() => setIsLoading(false));
   }, []);
