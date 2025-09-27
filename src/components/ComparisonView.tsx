@@ -43,7 +43,7 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ tabId }) => {
             onClick={() => setActiveSlotIndex(tab.id, idx)}
             type="button"
           >
-            <div className="text-xs px-2 py-1 bg-[#44444E] text-[#D3DAD9] flex items-center gap-2">
+            <div className="text-xs px-2 py-1 bg-[#44444E] text-[#D3DAD9] flex items-center gap-2 w-full">
               <span className="truncate" title={file}>
                 {file ? file.split("/").pop() : "(empty)"}
               </span>
@@ -53,7 +53,7 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ tabId }) => {
             </div>
 
             {/* Canvas-based image rendering (matches SingleTab canvas behavior) */}
-            <div className="flex-1 flex items-center justify-center">
+            <div className="flex-1 flex items-center justify-center w-full">
               {file ? (
                 <SlotCanvas key={child.id} rawPath={file} />
               ) : (
