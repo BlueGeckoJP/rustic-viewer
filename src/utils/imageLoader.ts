@@ -41,15 +41,11 @@ const createImageBitmapFromCacheItem = (
 };
 
 const returnDecodeImagePromise = (path: string) => {
-  return decodeImageFromPath(path).then((img) => {
-    const sab = new SharedArrayBuffer(img.data.buffer.byteLength);
-    const pixels = new Uint8ClampedArray(sab);
-    pixels.set(img.data);
-
+  return decodeImageFromPath(path).then((data) => {
     const cacheItem = {
-      buffer: sab,
-      width: img.width,
-      height: img.height,
+      buffer: data.data,
+      width: data.width,
+      height: data.height,
       bitmap: undefined,
     };
     imageCache.put(path, cacheItem);
