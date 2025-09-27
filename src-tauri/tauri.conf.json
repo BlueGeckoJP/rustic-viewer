@@ -4,9 +4,9 @@
   "version": "0.1.0",
   "identifier": "me.bluegecko.rustic-viewer",
   "build": {
-    "beforeDevCommand": "pnpm wasm:build && pnpm test && pnpm dev",
+    "beforeDevCommand": "pnpm wasm:build && pnpm dev",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "pnpm build",
+    "beforeBuildCommand": "pnpm wasm:build && pnpm build",
     "frontendDist": "../dist"
   },
   "app": {
