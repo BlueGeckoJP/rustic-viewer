@@ -206,6 +206,14 @@ const TabBar = () => {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
+                      if (activeTabId === tab.id) {
+                        const currentIndex = tabOrder.indexOf(tab.id);
+                        const nextTabId =
+                          tabOrder[
+                            Math.min(tabOrder.length - 1, currentIndex + 1)
+                          ];
+                        if (nextTabId) setActiveTab(nextTabId);
+                      }
                       removeTab(tab.id);
                       setSelectedIds((prev) => {
                         if (!prev.has(tab.id)) return prev;
