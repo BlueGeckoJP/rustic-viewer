@@ -1,5 +1,6 @@
+import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useRef, useState } from "react";
-import loadImage from "../utils/imageLoader";
+import type { DecodedImage } from "../types";
 import ImageCanvas from "./ImageCanvas";
 
 export type SlotCanvasProps = { rawPath: string };
@@ -11,13 +12,21 @@ const SlotCanvas: React.FC<SlotCanvasProps> = ({ rawPath }) => {
 
   useEffect(() => {
     let alive = true;
-    loadImage(rawPath)
-      .then((img) => {
-        if (alive) setImgData(img ?? null);
-      })
+    invoke("decode_image", { path: rawPath })
       .catch((e) => {
-        console.error("Failed to load image:", e);
+        console.error("Failed to decode image:", e);
         if (alive) setImgData(null);
+      })
+      .then(async (payload) => {
+        if (!payload) return;
+        const decodedImage = payload as DecodedImage;
+        const imageData = new ImageData(
+          new Uint8ClampedArray(decodedImage.data),
+          decodedImage.width,
+          decodedImage.height,
+        );
+        const img = await createImageBitmap(imageData);
+        if (alive) setImgData(img ?? null);
       });
     return () => {
       alive = false;

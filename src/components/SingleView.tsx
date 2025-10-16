@@ -1,7 +1,8 @@
+import { invoke } from "@tauri-apps/api/core";
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { isSingleTab, useTabStore } from "../store";
-import loadImage from "../utils/imageLoader";
+import type { DecodedImage } from "../types";
 import ImageCanvas from "./ImageCanvas";
 
 /**
@@ -21,11 +22,11 @@ const SingleView: React.FC<SingleViewProps> = (_props: SingleViewProps) => {
   // Store selectors
   const activeTabId = useTabStore((s) => s.activeTabId);
   const singleTab = useTabStore((s) =>
-    s.activeTabId ? s.getSingleTab(s.activeTabId) : null
+    s.activeTabId ? s.getSingleTab(s.activeTabId) : null,
   );
   const setCurrentIndex = useTabStore((s) => s.setCurrentIndex);
   const activeTab = useTabStore((s) =>
-    activeTabId ? s.tabs.get(activeTabId) ?? null : null
+    activeTabId ? (s.tabs.get(activeTabId) ?? null) : null,
   );
 
   // Local view state
@@ -36,15 +37,30 @@ const SingleView: React.FC<SingleViewProps> = (_props: SingleViewProps) => {
 
   const loadImageByPath = useCallback((rawPath: string) => {
     setIsLoading(true);
-    loadImage(rawPath)
-      .then((img) => {
-        setCurrentImage(img ?? null);
-        setFileName(rawPath);
-      })
+    invoke("decode_image", { path: rawPath })
       .catch((e) => {
-        console.error("Failed to load image:", e);
+        console.error("Failed to decode image:", e);
         setCurrentImage(null);
         setFileName(null);
+        setIsLoading(false);
+      })
+      .then(async (payload) => {
+        if (!payload) return;
+        const decodedImage = payload as DecodedImage;
+        const imageData = new ImageData(
+          new Uint8ClampedArray(decodedImage.data),
+          decodedImage.width,
+          decodedImage.height,
+        );
+        const img = await createImageBitmap(imageData);
+        if (img) {
+          setCurrentImage(img);
+          setFileName(rawPath);
+        } else {
+          console.error("Failed to create ImageBitmap: img is null");
+          setCurrentImage(null);
+          setFileName(null);
+        }
       })
       .finally(() => setIsLoading(false));
   }, []);

@@ -1,4 +1,5 @@
 mod args;
+mod decode_image;
 mod startup_state;
 
 use clap::Parser;
@@ -93,7 +94,7 @@ pub fn run() {
                 _ => {}
             }
         })
-        .invoke_handler(tauri::generate_handler![])
+        .invoke_handler(tauri::generate_handler![decode_image::decode_image])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
