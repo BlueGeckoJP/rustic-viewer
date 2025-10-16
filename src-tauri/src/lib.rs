@@ -2,7 +2,11 @@ mod args;
 mod decode_image;
 mod startup_state;
 
+use std::{num::NonZeroUsize, sync::Mutex};
+
 use clap::Parser;
+use image::DynamicImage;
+use lru::LruCache;
 use tauri::{
     menu::{Menu, MenuItem, PredefinedMenuItem, Submenu},
     Emitter, Listener, Manager,
@@ -14,6 +18,10 @@ use crate::{
     args::{handle_args, Args},
     startup_state::StartupState,
 };
+
+struct AppState {
+    image_cache: Mutex<LruCache<String, DynamicImage>>,
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -32,6 +40,9 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
+        .manage(AppState {
+            image_cache: Mutex::new(LruCache::new(NonZeroUsize::new(500).unwrap())),
+        })
         .setup(|app| {
             let app_handle = app.handle();
             app.manage(StartupState::default());
