@@ -2,10 +2,12 @@ mod args;
 mod decode_image;
 mod startup_state;
 
-use std::{num::NonZeroUsize, sync::Mutex};
+use std::{
+    num::NonZeroUsize,
+    sync::{Arc, Mutex},
+};
 
 use clap::Parser;
-use image::DynamicImage;
 use lru::LruCache;
 use tauri::{
     menu::{Menu, MenuItem, PredefinedMenuItem, Submenu},
@@ -19,8 +21,14 @@ use crate::{
     startup_state::StartupState,
 };
 
+struct CachedImageData {
+    width: u32,
+    height: u32,
+    data: Arc<Vec<u8>>,
+}
+
 struct AppState {
-    image_cache: Mutex<LruCache<String, DynamicImage>>,
+    image_cache: Mutex<LruCache<String, CachedImageData>>,
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
