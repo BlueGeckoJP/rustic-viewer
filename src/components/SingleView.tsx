@@ -1,5 +1,5 @@
 import type React from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { isSingleTab, useTabStore } from "../store";
 import loadImage from "../utils/imageLoader";
 import ImageCanvas from "./ImageCanvas";
@@ -21,12 +21,13 @@ const SingleView: React.FC<SingleViewProps> = (_props: SingleViewProps) => {
   // Store selectors
   const activeTabId = useTabStore((s) => s.activeTabId);
   const singleTab = useTabStore((s) =>
-    s.activeTabId ? s.getSingleTab(s.activeTabId) : null
+    s.activeTabId ? s.getSingleTab(s.activeTabId) : null,
   );
   const setCurrentIndex = useTabStore((s) => s.setCurrentIndex);
   const activeTab = useTabStore((s) =>
-    activeTabId ? s.tabs.get(activeTabId) ?? null : null
+    activeTabId ? (s.tabs.get(activeTabId) ?? null) : null,
   );
+  const [rawPath, setRawPath] = useState<string>("");
 
   // Local view state
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -34,20 +35,28 @@ const SingleView: React.FC<SingleViewProps> = (_props: SingleViewProps) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [fileName, setFileName] = useState<string | null>(null);
 
-  const loadImageByPath = useCallback((rawPath: string) => {
+  useEffect(() => {
+    let alive = true;
     setIsLoading(true);
     loadImage(rawPath)
       .then((img) => {
-        setCurrentImage(img ?? null);
-        setFileName(rawPath);
+        if (alive) {
+          setCurrentImage(img ?? null);
+          setFileName(rawPath);
+        }
       })
       .catch((e) => {
         console.error("Failed to load image:", e);
-        setCurrentImage(null);
-        setFileName(null);
+        if (alive) {
+          setCurrentImage(null);
+          setFileName(null);
+        }
       })
       .finally(() => setIsLoading(false));
-  }, []);
+    return () => {
+      alive = false;
+    };
+  }, [rawPath]);
 
   // When active single tab changes, load its current image
   useEffect(() => {
@@ -61,8 +70,8 @@ const SingleView: React.FC<SingleViewProps> = (_props: SingleViewProps) => {
       return;
     }
     const path = singleTab.imageList[singleTab.currentIndex];
-    loadImageByPath(path);
-  }, [singleTab, loadImageByPath]);
+    setRawPath(path);
+  }, [singleTab]);
 
   // Arrow key navigation
   useEffect(() => {
@@ -73,16 +82,16 @@ const SingleView: React.FC<SingleViewProps> = (_props: SingleViewProps) => {
       if (e.key === "ArrowRight") {
         const next = (currentIndex + 1) % imageList.length;
         setCurrentIndex(singleTab.id, next);
-        loadImageByPath(imageList[next]);
+        setRawPath(imageList[next]);
       } else if (e.key === "ArrowLeft") {
         const prev = (currentIndex - 1 + imageList.length) % imageList.length;
         setCurrentIndex(singleTab.id, prev);
-        loadImageByPath(imageList[prev]);
+        setRawPath(imageList[prev]);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [singleTab, setCurrentIndex, loadImageByPath]);
+  }, [singleTab, setCurrentIndex]);
 
   // Render nothing if the active tab is not a single tab
   if (!activeTab || !isSingleTab(activeTab)) return null;
