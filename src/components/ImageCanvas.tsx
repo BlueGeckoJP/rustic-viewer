@@ -73,7 +73,7 @@ const ImageCanvas: React.FC<ImageCanvasProps> = ({
       offsetX,
       offsetY,
       drawWidth,
-      drawHeight
+      drawHeight,
     );
   }, [image]);
 

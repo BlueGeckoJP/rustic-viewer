@@ -88,7 +88,7 @@ const TabBar = () => {
       { id: "close-right", label: "Close Tabs to Right" },
     ];
     const singleSelectedCount = tabs.filter(
-      (t) => t.type === "single" && selectedIds.has(t.id)
+      (t) => t.type === "single" && selectedIds.has(t.id),
     ).length;
     if (singleSelectedCount >= 2) {
       contextItems.unshift({
@@ -177,8 +177,8 @@ const TabBar = () => {
                     active
                       ? "shadow-md bg-[#44444E] ring-2 ring-[#715A5A]"
                       : selected
-                      ? "bg-[#44444E]"
-                      : "hover:bg-[#44444E]"
+                        ? "bg-[#44444E]"
+                        : "hover:bg-[#44444E]"
                   }`}
                   ref={(el) => tabMove.registerTabRef(tab.id, el)}
                 >
@@ -254,7 +254,7 @@ const TabBar = () => {
                             e.preventDefault();
                             e.stopPropagation();
                             setMenuOpenFor(
-                              `${tab.id}${CHILD_PREFIX}${child?.id}`
+                              `${tab.id}${CHILD_PREFIX}${child?.id}`,
                             );
                             setMenuPos({ x: e.clientX, y: e.clientY });
                           }}

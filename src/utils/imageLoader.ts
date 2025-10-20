@@ -2,7 +2,7 @@ import imageCache, { type CacheItem } from "./imageCache";
 import { decodeImageFromPath } from "./imageDecoder";
 
 export default async function loadImage(
-  path: string
+  path: string,
 ): Promise<ImageBitmap | undefined> {
   if (imageCache.has(path)) {
     const item = imageCache.get(path);
@@ -22,7 +22,7 @@ export default async function loadImage(
 
 const createImageBitmapFromCacheItem = (
   item: CacheItem,
-  path: string
+  path: string,
 ): Promise<ImageBitmap> => {
   return window.createImageBitmap(item.image).then((bitmap) => {
     item.bitmap = bitmap;

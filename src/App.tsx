@@ -19,17 +19,17 @@ export default function App() {
   // Exposed by SingleView to allow Tauri events to open images
   // As a countermeasure for the issue where all internal conditional branches become null when using the old openImage
   const openImageRef = useRef<(rawPath: string, newTab?: boolean) => void>(
-    () => {}
+    () => {},
   );
   const activeTabId = useTabStore((s) => s.activeTabId);
   const activeTab = useTabStore((s) =>
-    activeTabId ? s.tabs.get(activeTabId) || null : null
+    activeTabId ? s.tabs.get(activeTabId) || null : null,
   ); // Map based
   const addSingleTab = useTabStore((s) => s.addSingleTab);
   const setActiveTab = useTabStore((s) => s.setActiveTab);
   const updateSingleTab = useTabStore((s) => s.updateSingleTab);
   const updateComparisonChildren = useTabStore(
-    (s) => s.updateComparisonChildren
+    (s) => s.updateComparisonChildren,
   );
 
   const openImage = useCallback(
@@ -46,7 +46,7 @@ export default function App() {
             a.localeCompare(b, undefined, {
               numeric: true,
               sensitivity: "base",
-            })
+            }),
           );
         const idx = files.indexOf(rawPath);
 
@@ -78,8 +78,8 @@ export default function App() {
               cid === childId
                 ? modified
                 : activeTab.children.get(cid)
-                ? (activeTab.children.get(cid) as SingleTab)
-                : oldChild
+                  ? (activeTab.children.get(cid) as SingleTab)
+                  : oldChild,
             );
           });
           updateComparisonChildren(activeTab.id, newChildrenMap);
@@ -92,7 +92,7 @@ export default function App() {
       setActiveTab,
       updateSingleTab,
       updateComparisonChildren,
-    ]
+    ],
   );
 
   // Expose openImage through ref for parent (App) to call from Tauri events
@@ -128,7 +128,7 @@ export default function App() {
               : String(event.payload);
 
           openImageRef.current(rawPath, true);
-        }
+        },
       );
 
       const newTabListener = await listen("new-tab", (event) => {
@@ -140,7 +140,7 @@ export default function App() {
       unlisteners.push(
         openImageListener,
         newTabListener,
-        openImageNewTabListener
+        openImageNewTabListener,
       );
       await emit("frontend-ready", null); // Notify backend that frontend is ready
     })();

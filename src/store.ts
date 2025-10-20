@@ -1,5 +1,5 @@
-import { create } from "zustand";
 import { v4 as uuid } from "uuid";
+import { create } from "zustand";
 
 export type Tab = SingleTab | ComparisonTab;
 
@@ -439,7 +439,7 @@ export const useTabStore = create<TabStore>((set, get) => ({
     set((state) => {
       const comp = state.tabs.get(comparisonId);
       if (!comp || comp.type !== "comparison") return state;
-      const childIndex = comp.childrenOrder.findIndex((cid) => cid === childId);
+      const childIndex = comp.childrenOrder.indexOf(childId);
       if (childIndex < 0) return state;
       const newChildrenOrder = comp.childrenOrder.filter(
         (cid) => cid !== childId,

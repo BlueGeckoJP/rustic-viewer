@@ -3,17 +3,27 @@ import "@testing-library/jest-dom";
 
 // Optionally add global mocks or setup here
 
-// Minimal ImageData polyfill for jsdom environment used in tests
-if (typeof (globalThis as any).ImageData === "undefined") {
-  // Simple constructor supporting width/height and a data buffer
-  (globalThis as any).ImageData = class {
-    width: number;
-    height: number;
-    data: Uint8ClampedArray;
-    constructor(w: number, h: number) {
-      this.width = w;
-      this.height = h;
-      this.data = new Uint8ClampedArray(w * h * 4);
+// ImageData polyfill for jsdom environment used in tests
+// This ensures ImageData is available in the test environment
+const ensureImageDataExists = (): void => {
+  if (typeof globalThis.ImageData === "undefined") {
+    // Simple constructor supporting width/height and a data buffer
+    class ImageDataPolyfill {
+      readonly colorSpace = "srgb" as const;
+      width: number;
+      height: number;
+      data: Uint8ClampedArray;
+
+      constructor(width: number, height: number) {
+        this.width = width;
+        this.height = height;
+        this.data = new Uint8ClampedArray(width * height * 4);
+      }
     }
-  };
-}
+
+    // biome-ignore lint/suspicious/noExplicitAny: Polyfill requires dynamic property assignment
+    (globalThis as Record<string, any>).ImageData = ImageDataPolyfill;
+  }
+};
+
+ensureImageDataExists();
