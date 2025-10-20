@@ -52,7 +52,9 @@ const SingleView: React.FC<SingleViewProps> = (_props: SingleViewProps) => {
           setFileName(null);
         }
       })
-      .finally(() => setIsLoading(false));
+      .finally(() => {
+        if (alive) setIsLoading(false);
+      });
     return () => {
       alive = false;
     };
