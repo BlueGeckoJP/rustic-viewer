@@ -99,7 +99,7 @@ const SingleView: React.FC<SingleViewProps> = (_props: SingleViewProps) => {
   if (!activeTab || !isSingleTab(activeTab)) return null;
 
   return (
-    <div className="group overflow-hidden flex flex-col bg-[#2F2E33] h-full w-full">
+    <div className="group relative overflow-hidden flex flex-col bg-[#2F2E33] h-full w-full">
       <div className="text-xs px-2 py-1 bg-[#44444E] text-[#D3DAD9] flex items-center gap-2 h-6">
         <span className="truncate" title={fileName ? fileName : "(empty)"}>
           {fileName ? fileName.split("/").pop() : "(empty)"}

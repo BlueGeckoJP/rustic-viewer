@@ -33,7 +33,7 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ tabId }) => {
         return (
           <button
             key={child.id}
-            className={`relative group rounded-md overflow-hidden flex flex-col bg-[#2F2E33] ${
+            className={`relative group rounded-md overflow-hidden flex flex-col bg-[#2F2E33] hover:[&>div:last-child]:opacity-100 ${
               n <= 3 ? "flex-1" : "w-full h-full"
             } ${
               activeSlotIndex === idx
@@ -62,7 +62,7 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ tabId }) => {
             </div>
 
             {/* Simple per-child navigation controls (optional) */}
-            <div className="absolute bottom-1 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition">
+            <div className="absolute bottom-1 right-2 flex gap-1 opacity-0 transition">
               <button
                 className="px-2 py-1 bg-[#44444E] rounded text-xs hover:bg-[#555]"
                 onClick={(e) => {
