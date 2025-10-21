@@ -1,6 +1,7 @@
 // Actions for child tab management within comparison tabs
 
 import type { StateCreator } from "zustand";
+import { isComparisonTab } from "../guards";
 import { normalizeComparisonAfterChildrenChangeMap } from "../helpers/comparisonHelpers";
 import type { ComparisonTab, TabStore } from "../types";
 
@@ -20,7 +21,7 @@ export const createChildManagementActions: StateCreator<
     if (fromIndex === toIndex) return;
     set((state) => {
       const comp = state.tabs.get(comparisonId);
-      if (!comp || comp.type !== "comparison") return state;
+      if (!comp || !isComparisonTab(comp)) return state;
       const order = [...comp.childrenOrder];
       if (
         fromIndex < 0 ||
@@ -57,7 +58,7 @@ export const createChildManagementActions: StateCreator<
   detachChildToTopLevel: (comparisonId, childId, insertAfterParent = true) => {
     set((state) => {
       const comp = state.tabs.get(comparisonId);
-      if (!comp || comp.type !== "comparison") return state;
+      if (!comp || !isComparisonTab(comp)) return state;
       const childIndex = comp.childrenOrder.indexOf(childId);
       if (childIndex < 0) return state;
       const child = comp.children.get(childId);
@@ -93,7 +94,7 @@ export const createChildManagementActions: StateCreator<
   removeChildFromComparison: (comparisonId, childId) => {
     set((state) => {
       const comp = state.tabs.get(comparisonId);
-      if (!comp || comp.type !== "comparison") return state;
+      if (!comp || !isComparisonTab(comp)) return state;
       const childIndex = comp.childrenOrder.indexOf(childId);
       if (childIndex < 0) return state;
       const newChildrenOrder = comp.childrenOrder.filter(
@@ -119,7 +120,7 @@ export const createChildManagementActions: StateCreator<
   detachAllChildren: (comparisonId) => {
     set((state) => {
       const comp = state.tabs.get(comparisonId);
-      if (!comp || comp.type !== "comparison") return state;
+      if (!comp || !isComparisonTab(comp)) return state;
       const newTabs = new Map(state.tabs);
       newTabs.delete(comparisonId);
       const newOrder = [...state.tabOrder];

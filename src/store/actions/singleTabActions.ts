@@ -2,6 +2,7 @@
 
 import { v4 as uuid } from "uuid";
 import type { StateCreator } from "zustand";
+import { isComparisonTab, isSingleTab } from "../guards";
 import type { SingleTab, TabStore } from "../types";
 
 export const createSingleTabActions: StateCreator<
@@ -36,13 +37,13 @@ export const createSingleTabActions: StateCreator<
 
   getSingleTab: (id) => {
     const t = get().tabs.get(id);
-    return t && t.type === "single" ? t : null;
+    return t && isSingleTab(t) ? t : null;
   },
 
   updateSingleTab: (id, patch) => {
     set((state) => {
       const existing = state.tabs.get(id);
-      if (!existing || existing.type !== "single") return state;
+      if (!existing || !isSingleTab(existing)) return state;
       const updated = { ...existing, ...patch } as SingleTab;
       const newTabs = new Map(state.tabs);
       newTabs.set(id, updated);
@@ -54,7 +55,7 @@ export const createSingleTabActions: StateCreator<
     set((state) => {
       const currentTabs = state.tabs;
       const direct = currentTabs.get(id);
-      if (direct && direct.type === "single") {
+      if (direct && isSingleTab(direct)) {
         const newTabs = new Map(currentTabs);
         newTabs.set(id, { ...direct, currentIndex: index });
         return { tabs: newTabs };
@@ -62,7 +63,7 @@ export const createSingleTabActions: StateCreator<
       // search comparisons for child
       for (const tid of state.tabOrder) {
         const tab = currentTabs.get(tid);
-        if (tab && tab.type === "comparison" && tab.children.has(id)) {
+        if (tab && isComparisonTab(tab) && tab.children.has(id)) {
           const child = tab.children.get(id);
           if (!child) return state;
           const newChild = { ...child, currentIndex: index };

@@ -2,6 +2,7 @@
 
 import { v4 as uuid } from "uuid";
 import type { StateCreator } from "zustand";
+import { isComparisonTab, isSingleTab } from "../guards";
 import type { ComparisonTab, SingleTab, TabStore } from "../types";
 
 export const createComparisonTabActions: StateCreator<
@@ -46,7 +47,7 @@ export const createComparisonTabActions: StateCreator<
 
   getComparisonTab: (id) => {
     const t = get().tabs.get(id);
-    return t && t.type === "comparison" ? t : null;
+    return t && isComparisonTab(t) ? t : null;
   },
 
   // Move selected single tabs into a new comparison tab
@@ -60,7 +61,7 @@ export const createComparisonTabActions: StateCreator<
       const remainingOrder: string[] = [];
       state.tabOrder.forEach((tid) => {
         const t = state.tabs.get(tid);
-        if (t && t.type === "single" && uniq.includes(t.id)) {
+        if (t && isSingleTab(t) && uniq.includes(t.id)) {
           orderedSingles.push(t);
         } else if (t) {
           remainingOrder.push(tid);
@@ -89,7 +90,7 @@ export const createComparisonTabActions: StateCreator<
 
       const firstIndexInOld = state.tabOrder.findIndex((tid) => {
         const t = state.tabs.get(tid);
-        return t?.type === "single" && uniq.includes(t.id);
+        return t && isSingleTab(t) && uniq.includes(t.id);
       });
 
       const newTabs = new Map(state.tabs);
@@ -105,7 +106,7 @@ export const createComparisonTabActions: StateCreator<
         }
         const tid = state.tabOrder[i];
         const t = state.tabs.get(tid);
-        if (t?.type === "single" && uniq.includes(t.id)) continue;
+        if (t && isSingleTab(t) && uniq.includes(t.id)) continue;
         newOrder.push(tid);
       }
       if (!inserted) {
@@ -126,7 +127,7 @@ export const createComparisonTabActions: StateCreator<
   setActiveSlotIndex: (id, slotIndex) => {
     set((state) => {
       const tab = state.tabs.get(id);
-      if (!tab || tab.type !== "comparison") return state;
+      if (!tab || !isComparisonTab(tab)) return state;
       const newTabs = new Map(state.tabs);
       newTabs.set(id, { ...tab, activeSlotIndex: slotIndex });
       return { tabs: newTabs };
@@ -136,7 +137,7 @@ export const createComparisonTabActions: StateCreator<
   updateComparisonChildren: (id, children) => {
     set((state) => {
       const tab = state.tabs.get(id);
-      if (!tab || tab.type !== "comparison") return state;
+      if (!tab || !isComparisonTab(tab)) return state;
       const childrenOrder = tab.childrenOrder.filter((cid) =>
         children.has(cid),
       );
