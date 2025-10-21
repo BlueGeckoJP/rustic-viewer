@@ -1,5 +1,5 @@
 import type React from "react";
-import { isComparisonTab, useTabStore } from "../store/index";
+import { isComparisonTab, useTabStore } from "../store";
 import SlotCanvas from "./SlotCanvas";
 
 type ComparisonViewProps = {

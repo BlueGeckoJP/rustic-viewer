@@ -1,6 +1,6 @@
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
-import { isSingleTab, useTabStore } from "../store/index";
+import { isSingleTab, useTabStore } from "../store";
 import loadImage from "../utils/imageLoader";
 import ImageCanvas from "./ImageCanvas";
 

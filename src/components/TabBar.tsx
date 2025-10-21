@@ -1,7 +1,7 @@
 import type React from "react";
 import { useRef, useState } from "react";
 import useTabMove from "../hooks/useTabMove";
-import { isComparisonTab, isSingleTab, type Tab, useTabStore } from "../store/index";
+import { isComparisonTab, isSingleTab, type Tab, useTabStore } from "../store";
 import ContextMenu, { type ContextMenuItem } from "./ContextMenu";
 
 const CHILD_PREFIX = "::child::";
