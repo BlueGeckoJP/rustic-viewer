@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useTabStore } from "../store";
+import { useTabStore } from "../store/index";
 
 export type UseTabMoveProps = {
   tabBarRef: React.RefObject<HTMLDivElement | null>;

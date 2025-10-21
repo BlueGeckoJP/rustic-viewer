@@ -9,7 +9,7 @@ import {
   isSingleTab,
   type SingleTab,
   useTabStore,
-} from "./store";
+} from "./store/index";
 
 const imageFileRegex = /\.(png|jpg|jpeg|gif|bmp|webp)$/i;
 
