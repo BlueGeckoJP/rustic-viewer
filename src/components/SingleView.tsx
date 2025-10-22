@@ -37,7 +37,10 @@ const SingleView: React.FC<SingleViewProps> = (_props: SingleViewProps) => {
 
   useEffect(() => {
     let alive = true;
-    setIsLoading(true);
+    // Slight delay to avoid flicker on fast loads
+    setTimeout(() => {
+      if (alive) setIsLoading(true);
+    }, 100);
     loadImage(rawPath)
       .then((img) => {
         if (alive) {
@@ -53,7 +56,10 @@ const SingleView: React.FC<SingleViewProps> = (_props: SingleViewProps) => {
         }
       })
       .finally(() => {
-        if (alive) setIsLoading(false);
+        if (alive) {
+          setIsLoading(false);
+          alive = false;
+        }
       });
     return () => {
       alive = false;
@@ -112,7 +118,7 @@ const SingleView: React.FC<SingleViewProps> = (_props: SingleViewProps) => {
 
         {/* Loading overlay */}
         <div
-          className={`ml-auto bg-[#715A5A] px-2 h-full flex items-center justify-center transition-opacity duration-300 ${isLoading ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+          className={`ml-auto bg-[#715A5A] px-2 h-full flex items-center justify-center transition-opacity duration-300 ${isLoading ? "animate-loading-overlay-fade-in" : "animate-loading-overlay-fade-out pointer-events-none"}`}
         >
           <div className="flex justify-between items-center gap-3">
             {/* Loading pulse indicator */}

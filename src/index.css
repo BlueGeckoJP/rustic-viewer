@@ -1,1 +1,36 @@
 @import "tailwindcss";
+
+@keyframes loadingOverlayFadeIn {
+    0% {
+        opacity: 0;
+        width: 0;
+    }
+    1% {
+        opacity: 0;
+        width: fit-content;
+    }
+    100% {
+        opacity: 1;
+        width: fit-content;
+    }
+}
+
+@keyframes loadingOverlayFadeOut {
+    0% {
+        opacity: 1;
+        width: fit-content;
+    }
+    99% {
+        opacity: 0;
+        width: fit-content;
+    }
+    100% {
+        opacity: 0;
+        width: 0;
+    }
+}
+
+@theme {
+    --animate-loading-overlay-fade-in: loadingOverlayFadeIn 500ms forwards;
+    --animate-loading-overlay-fade-out: loadingOverlayFadeOut 500ms forwards;
+}
