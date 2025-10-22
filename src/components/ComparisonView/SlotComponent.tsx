@@ -16,6 +16,7 @@ const SlotComponent: React.FC<SlotComponentProps> = ({
   childId,
 }) => {
   const [imgData, setImgData] = useState<ImageBitmap | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const tab = useTabStore((s) => s.tabs.get(tabId) ?? null);
@@ -23,6 +24,7 @@ const SlotComponent: React.FC<SlotComponentProps> = ({
 
   useEffect(() => {
     let alive = true;
+    setIsLoading(true);
     loadImage(rawPath)
       .then((img) => {
         if (alive) setImgData(img ?? null);
@@ -30,6 +32,9 @@ const SlotComponent: React.FC<SlotComponentProps> = ({
       .catch((e) => {
         console.error("Failed to load image:", e);
         if (alive) setImgData(null);
+      })
+      .finally(() => {
+        if (alive) setIsLoading(false);
       });
     return () => {
       alive = false;
@@ -42,13 +47,31 @@ const SlotComponent: React.FC<SlotComponentProps> = ({
 
   return (
     <>
-      <div className="text-xs px-2 py-1 bg-[#44444E] text-[#D3DAD9] flex items-center gap-2 w-full">
-        <span className="truncate" title={rawPath}>
+      <div className="text-xs bg-[#44444E] text-[#D3DAD9] flex items-center gap-2 w-full h-6">
+        <span className="truncate mx-2" title={rawPath}>
           {rawPath ? rawPath.split("/").pop() : "(empty)"}
         </span>
         <span className="opacity-60">
           {child.currentIndex + 1}/{child.imageList.length}
         </span>
+
+        {/* Loading overlay */}
+        <div
+          className={`ml-auto bg-[#715A5A] px-2 h-full flex items-center justify-center transition-opacity duration-300 ${isLoading ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+        >
+          <div className="flex justify-between items-center gap-3">
+            {/* Loading pulse indicator */}
+            <div className="relative">
+              <div className="w-3 h-3 bg-[#D3DAD9] rounded-full animate-pulse"></div>
+              <div className="absolute top-0 left-0 w-3 h-3 bg-[#D3DAD9] rounded-full animate-ping opacity-75"></div>
+            </div>
+            <div className="flex">
+              <span className="text-[#D3DAD9] text-sm font-medium">
+                Loading...
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Canvas-based image rendering (matches SingleTab canvas behavior) */}
