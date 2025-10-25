@@ -106,7 +106,9 @@ const SingleView: React.FC<SingleViewProps> = (_props: SingleViewProps) => {
 
   return (
     <div className="group relative overflow-hidden flex flex-col bg-[#2F2E33] h-full w-full">
-      <div className="text-xs bg-[#44444E] text-[#D3DAD9] flex items-center gap-2 h-6">
+      <div
+        className={`text-xs text-[#D3DAD9] flex items-center gap-2 h-6 ${isLoading ? "bg-[#715A5A] transition-colors duration-300" : "bg-[#44444E]"}`}
+      >
         <span className="truncate mx-2" title={fileName ? fileName : "(empty)"}>
           {fileName ? fileName.split("/").pop() : "(empty)"}
         </span>
@@ -118,7 +120,7 @@ const SingleView: React.FC<SingleViewProps> = (_props: SingleViewProps) => {
 
         {/* Loading overlay */}
         <div
-          className={`ml-auto bg-[#715A5A] px-2 h-full flex items-center justify-center transition-opacity duration-300 ${isLoading ? "animate-loading-overlay-fade-in" : "animate-loading-overlay-fade-out pointer-events-none"}`}
+          className={`ml-auto px-2 h-full flex items-center justify-center transition-opacity duration-300 ${isLoading ? "animate-loading-overlay-fade-in" : "animate-loading-overlay-fade-out pointer-events-none"}`}
         >
           <div className="flex justify-between items-center gap-3">
             {/* Loading pulse indicator */}

@@ -53,7 +53,9 @@ const SlotComponent: React.FC<SlotComponentProps> = ({
 
   return (
     <>
-      <div className="text-xs bg-[#44444E] text-[#D3DAD9] flex items-center gap-2 w-full h-6">
+      <div
+        className={`text-xs text-[#D3DAD9] flex items-center gap-2 w-full h-6 ${isLoading ? "bg-[#715A5A] transition-colors duration-300" : "bg-[#44444E]"}`}
+      >
         <span className="truncate mx-2" title={rawPath}>
           {rawPath ? rawPath.split("/").pop() : "(empty)"}
         </span>
@@ -63,7 +65,7 @@ const SlotComponent: React.FC<SlotComponentProps> = ({
 
         {/* Loading overlay */}
         <div
-          className={`ml-auto bg-[#715A5A] px-2 h-full flex items-center justify-center transition-all duration-300 ${isLoading ? "animate-loading-overlay-fade-in" : "pointer-events-none animate-loading-overlay-fade-out"}`}
+          className={`ml-auto px-2 h-full flex items-center justify-center transition-all duration-300 ${isLoading ? "animate-loading-overlay-fade-in" : "pointer-events-none animate-loading-overlay-fade-out"}`}
         >
           <div className="flex justify-between items-center gap-3">
             {/* Loading pulse indicator */}
