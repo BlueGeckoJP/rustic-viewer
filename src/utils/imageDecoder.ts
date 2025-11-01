@@ -120,10 +120,25 @@ function enqueueDecodeRequest(content: Uint8Array): Promise<ImageData> {
   });
 }
 
-export async function decodeImageFromPath(path: string): Promise<ImageData> {
+export async function decodeImageFromPath(path: string): Promise<{
+  imageData: ImageData;
+  fileReadTime: number;
+  wasmDecodeTime: number;
+}> {
+  const startFileRead = performance.now();
   const fileUrl = convertFileSrc(path);
   const content = await readFile(fileUrl);
-  return enqueueDecodeRequest(content);
+  const fileReadTime = performance.now() - startFileRead;
+
+  const startDecode = performance.now();
+  const imageData = await enqueueDecodeRequest(content);
+  const wasmDecodeTime = performance.now() - startDecode;
+
+  return {
+    imageData,
+    fileReadTime,
+    wasmDecodeTime,
+  };
 }
 
 /** Optional: allow direct Uint8Array decoding if already loaded elsewhere */
