@@ -8,7 +8,7 @@ import ImageWorker from "../imageWorker.ts?worker";
  */
 
 type Pending = {
-  resolve: (img: ImageData) => void;
+  resolve: (img: ImageBitmap) => void;
   reject: (err: Error | ErrorEvent) => void;
 };
 
@@ -36,7 +36,7 @@ function initializeWorkerPool() {
     };
 
     worker.onmessage = (e: MessageEvent) => {
-      const data = e.data as { img?: ImageData; requestId?: number };
+      const data = e.data as { img?: ImageBitmap; requestId?: number };
       if (data && typeof data.requestId === "number") {
         const p = pending.get(data.requestId);
         if (p) {
@@ -99,12 +99,12 @@ function processQueue() {
   }
 }
 
-function enqueueDecodeRequest(content: Uint8Array): Promise<ImageData> {
+function enqueueDecodeRequest(content: Uint8Array): Promise<ImageBitmap> {
   initializeWorkerPool();
 
   const requestId = nextId++;
 
-  return new Promise<ImageData>((resolve, reject) => {
+  return new Promise<ImageBitmap>((resolve, reject) => {
     pending.set(requestId, { resolve, reject });
 
     const availableWorker = getAvailableWorker();
@@ -121,9 +121,9 @@ function enqueueDecodeRequest(content: Uint8Array): Promise<ImageData> {
 }
 
 export async function decodeImageFromPath(path: string): Promise<{
-  imageData: ImageData;
+  imageBitmap: ImageBitmap;
   fileReadTime: number;
-  wasmDecodeTime: number;
+  decodeTime: number;
 }> {
   const startFileRead = performance.now();
   const fileUrl = convertFileSrc(path);
@@ -131,18 +131,20 @@ export async function decodeImageFromPath(path: string): Promise<{
   const fileReadTime = performance.now() - startFileRead;
 
   const startDecode = performance.now();
-  const imageData = await enqueueDecodeRequest(content);
-  const wasmDecodeTime = performance.now() - startDecode;
+  const imageBitmap = await enqueueDecodeRequest(content);
+  const decodeTime = performance.now() - startDecode;
 
   return {
-    imageData,
+    imageBitmap,
     fileReadTime,
-    wasmDecodeTime,
+    decodeTime,
   };
 }
 
 /** Optional: allow direct Uint8Array decoding if already loaded elsewhere */
-export async function decodeImageBytes(bytes: Uint8Array): Promise<ImageData> {
+export async function decodeImageBytes(
+  bytes: Uint8Array,
+): Promise<ImageBitmap> {
   return enqueueDecodeRequest(bytes);
 }
 

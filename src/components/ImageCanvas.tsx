@@ -2,11 +2,11 @@ import type React from "react";
 import { useCallback, useEffect, useRef } from "react";
 
 /**
- * Generic high-DPI aware canvas component that draws an ImageData using aspect-fit (contain) logic.
- * Optionally accepts an already decoded ImageData OR raw drawing params via a callback.
+ * Generic high-DPI aware canvas component that draws an ImageBitmap using aspect-fit (contain) logic.
+ * Optionally accepts an already decoded ImageBitmap OR raw drawing params via a callback.
  *
  * Props:
- *  - image: ImageData | null -> when provided triggers drawing
+ *  - image: ImageBitmap | null -> when provided triggers drawing
  *  - className/style: styling
  *  - onInitCanvas?: (canvas: HTMLCanvasElement) => void  (for parent to keep a ref if needed)
  */

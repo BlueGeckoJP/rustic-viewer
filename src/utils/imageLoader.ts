@@ -13,8 +13,7 @@ export default async function loadImage(
     const metrics: ImageLoadMetrics = {
       path,
       fileReadTime: 0,
-      wasmDecodeTime: 0,
-      bitmapCreateTime: 0,
+      decodeTime: 0,
       totalTime,
       cacheHit: true,
       timestamp: Date.now(),
@@ -27,49 +26,29 @@ export default async function loadImage(
   return returnDecodeImagePromise(path, startTotal);
 }
 
-const createImageBitmapFromCacheItem = (
-  item: CacheItem,
-  data: ImageData,
-  path: string,
-): Promise<{ bitmap: ImageBitmap; bitmapTime: number }> => {
-  const startBitmap = performance.now();
-  return window.createImageBitmap(data).then((bitmap) => {
-    const bitmapTime = performance.now() - startBitmap;
-    item.bitmap = bitmap;
-    imageCache.put(path, item); // Update cache with bitmap
-    return { bitmap, bitmapTime };
-  });
-};
-
 const returnDecodeImagePromise = async (path: string, startTotal: number) => {
-  const { imageData, fileReadTime, wasmDecodeTime } =
+  const { imageBitmap, fileReadTime, decodeTime } =
     await decodeImageFromPath(path);
 
   const cacheItem: CacheItem = {
-    width: imageData.width,
-    height: imageData.height,
+    bitmap: imageBitmap,
+    width: imageBitmap.width,
+    height: imageBitmap.height,
   };
   imageCache.put(path, cacheItem);
-
-  const { bitmap, bitmapTime } = await createImageBitmapFromCacheItem(
-    cacheItem,
-    imageData,
-    path,
-  );
 
   const totalTime = performance.now() - startTotal;
 
   const metrics: ImageLoadMetrics = {
     path,
     fileReadTime,
-    wasmDecodeTime,
-    bitmapCreateTime: bitmapTime,
+    decodeTime,
     totalTime,
     cacheHit: false,
     timestamp: Date.now(),
-    imageSize: { width: imageData.width, height: imageData.height },
+    imageSize: { width: imageBitmap.width, height: imageBitmap.height },
   };
   monitor.recordMetric(metrics);
 
-  return bitmap;
+  return imageBitmap;
 };
