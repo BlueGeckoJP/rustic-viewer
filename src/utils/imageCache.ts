@@ -1,5 +1,4 @@
 export type CacheItem = {
-  image: ImageData;
   width: number;
   height: number;
   bitmap?: ImageBitmap;
