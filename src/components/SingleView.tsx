@@ -24,6 +24,9 @@ const SingleView: React.FC<SingleViewProps> = (_props: SingleViewProps) => {
     s.activeTabId ? s.getSingleTab(s.activeTabId) : null,
   );
   const setCurrentIndex = useTabStore((s) => s.setCurrentIndex);
+  const setZoom = useTabStore((s) => s.setZoom);
+  const setPanOffset = useTabStore((s) => s.setPanOffset);
+  const resetZoomAndPan = useTabStore((s) => s.resetZoomAndPan);
   const activeTab = useTabStore((s) =>
     activeTabId ? (s.tabs.get(activeTabId) ?? null) : null,
   );
@@ -34,6 +37,10 @@ const SingleView: React.FC<SingleViewProps> = (_props: SingleViewProps) => {
   const [currentImage, setCurrentImage] = useState<ImageBitmap | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [fileName, setFileName] = useState<string | null>(null);
+  const [isPanning, setIsPanning] = useState<boolean>(false);
+  const [panStart, setPanStart] = useState<{ x: number; y: number } | null>(
+    null,
+  );
 
   useEffect(() => {
     let alive = true;
@@ -81,7 +88,7 @@ const SingleView: React.FC<SingleViewProps> = (_props: SingleViewProps) => {
     setRawPath(path);
   }, [singleTab]);
 
-  // Arrow key navigation
+  // Arrow key navigation and keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!singleTab) return;
@@ -95,11 +102,14 @@ const SingleView: React.FC<SingleViewProps> = (_props: SingleViewProps) => {
         const prev = (currentIndex - 1 + imageList.length) % imageList.length;
         setCurrentIndex(singleTab.id, prev);
         setRawPath(imageList[prev]);
+      } else if (e.key === "0" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        resetZoomAndPan(singleTab.id);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [singleTab, setCurrentIndex]);
+  }, [singleTab, setCurrentIndex, resetZoomAndPan]);
 
   // Render nothing if the active tab is not a single tab
   if (!activeTab || !isSingleTab(activeTab)) return null;
@@ -137,11 +147,60 @@ const SingleView: React.FC<SingleViewProps> = (_props: SingleViewProps) => {
         </div>
       </div>
 
-      <div className="flex-1 flex items-center justify-center">
+      <div
+        className="flex-1 flex items-center justify-center"
+        role="img"
+        aria-label="Image viewer with zoom and pan controls"
+        onWheel={(e) => {
+          if (!singleTab) return;
+          e.preventDefault();
+          const delta = -e.deltaY;
+          const zoomFactor = 1 + delta * 0.001;
+          const newZoom = Math.max(
+            0.1,
+            Math.min(10, singleTab.zoom * zoomFactor),
+          );
+          setZoom(singleTab.id, newZoom);
+        }}
+        onMouseDown={(e) => {
+          if (!singleTab) return;
+          if (e.button === 0) {
+            // Left click to pan
+            e.preventDefault();
+            setIsPanning(true);
+            setPanStart({ x: e.clientX, y: e.clientY });
+          }
+        }}
+        onMouseMove={(e) => {
+          if (!singleTab || !isPanning || !panStart) return;
+          const dx = e.clientX - panStart.x;
+          const dy = e.clientY - panStart.y;
+          setPanOffset(singleTab.id, {
+            x: singleTab.panOffset.x + dx,
+            y: singleTab.panOffset.y + dy,
+          });
+          setPanStart({ x: e.clientX, y: e.clientY });
+        }}
+        onMouseUp={() => {
+          setIsPanning(false);
+          setPanStart(null);
+        }}
+        onMouseLeave={() => {
+          setIsPanning(false);
+          setPanStart(null);
+        }}
+        onDoubleClick={() => {
+          if (!singleTab) return;
+          resetZoomAndPan(singleTab.id);
+        }}
+        style={{ cursor: isPanning ? "grabbing" : "default" }}
+      >
         {currentImage ? (
           <ImageCanvas
             image={currentImage}
             className="w-screen h-screen max-w-screen max-h-[calc(100vh-24px)]"
+            zoom={singleTab?.zoom ?? 1.0}
+            panOffset={singleTab?.panOffset ?? { x: 0, y: 0 }}
             onInitCanvas={(c) => {
               canvasRef.current = c;
             }}

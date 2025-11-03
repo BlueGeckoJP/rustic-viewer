@@ -18,9 +18,16 @@ const SlotComponent: React.FC<SlotComponentProps> = ({
   const [imgData, setImgData] = useState<ImageBitmap | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [isPanning, setIsPanning] = useState<boolean>(false);
+  const [panStart, setPanStart] = useState<{ x: number; y: number } | null>(
+    null,
+  );
 
   const tab = useTabStore((s) => s.tabs.get(tabId) ?? null);
   const setCurrentIndex = useTabStore((s) => s.setCurrentIndex);
+  const setZoom = useTabStore((s) => s.setZoom);
+  const setPanOffset = useTabStore((s) => s.setPanOffset);
+  const resetZoomAndPan = useTabStore((s) => s.resetZoomAndPan);
 
   useEffect(() => {
     let alive = true;
@@ -46,6 +53,18 @@ const SlotComponent: React.FC<SlotComponentProps> = ({
       alive = false;
     };
   }, [rawPath]);
+
+  // Keyboard shortcuts for zoom reset
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "0" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        resetZoomAndPan(childId);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [childId, resetZoomAndPan]);
 
   if (!tab || !isComparisonTab(tab)) return null;
   const child = tab.children.get(childId) ?? null;
@@ -83,7 +102,49 @@ const SlotComponent: React.FC<SlotComponentProps> = ({
       </div>
 
       {/* Canvas-based image rendering (matches SingleTab canvas behavior) */}
-      <div className="flex-1 flex items-center justify-center w-full">
+      <div
+        className="flex-1 flex items-center justify-center w-full"
+        role="img"
+        aria-label="Comparison slot with zoom and pan controls"
+        onWheel={(e) => {
+          e.preventDefault();
+          const delta = -e.deltaY;
+          const zoomFactor = 1 + delta * 0.001;
+          const newZoom = Math.max(0.1, Math.min(10, child.zoom * zoomFactor));
+          setZoom(childId, newZoom);
+        }}
+        onMouseDown={(e) => {
+          if (e.button === 0) {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsPanning(true);
+            setPanStart({ x: e.clientX, y: e.clientY });
+          }
+        }}
+        onMouseMove={(e) => {
+          if (!isPanning || !panStart) return;
+          const dx = e.clientX - panStart.x;
+          const dy = e.clientY - panStart.y;
+          setPanOffset(childId, {
+            x: child.panOffset.x + dx,
+            y: child.panOffset.y + dy,
+          });
+          setPanStart({ x: e.clientX, y: e.clientY });
+        }}
+        onMouseUp={() => {
+          setIsPanning(false);
+          setPanStart(null);
+        }}
+        onMouseLeave={() => {
+          setIsPanning(false);
+          setPanStart(null);
+        }}
+        onDoubleClick={(e) => {
+          e.stopPropagation();
+          resetZoomAndPan(childId);
+        }}
+        style={{ cursor: isPanning ? "grabbing" : "default" }}
+      >
         {rawPath ? (
           // NOTE: I left a 1rem gap with max-h because, without it, when the height is reduced even slightly,
           // the canvas rendering can’t keep up with the resize.
@@ -92,6 +153,8 @@ const SlotComponent: React.FC<SlotComponentProps> = ({
             <ImageCanvas
               image={imgData}
               className="w-full h-full max-w-full max-h-full block"
+              zoom={child.zoom}
+              panOffset={child.panOffset}
               onInitCanvas={(c) => {
                 canvasRef.current = c;
               }}

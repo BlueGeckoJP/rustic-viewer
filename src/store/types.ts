@@ -8,6 +8,8 @@ export type SingleTab = {
   directory: string | null;
   imageList: string[];
   currentIndex: number;
+  zoom: number; // 1.0 = 100%, 2.0 = 200%, etc.
+  panOffset: { x: number; y: number }; // Pan offset in CSS pixels
 };
 
 export type ComparisonTab = {
@@ -41,6 +43,9 @@ export type TabStore = {
   getComparisonTab: (id: string) => ComparisonTab | null;
   setCurrentIndex: (id: string, index: number) => void;
   updateSingleTab: (id: string, tab: Partial<SingleTab>) => void;
+  setZoom: (id: string, zoom: number) => void;
+  setPanOffset: (id: string, offset: { x: number; y: number }) => void;
+  resetZoomAndPan: (id: string) => void;
   setActiveTab: (id: string) => void;
   setActiveSlotIndex: (id: string, slotIndex: number) => void;
   updateComparisonChildren: (

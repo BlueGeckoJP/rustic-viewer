@@ -9,21 +9,27 @@ import { useCallback, useEffect, useRef } from "react";
  *  - image: ImageBitmap | null -> when provided triggers drawing
  *  - className/style: styling
  *  - onInitCanvas?: (canvas: HTMLCanvasElement) => void  (for parent to keep a ref if needed)
+ *  - zoom?: number (1.0 = 100%, 2.0 = 200%, etc.)
+ *  - panOffset?: { x: number, y: number } (pan offset in CSS pixels)
  */
 export interface ImageCanvasProps {
   image: ImageBitmap | null;
   className?: string;
   onInitCanvas?: (canvas: HTMLCanvasElement) => void;
+  zoom?: number;
+  panOffset?: { x: number; y: number };
 }
 
 const ImageCanvas: React.FC<ImageCanvasProps> = ({
   image,
   className,
   onInitCanvas,
+  zoom = 1.0,
+  panOffset = { x: 0, y: 0 },
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  // Core draw logic (aspect fit)
+  // Core draw logic (aspect fit with zoom and pan)
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -43,18 +49,27 @@ const ImageCanvas: React.FC<ImageCanvasProps> = ({
     const imgRatio = image.width / image.height;
     const canvasRatio = cssW / cssH;
 
-    let drawWidth: number, drawHeight: number, offsetX: number, offsetY: number;
+    // Calculate base size (fit to canvas)
+    let baseWidth: number, baseHeight: number;
     if (imgRatio > canvasRatio) {
-      drawWidth = cssW;
-      drawHeight = cssW / imgRatio;
-      offsetX = 0;
-      offsetY = (cssH - drawHeight) / 2;
+      baseWidth = cssW;
+      baseHeight = cssW / imgRatio;
     } else {
-      drawHeight = cssH;
-      drawWidth = cssH * imgRatio;
-      offsetX = (cssW - drawWidth) / 2;
-      offsetY = 0;
+      baseHeight = cssH;
+      baseWidth = cssH * imgRatio;
     }
+
+    // Apply zoom
+    const drawWidth = baseWidth * zoom;
+    const drawHeight = baseHeight * zoom;
+
+    // Calculate center point for zoom
+    const centerX = cssW / 2;
+    const centerY = cssH / 2;
+
+    // Apply pan offset (with zoom consideration)
+    const offsetX = centerX - drawWidth / 2 + panOffset.x;
+    const offsetY = centerY - drawHeight / 2 + panOffset.y;
 
     const srcCanvas = document.createElement("canvas");
     srcCanvas.width = image.width;
@@ -75,7 +90,7 @@ const ImageCanvas: React.FC<ImageCanvasProps> = ({
       drawWidth,
       drawHeight,
     );
-  }, [image]);
+  }, [image, zoom, panOffset]);
 
   // Resize observer for DPR changes or container size changes
   useEffect(() => {
