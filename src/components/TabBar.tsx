@@ -161,6 +161,7 @@ const TabBar = () => {
             const singleTab = singleTabs[tabId];
             const comparisonTab = comparisonTabs[tabId];
             if (!singleTab && !comparisonTab) return null;
+            if (singleTab?.parentId) return null;
 
             const isComp = !!comparisonTab;
             const tab = isComp ? comparisonTab : singleTab;
