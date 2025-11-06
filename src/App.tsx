@@ -4,12 +4,7 @@ import { useCallback, useEffect, useRef } from "react";
 import ComparisonView from "./components/ComparisonView";
 import SingleView from "./components/SingleView";
 import TabBar from "./components/TabBar";
-import {
-  isComparisonTab,
-  isSingleTab,
-  type SingleTab,
-  useTabStore,
-} from "./store";
+import { useTabStore } from "./store";
 
 const imageFileRegex = /\.(png|jpg|jpeg|gif|bmp|webp)$/i;
 
@@ -22,15 +17,13 @@ export default function App() {
     () => {},
   );
   const activeTabId = useTabStore((s) => s.activeTabId);
-  const activeTab = useTabStore((s) =>
-    activeTabId ? s.tabs.get(activeTabId) || null : null,
-  ); // Map based
+  const singleTabs = useTabStore((s) => s.singleTabs);
+  const comparisonTabs = useTabStore((s) => s.comparisonTabs);
+  const activeTab =
+    singleTabs[activeTabId] || comparisonTabs[activeTabId] || null;
   const addSingleTab = useTabStore((s) => s.addSingleTab);
   const setActiveTab = useTabStore((s) => s.setActiveTab);
   const updateSingleTab = useTabStore((s) => s.updateSingleTab);
-  const updateComparisonChildren = useTabStore(
-    (s) => s.updateComparisonChildren,
-  );
 
   const openImage = useCallback(
     (rawPath: string, newTab: boolean = false) => {
@@ -51,47 +44,42 @@ export default function App() {
         const idx = files.indexOf(rawPath);
 
         if (!activeTab || newTab) {
-          const id = addSingleTab(dir, files, idx >= 0 ? idx : 0);
+          const id = addSingleTab(files, idx >= 0 ? idx : 0, dir);
           // Ensure this new tab becomes active (addTab already sets active but explicit for clarity)
           setActiveTab(id);
-        } else if (isSingleTab(activeTab)) {
-          updateSingleTab(activeTab.id, {
-            directory: dir,
-            imageList: files,
-            currentIndex: idx >= 0 ? idx : 0,
-          });
-        } else if (isComparisonTab(activeTab)) {
-          const childId = activeTab.childrenOrder[activeTab.activeSlotIndex];
-          const oldChild = activeTab.children.get(childId);
-          if (!oldChild || !isSingleTab(oldChild)) return;
-          // Update the child tab inside the comparison tab
-          const modified: SingleTab = {
-            ...oldChild,
-            directory: dir,
-            imageList: files,
-            currentIndex: idx >= 0 ? idx : 0,
-          };
-          const newChildrenMap = new Map<string, SingleTab>();
-          activeTab.childrenOrder.forEach((cid) => {
-            newChildrenMap.set(
-              cid,
-              cid === childId
-                ? modified
-                : activeTab.children.get(cid)
-                  ? (activeTab.children.get(cid) as SingleTab)
-                  : oldChild,
-            );
-          });
-          updateComparisonChildren(activeTab.id, newChildrenMap);
+        } else {
+          const singleTab = singleTabs[activeTabId];
+          const comparisonTab = comparisonTabs[activeTabId];
+
+          if (singleTab) {
+            updateSingleTab(singleTab.id, {
+              directory: dir,
+              imageList: files,
+              currentIndex: idx >= 0 ? idx : 0,
+            });
+          } else if (comparisonTab) {
+            const childId =
+              comparisonTab.children[comparisonTab.activeSlotIndex];
+            const child = singleTabs[childId];
+            if (!child) return;
+            // Update the child tab inside the comparison tab
+            updateSingleTab(childId, {
+              directory: dir,
+              imageList: files,
+              currentIndex: idx >= 0 ? idx : 0,
+            });
+          }
         }
       });
     },
     [
       activeTab,
+      activeTabId,
+      singleTabs,
+      comparisonTabs,
       addSingleTab,
       setActiveTab,
       updateSingleTab,
-      updateComparisonChildren,
     ],
   );
 
@@ -134,7 +122,7 @@ export default function App() {
       const newTabListener = await listen("new-tab", (event) => {
         console.log("Received new-tab event:", event.payload);
 
-        addSingleTab(null, [], 0);
+        addSingleTab([], 0, null);
       });
 
       unlisteners.push(
@@ -158,10 +146,10 @@ export default function App() {
     <div className="w-screen h-screen overflow-hidden bg-[#27262B] text-[#D3DAD9]">
       <TabBar />
       <div className="h-full relative">
-        {activeTab && activeTab.type === "single" && <SingleView />}
+        {activeTab && singleTabs[activeTabId] && <SingleView />}
 
-        {activeTab && isComparisonTab(activeTab) && (
-          <ComparisonView tabId={activeTab.id} />
+        {activeTab && comparisonTabs[activeTabId] && (
+          <ComparisonView tabId={activeTabId} />
         )}
       </div>
     </div>
