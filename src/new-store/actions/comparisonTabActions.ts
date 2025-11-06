@@ -21,10 +21,18 @@ export const createComparisonTabActions: StateCreator<
       children,
       activeSlotIndex: activeSlotIndex ?? 0,
     };
+
     set((state) => {
       const newComparisonTabs = { ...state.comparisonTabs };
       newComparisonTabs[id] = tab;
+
+      const newSingleTabs = { ...state.singleTabs };
+      children.forEach((childId) => {
+        newSingleTabs[childId].parentId = id;
+      });
+
       return {
+        singleTabs: newSingleTabs,
         comparisonTabs: newComparisonTabs,
         tabOrder: [...state.tabOrder, id],
         activeTabId: id,
