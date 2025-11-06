@@ -40,4 +40,10 @@ export type TabStoreState = {
   reorderTab: (fromIndex: number, toIndex: number) => void;
   detachToSingleTab: (comparisonId: string, slotIndex: number) => void;
   detachAllChildren: (comparisonId: string) => void;
+  createComparisonFromSingleTabs: (ids: string[]) => void;
+  reorderComparisonChildren: (
+    comparisonId: string,
+    fromIndex: number,
+    toIndex: number,
+  ) => void;
 };
