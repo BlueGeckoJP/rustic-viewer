@@ -1,29 +1,26 @@
-// Common actions that apply to all tab types
-
 import type { StateCreator } from "zustand";
-import type { TabStore } from "../types";
+import type { TabStoreState } from "../types";
 
 export const createCommonActions: StateCreator<
-  TabStore,
+  TabStoreState,
   [],
   [],
-  Pick<TabStore, "removeTab" | "setActiveTab">
+  Pick<TabStoreState, "removeSingleTab" | "setActiveTab">
 > = (set) => ({
-  removeTab: (id) => {
+  removeSingleTab: (id) => {
     set((state) => {
-      const newTabs = new Map(state.tabs);
-      newTabs.delete(id);
+      const newTabs = { ...state.singleTabs };
+      delete newTabs[id];
       const newOrder = state.tabOrder.filter((tid) => tid !== id);
       const activeTabId =
         state.activeTabId === id
           ? newOrder.length > 0
             ? newOrder[newOrder.length - 1]
-            : null
+            : state.addSingleTab([], 0, null)
           : state.activeTabId;
-      return { tabs: newTabs, tabOrder: newOrder, activeTabId };
+      return { singleTabs: newTabs, activeTabId, tabOrder: newOrder };
     });
   },
-
   setActiveTab: (id) => {
     set({ activeTabId: id });
   },

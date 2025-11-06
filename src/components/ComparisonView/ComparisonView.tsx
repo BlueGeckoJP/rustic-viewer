@@ -1,6 +1,6 @@
 import type React from "react";
 import { useEffect } from "react";
-import { isComparisonTab, useTabStore } from "../../store";
+import { useTabStore } from "../../store";
 import SlotComponent from "./SlotComponent";
 
 type ComparisonViewProps = {
@@ -8,20 +8,21 @@ type ComparisonViewProps = {
 };
 
 export const ComparisonView: React.FC<ComparisonViewProps> = ({ tabId }) => {
-  const tab = useTabStore((s) => s.tabs.get(tabId) ?? null);
+  const tab = useTabStore((s) => s.comparisonTabs[tabId] || null);
+  const singleTabs = useTabStore((s) => s.singleTabs);
   const setActiveSlotIndex = useTabStore((s) => s.setActiveSlotIndex);
   const setCurrentIndex = useTabStore((s) => s.setCurrentIndex);
   const resetZoomAndPan = useTabStore((s) => s.resetZoomAndPan);
 
   // Arrow key navigation and keyboard shortcuts for active slot
   useEffect(() => {
-    if (!tab || !isComparisonTab(tab)) return;
+    if (!tab) return;
 
-    const { children, childrenOrder, activeSlotIndex } = tab;
+    const { children, activeSlotIndex } = tab;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      const activeChildId = childrenOrder[activeSlotIndex];
-      const activeChild = children.get(activeChildId);
+      const activeChildId = children[activeSlotIndex];
+      const activeChild = singleTabs[activeChildId];
 
       if (!activeChild || activeChild.imageList.length === 0) return;
 
@@ -41,12 +42,12 @@ export const ComparisonView: React.FC<ComparisonViewProps> = ({ tabId }) => {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [tab, setCurrentIndex, resetZoomAndPan]);
+  }, [tab, setCurrentIndex, resetZoomAndPan, singleTabs]);
 
-  if (!tab || !isComparisonTab(tab)) return null;
+  if (!tab) return null;
 
-  const { children, childrenOrder, activeSlotIndex } = tab;
-  const n = childrenOrder.length;
+  const { children, activeSlotIndex } = tab;
+  const n = children.length;
 
   // Basic layout rules (auto by number of children)
   let containerClass = "";
@@ -58,8 +59,8 @@ export const ComparisonView: React.FC<ComparisonViewProps> = ({ tabId }) => {
 
   return (
     <div className={`p-2 box-border w-full h-full ${containerClass}`}>
-      {childrenOrder.map((cid, idx) => {
-        const child = children.get(cid);
+      {children.map((cid, idx) => {
+        const child = singleTabs[cid];
         if (!child) return null;
         return (
           <button

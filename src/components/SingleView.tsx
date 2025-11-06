@@ -1,6 +1,6 @@
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
-import { isSingleTab, useTabStore } from "../store";
+import { useTabStore } from "../store";
 import loadImage from "../utils/imageLoader";
 import ImageCanvas from "./ImageCanvas";
 
@@ -21,15 +21,12 @@ const SingleView: React.FC<SingleViewProps> = (_props: SingleViewProps) => {
   // Store selectors
   const activeTabId = useTabStore((s) => s.activeTabId);
   const singleTab = useTabStore((s) =>
-    s.activeTabId ? s.getSingleTab(s.activeTabId) : null,
+    activeTabId ? s.singleTabs[activeTabId] || null : null,
   );
   const setCurrentIndex = useTabStore((s) => s.setCurrentIndex);
   const setZoom = useTabStore((s) => s.setZoom);
   const setPanOffset = useTabStore((s) => s.setPanOffset);
   const resetZoomAndPan = useTabStore((s) => s.resetZoomAndPan);
-  const activeTab = useTabStore((s) =>
-    activeTabId ? (s.tabs.get(activeTabId) ?? null) : null,
-  );
   const [rawPath, setRawPath] = useState<string>("");
 
   // Local view state
@@ -112,7 +109,7 @@ const SingleView: React.FC<SingleViewProps> = (_props: SingleViewProps) => {
   }, [singleTab, setCurrentIndex, resetZoomAndPan]);
 
   // Render nothing if the active tab is not a single tab
-  if (!activeTab || !isSingleTab(activeTab)) return null;
+  if (!singleTab) return null;
 
   return (
     <div className="group relative overflow-hidden flex flex-col bg-[#2F2E33] h-full w-full">
@@ -123,9 +120,9 @@ const SingleView: React.FC<SingleViewProps> = (_props: SingleViewProps) => {
           {fileName ? fileName.split("/").pop() : "(empty)"}
         </span>
         <span className="opacity-60">
-          {activeTab.imageList.length <= 0
+          {singleTab.imageList.length <= 0
             ? "No Images"
-            : `${activeTab.currentIndex + 1}/${activeTab.imageList.length}`}
+            : `${singleTab.currentIndex + 1}/${singleTab.imageList.length}`}
         </span>
 
         {/* Loading overlay */}
@@ -216,9 +213,9 @@ const SingleView: React.FC<SingleViewProps> = (_props: SingleViewProps) => {
             onClick={(e) => {
               e.stopPropagation();
               const next =
-                (activeTab.currentIndex - 1 + activeTab.imageList.length) %
-                activeTab.imageList.length;
-              setCurrentIndex(activeTab.id, next);
+                (singleTab.currentIndex - 1 + singleTab.imageList.length) %
+                singleTab.imageList.length;
+              setCurrentIndex(singleTab.id, next);
             }}
             type="button"
           >
@@ -229,8 +226,8 @@ const SingleView: React.FC<SingleViewProps> = (_props: SingleViewProps) => {
             onClick={(e) => {
               e.stopPropagation();
               const next =
-                (activeTab.currentIndex + 1) % activeTab.imageList.length;
-              setCurrentIndex(activeTab.id, next);
+                (singleTab.currentIndex + 1) % singleTab.imageList.length;
+              setCurrentIndex(singleTab.id, next);
             }}
             type="button"
           >

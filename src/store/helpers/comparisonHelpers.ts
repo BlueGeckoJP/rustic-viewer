@@ -1,51 +1,74 @@
-// Helper functions for comparison tab operations
+import type {
+  ComparisonTabState,
+  SingleTabState,
+  TabStoreState,
+} from "../types";
 
-import type { ComparisonTab, SingleTab, Tab } from "../types";
-
-// Helper: centralize the logic for updating a comparison tab after its children change
-// Works with the store's map-based tabs and childrenOrder representation.
-export function normalizeComparisonAfterChildrenChangeMap(
-  tabs: Map<string, Tab>,
-  tabOrder: string[],
+export function handleChildRemoval(
+  state: TabStoreState,
+  comparisonTab: ComparisonTabState,
   comparisonId: string,
-  comp: ComparisonTab,
-  newChildren: Map<string, SingleTab>,
-  newChildrenOrder: string[],
-  removedChildIndex?: number,
-): { tabs: Map<string, Tab>; tabOrder: string[]; activeTabId?: string } {
-  const outTabs = new Map(tabs);
-  const outOrder = [...tabOrder];
+  slotIndex: number,
+  newChildren: string[],
+  newSingleTabs: Record<string, SingleTabState>,
+): Partial<TabStoreState> {
+  if (newChildren.length === 0) {
+    // If no children left, remove the comparison tab
+    const newComparisonTabs = { ...state.comparisonTabs };
+    delete newComparisonTabs[comparisonId];
 
-  if (newChildrenOrder.length === 1) {
-    const remainingId = newChildrenOrder[0];
-    const remaining = newChildren.get(remainingId);
-    if (!remaining) return { tabs: outTabs, tabOrder: outOrder };
-    // Replace comparison with remaining single
-    outTabs.delete(comparisonId);
-    outTabs.set(remainingId, remaining);
-    const idx = outOrder.indexOf(comparisonId);
-    if (idx >= 0) outOrder.splice(idx, 1, remainingId);
-    else outOrder.push(remainingId);
-    return { tabs: outTabs, tabOrder: outOrder, activeTabId: remainingId };
-  } else if (newChildrenOrder.length === 0) {
-    // Remove comparison entirely
-    outTabs.delete(comparisonId);
-    const filtered = outOrder.filter((tid) => tid !== comparisonId);
-    return { tabs: outTabs, tabOrder: filtered };
-  } else {
-    const adjustedActive = Math.min(
-      comp.activeSlotIndex >= (removedChildIndex ?? 0)
-        ? comp.activeSlotIndex - 1
-        : comp.activeSlotIndex,
-      newChildrenOrder.length - 1,
-    );
-    const newComp: ComparisonTab = {
-      ...comp,
-      children: new Map(newChildren),
-      childrenOrder: [...newChildrenOrder],
-      activeSlotIndex: adjustedActive,
+    const newTabOrder = state.tabOrder.filter((id) => id !== comparisonId);
+    const nextActiveTabId = newTabOrder[0] || state.addSingleTab([], 0, null);
+
+    return {
+      singleTabs: newSingleTabs,
+      comparisonTabs: newComparisonTabs,
+      tabOrder: newTabOrder,
+      activeTabId: nextActiveTabId,
     };
-    outTabs.set(comparisonId, newComp);
-    return { tabs: outTabs, tabOrder: outOrder };
+  } else if (newChildren.length === 1) {
+    // If one child left, convert to single tab
+    const remainingChildId = newChildren[0];
+    const remainingChild = state.singleTabs[remainingChildId];
+    if (remainingChild) {
+      newSingleTabs[remainingChildId] = {
+        ...remainingChild,
+        parentId: null,
+      };
+    }
+
+    const newComparisonTabs = { ...state.comparisonTabs };
+    delete newComparisonTabs[comparisonId];
+
+    const newTabOrder = state.tabOrder.filter((id) => id !== comparisonId);
+
+    return {
+      singleTabs: newSingleTabs,
+      comparisonTabs: newComparisonTabs,
+      tabOrder: newTabOrder,
+      activeTabId: remainingChildId,
+    };
+  } else {
+    // More than one child left, just update comparison tab
+    const adjustedActiveSlotIndex = Math.min(
+      comparisonTab.activeSlotIndex >= slotIndex
+        ? comparisonTab.activeSlotIndex - 1
+        : comparisonTab.activeSlotIndex,
+      newChildren.length - 1,
+    );
+
+    const newComparisonTabs = {
+      ...state.comparisonTabs,
+      [comparisonId]: {
+        ...comparisonTab,
+        children: newChildren,
+        activeSlotIndex: adjustedActiveSlotIndex,
+      },
+    };
+
+    return {
+      singleTabs: newSingleTabs,
+      comparisonTabs: newComparisonTabs,
+    };
   }
 }

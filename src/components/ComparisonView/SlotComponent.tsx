@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { isComparisonTab, useTabStore } from "../../store";
+import { useTabStore } from "../../store";
 import loadImage from "../../utils/imageLoader";
 import ImageCanvas from "../ImageCanvas";
 
@@ -23,7 +23,8 @@ const SlotComponent: React.FC<SlotComponentProps> = ({
     null,
   );
 
-  const tab = useTabStore((s) => s.tabs.get(tabId) ?? null);
+  const tab = useTabStore((s) => s.comparisonTabs[tabId] || null);
+  const singleTabs = useTabStore((s) => s.singleTabs);
   const setCurrentIndex = useTabStore((s) => s.setCurrentIndex);
   const setZoom = useTabStore((s) => s.setZoom);
   const setPanOffset = useTabStore((s) => s.setPanOffset);
@@ -66,8 +67,8 @@ const SlotComponent: React.FC<SlotComponentProps> = ({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [childId, resetZoomAndPan]);
 
-  if (!tab || !isComparisonTab(tab)) return null;
-  const child = tab.children.get(childId) ?? null;
+  if (!tab) return null;
+  const child = singleTabs[childId] ?? null;
   if (!child) return null;
 
   return (

@@ -1,69 +1,43 @@
-// Type definitions for the tab store
-
-export type Tab = SingleTab | ComparisonTab;
-
-export type SingleTab = {
+export type SingleTabState = {
   id: string;
-  type: "single";
+  parentId: string | null;
   directory: string | null;
   imageList: string[];
   currentIndex: number;
-  zoom: number; // 1.0 = 100%, 2.0 = 200%, etc.
-  panOffset: { x: number; y: number }; // Pan offset in CSS pixels
+  zoom: number;
+  panOffset: { x: number; y: number };
 };
 
-export type ComparisonTab = {
+export type ComparisonTabState = {
   id: string;
-  type: "comparison";
-  // children stored in insertion-ordered Map keyed by child id
-  children: Map<string, SingleTab>;
-  // ordering for children (explicit order kept – Map preserves insertion but this stays authoritative)
-  childrenOrder: string[];
+  children: string[];
   activeSlotIndex: number;
-  // Future: layoutMode?: 'auto' | 'row' | 'grid2x2';
-  // Future: sync?: { zoom?: boolean; pan?: boolean };
 };
 
-export type TabStore = {
-  // tabs keyed by id
-  tabs: Map<string, Tab>;
-  // ordering for top-level tabs
+export type TabStoreState = {
+  singleTabs: Record<string, SingleTabState>;
+  comparisonTabs: Record<string, ComparisonTabState>;
   tabOrder: string[];
-  activeTabId: string | null;
+  activeTabId: string;
   addSingleTab: (
-    directory: string | null,
     imageList: string[],
     currentIndex: number,
+    directory: string | null,
   ) => string;
-  addComparisonTab: (children: SingleTab[], activeSlotIndex: number) => string;
-  // Creates a comparison tab by moving the selected single tabs into it
-  createComparisonFromSingleIds: (ids: string[]) => string | null;
-  removeTab: (id: string) => void;
-  getSingleTab: (id: string) => SingleTab | null;
-  getComparisonTab: (id: string) => ComparisonTab | null;
+  addComparisonTab: (
+    childrenIds: string[],
+    activeSlotIndex: number | null,
+  ) => string;
+  removeSingleTab: (id: string) => void;
+  removeChild: (comparisonId: string, slotIndex: number) => void;
   setCurrentIndex: (id: string, index: number) => void;
-  updateSingleTab: (id: string, tab: Partial<SingleTab>) => void;
+  updateSingleTab: (id: string, tab: Partial<SingleTabState>) => void;
   setZoom: (id: string, zoom: number) => void;
   setPanOffset: (id: string, offset: { x: number; y: number }) => void;
   resetZoomAndPan: (id: string) => void;
   setActiveTab: (id: string) => void;
   setActiveSlotIndex: (id: string, slotIndex: number) => void;
-  updateComparisonChildren: (
-    id: string,
-    children: Map<string, SingleTab>,
-  ) => void;
   reorderTab: (fromIndex: number, toIndex: number) => void;
-  // --- New child management APIs (Level 2) ---
-  reorderComparisonChildren: (
-    comparisonId: string,
-    fromIndex: number,
-    toIndex: number,
-  ) => void;
-  detachChildToTopLevel: (
-    comparisonId: string,
-    childId: string,
-    insertAfterParent?: boolean,
-  ) => void;
-  removeChildFromComparison: (comparisonId: string, childId: string) => void;
+  detachToSingleTab: (comparisonId: string, slotIndex: number) => void;
   detachAllChildren: (comparisonId: string) => void;
 };
