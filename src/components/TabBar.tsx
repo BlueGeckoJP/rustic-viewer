@@ -1,23 +1,27 @@
 import type React from "react";
 import { useRef, useState } from "react";
 import useTabMove from "../hooks/useTabMove";
-import { isComparisonTab, isSingleTab, type Tab, useTabStore } from "../store";
+import {
+  type ComparisonTabState,
+  type SingleTabState,
+  useTabStore,
+} from "../store";
 import ContextMenu, { type ContextMenuItem } from "./ContextMenu";
 
 const CHILD_PREFIX = "::child::";
 
 const TabBar = () => {
   const tabBarRef = useRef<HTMLDivElement | null>(null);
-  const tabsMap = useTabStore((s) => s.tabs);
+  const singleTabs = useTabStore((s) => s.singleTabs);
+  const comparisonTabs = useTabStore((s) => s.comparisonTabs);
   const tabOrder = useTabStore((s) => s.tabOrder);
-  const tabs = tabOrder.map((id) => tabsMap.get(id)).filter(Boolean) as Tab[];
   const activeTabId = useTabStore((s) => s.activeTabId);
   const setActiveTab = useTabStore((s) => s.setActiveTab);
-  const removeTab = useTabStore((s) => s.removeTab);
-  const createComparison = useTabStore((s) => s.createComparisonFromSingleIds);
+  const removeSingleTab = useTabStore((s) => s.removeSingleTab);
+  const createComparison = useTabStore((s) => s.createComparisonFromSingleTabs);
   const addSingleTab = useTabStore((s) => s.addSingleTab);
-  const detachChild = useTabStore((s) => s.detachChildToTopLevel);
-  const removeChild = useTabStore((s) => s.removeChildFromComparison);
+  const detachChild = useTabStore((s) => s.detachToSingleTab);
+  const removeChild = useTabStore((s) => s.removeChild);
   const reorderChildren = useTabStore((s) => s.reorderComparisonChildren);
   const setActiveSlotIndex = useTabStore((s) => s.setActiveSlotIndex);
   const detachAllChildren = useTabStore((s) => s.detachAllChildren);
@@ -54,7 +58,7 @@ const TabBar = () => {
     if (e.shiftKey && lastClickedIndexRef.current != null) {
       const start = Math.min(lastClickedIndexRef.current, index);
       const end = Math.max(lastClickedIndexRef.current, index);
-      const ids = tabs.slice(start, end + 1).map((t) => t.id);
+      const ids = tabOrder.slice(start, end + 1);
       setSelectedIds(new Set(ids));
       return;
     }
@@ -66,12 +70,19 @@ const TabBar = () => {
   const [menuOpenFor, setMenuOpenFor] = useState<string | null>(null);
   const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
 
-  const getLabel = (tab: Tab) => {
-    if (isComparisonTab(tab)) {
-      return `Compare (${tab.childrenOrder.length})`;
+  const getLabel = (
+    tab: SingleTabState | ComparisonTabState,
+    type: "single" | "comparison",
+  ) => {
+    if (type === "comparison") {
+      const compTab = tab as ComparisonTabState;
+      return `Compare (${compTab.children.length})`;
     }
-    if (isSingleTab(tab) && tab.imageList?.length > 0) {
-      const base = tab.imageList[tab.currentIndex]?.split("/").pop();
+    const singleTab = tab as SingleTabState;
+    if (singleTab.imageList?.length > 0) {
+      const base = singleTab.imageList[singleTab.currentIndex]
+        ?.split("/")
+        .pop();
       return base || "Untitled";
     }
     return "New Tab";
@@ -87,8 +98,8 @@ const TabBar = () => {
       { id: "close-others", label: "Close Others" },
       { id: "close-right", label: "Close Tabs to Right" },
     ];
-    const singleSelectedCount = tabs.filter(
-      (t) => t.type === "single" && selectedIds.has(t.id),
+    const singleSelectedCount = tabOrder.filter(
+      (id) => singleTabs[id] && selectedIds.has(id),
     ).length;
     if (singleSelectedCount >= 2) {
       contextItems.unshift({
@@ -98,8 +109,8 @@ const TabBar = () => {
     }
     // Add comparison-specific actions if target is a comparison
     if (menuOpenFor) {
-      const target = tabsMap.get(menuOpenFor);
-      if (target && isComparisonTab(target)) {
+      const target = comparisonTabs[menuOpenFor];
+      if (target) {
         contextItems.push({ id: "detach-all", label: "Detach All Children" });
         contextItems.push({
           id: "toggle-expand",
@@ -146,14 +157,19 @@ const TabBar = () => {
           aria-orientation="vertical"
           className="flex flex-col gap-2"
         >
-          {tabs.map((tab, idx) => {
-            const label = getLabel(tab);
-            const active = tab.id === activeTabId;
-            const selected = selectedIds.has(tab.id);
-            const isComp = isComparisonTab(tab);
-            const expanded = isComp && expandedComparisonIds.has(tab.id);
+          {tabOrder.map((tabId, idx) => {
+            const singleTab = singleTabs[tabId];
+            const comparisonTab = comparisonTabs[tabId];
+            if (!singleTab && !comparisonTab) return null;
+
+            const isComp = !!comparisonTab;
+            const tab = isComp ? comparisonTab : singleTab;
+            const label = getLabel(tab, isComp ? "comparison" : "single");
+            const active = tabId === activeTabId;
+            const selected = selectedIds.has(tabId);
+            const expanded = isComp && expandedComparisonIds.has(tabId);
             return (
-              <div key={tab.id} className="flex flex-col gap-1">
+              <div key={tabId} className="flex flex-col gap-1">
                 {/** biome-ignore lint/a11y/useKeyWithClickEvents: Currently only mouse support is available. Key bindings will be added later if needed */}
                 <div
                   role="tab"
@@ -161,8 +177,8 @@ const TabBar = () => {
                   aria-selected={active}
                   aria-label={label}
                   onMouseDown={(e) => {
-                    toggleSelect(tab.id, idx, e);
-                    tabMove.onTabMouseDown(e, tab.id);
+                    toggleSelect(tabId, idx, e);
+                    tabMove.onTabMouseDown(e, tabId);
                   }}
                   onClick={(e) => {
                     if (tabMove.draggingId) e.preventDefault();
@@ -170,7 +186,7 @@ const TabBar = () => {
                   onContextMenu={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    setMenuOpenFor(tab.id);
+                    setMenuOpenFor(tabId);
                     setMenuPos({ x: e.clientX, y: e.clientY });
                   }}
                   className={`flex items-center gap-2 cursor-pointer select-none px-2 transition-colors duration-150 min-w-0 rounded-xl text-[#D3DAD9] ${
@@ -180,14 +196,14 @@ const TabBar = () => {
                         ? "bg-[#44444E]"
                         : "hover:bg-[#44444E]"
                   }`}
-                  ref={(el) => tabMove.registerTabRef(tab.id, el)}
+                  ref={(el) => tabMove.registerTabRef(tabId, el)}
                 >
                   {isComp && (
                     <button
                       className="text-xs px-1 py-0.5 rounded hover:bg-[#555]"
                       onClick={(e) => {
                         e.stopPropagation();
-                        toggleExpanded(tab.id);
+                        toggleExpanded(tabId);
                       }}
                       aria-label={
                         expanded ? "Collapse comparison" : "Expand comparison"
@@ -206,19 +222,23 @@ const TabBar = () => {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (activeTabId === tab.id) {
-                        const currentIndex = tabOrder.indexOf(tab.id);
+                      if (activeTabId === tabId) {
+                        const currentIndex = tabOrder.indexOf(tabId);
                         const nextTabId =
                           tabOrder[
                             Math.min(tabOrder.length - 1, currentIndex + 1)
                           ];
                         if (nextTabId) setActiveTab(nextTabId);
                       }
-                      removeTab(tab.id);
+                      if (singleTab) {
+                        removeSingleTab(tabId);
+                      } else if (comparisonTab) {
+                        detachAllChildren(tabId);
+                      }
                       setSelectedIds((prev) => {
-                        if (!prev.has(tab.id)) return prev;
+                        if (!prev.has(tabId)) return prev;
                         const n = new Set(prev);
-                        n.delete(tab.id);
+                        n.delete(tabId);
                         return n;
                       });
                     }}
@@ -229,17 +249,17 @@ const TabBar = () => {
                     ✕
                   </button>
                 </div>
-                {isComp && expanded && (
+                {isComp && expanded && comparisonTab && (
                   <div className="flex flex-col gap-1 pl-6 pr-1">
-                    {tab.childrenOrder.map((childId, cIdx) => {
-                      const child = tab.children.get(childId);
+                    {comparisonTab.children.map((childId, cIdx) => {
+                      const child = singleTabs[childId];
                       if (!child) return null;
-                      const file = child?.imageList[child?.currentIndex];
+                      const file = child.imageList[child.currentIndex];
                       const childActive =
-                        active && tab.activeSlotIndex === cIdx;
+                        active && comparisonTab.activeSlotIndex === cIdx;
                       return (
                         <button
-                          key={child?.id}
+                          key={childId}
                           className={`group flex items-center gap-2 text-xs rounded-lg px-2 py-1 cursor-pointer min-w-0 transition-colors ${
                             childActive
                               ? "bg-[#4F4E58] ring-1 ring-[#715A5A]"
@@ -247,15 +267,13 @@ const TabBar = () => {
                           }`}
                           onClick={(e) => {
                             e.stopPropagation();
-                            setActiveTab(tab.id);
-                            setActiveSlotIndex(tab.id, cIdx);
+                            setActiveTab(tabId);
+                            setActiveSlotIndex(tabId, cIdx);
                           }}
                           onContextMenu={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            setMenuOpenFor(
-                              `${tab.id}${CHILD_PREFIX}${child?.id}`,
-                            );
+                            setMenuOpenFor(`${tabId}${CHILD_PREFIX}${childId}`);
                             setMenuPos({ x: e.clientX, y: e.clientY });
                           }}
                           type="button"
@@ -264,8 +282,7 @@ const TabBar = () => {
                             {file ? file.split("/").pop() : "(empty)"}
                           </span>
                           <span className="opacity-50 text-[10px]">
-                            {child?.currentIndex ? child?.currentIndex + 1 : 0}/
-                            {child?.imageList.length}
+                            {child.currentIndex + 1}/{child.imageList.length}
                           </span>
                         </button>
                       );
@@ -290,25 +307,29 @@ const TabBar = () => {
 
             if (!childMode) {
               if (id === "create-comparison") {
-                const singleIds = tabs
-                  .filter((t) => t.type === "single" && selectedIds.has(t.id))
-                  .map((t) => t.id);
+                const singleIds = tabOrder.filter(
+                  (tid) => singleTabs[tid] && selectedIds.has(tid),
+                );
                 if (singleIds.length >= 2) {
                   createComparison(singleIds);
                 }
                 setSelectedIds(new Set());
               } else if (id === "new") {
-                addSingleTab(null, [], 0);
+                addSingleTab([], 0, null);
               } else if (id === "clone") {
-                const oldTab = tabsMap.get(targetId);
-                if (oldTab && isSingleTab(oldTab)) {
+                const oldTab = singleTabs[targetId];
+                if (oldTab) {
                   const newDirectory = oldTab.directory;
                   const newImageList = [...oldTab.imageList];
                   const newIndex = oldTab.currentIndex;
-                  addSingleTab(newDirectory, newImageList, newIndex);
+                  addSingleTab(newImageList, newIndex, newDirectory);
                 }
               } else if (id === "close") {
-                removeTab(targetId);
+                if (singleTabs[targetId]) {
+                  removeSingleTab(targetId);
+                } else if (comparisonTabs[targetId]) {
+                  detachAllChildren(targetId);
+                }
                 setSelectedIds((prev) => {
                   if (!prev.has(targetId)) return prev;
                   const n = new Set(prev);
@@ -316,15 +337,27 @@ const TabBar = () => {
                   return n;
                 });
               } else if (id === "close-others") {
-                tabs
-                  .filter((t) => t.id !== targetId)
-                  .map((t) => removeTab(t.id));
+                tabOrder
+                  .filter((tid) => tid !== targetId)
+                  .forEach((tid) => {
+                    if (singleTabs[tid]) {
+                      removeSingleTab(tid);
+                    } else if (comparisonTabs[tid]) {
+                      detachAllChildren(tid);
+                    }
+                  });
                 setSelectedIds(new Set([targetId]));
                 setActiveTab(targetId);
               } else if (id === "close-right") {
-                const idx = tabs.findIndex((t) => t.id === targetId);
+                const idx = tabOrder.indexOf(targetId);
                 if (idx >= 0) {
-                  tabs.slice(idx + 1).map((t) => removeTab(t.id));
+                  tabOrder.slice(idx + 1).forEach((tid) => {
+                    if (singleTabs[tid]) {
+                      removeSingleTab(tid);
+                    } else if (comparisonTabs[tid]) {
+                      detachAllChildren(tid);
+                    }
+                  });
                 }
               } else if (id === "detach-all") {
                 detachAllChildren(targetId);
@@ -334,9 +367,9 @@ const TabBar = () => {
             } else {
               // Child actions
               const [parentId, childId] = targetId.split(CHILD_PREFIX);
-              const parent = tabsMap.get(parentId);
-              if (!parent || !isComparisonTab(parent)) return;
-              const childIndex = parent.childrenOrder.indexOf(childId);
+              const parent = comparisonTabs[parentId];
+              if (!parent) return;
+              const childIndex = parent.children.indexOf(childId);
               if (childIndex < 0) return;
 
               if (id === "activate") {
@@ -346,12 +379,12 @@ const TabBar = () => {
                 if (childIndex > 0)
                   reorderChildren(parent.id, childIndex, childIndex - 1);
               } else if (id === "move-down") {
-                if (childIndex < parent.childrenOrder.length - 1)
+                if (childIndex < parent.children.length - 1)
                   reorderChildren(parent.id, childIndex, childIndex + 1);
               } else if (id === "detach") {
-                detachChild(parent.id, childId, true);
+                detachChild(parent.id, childIndex);
               } else if (id === "remove") {
-                removeChild(parent.id, childId);
+                removeChild(parent.id, childIndex);
               }
             }
 
