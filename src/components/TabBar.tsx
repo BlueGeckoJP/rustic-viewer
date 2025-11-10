@@ -190,7 +190,7 @@ const TabBar = () => {
                     setMenuOpenFor(tabId);
                     setMenuPos({ x: e.clientX, y: e.clientY });
                   }}
-                  className={`flex items-center gap-2 cursor-pointer select-none px-2 transition-colors duration-150 min-w-0 rounded-xl text-[#D3DAD9] ${
+                  className={`flex items-center gap-2 cursor-pointer select-none px-2 py-1 transition-colors duration-150 min-w-0 rounded-xl text-[#D3DAD9] ${
                     active
                       ? "shadow-md bg-[#44444E] ring-2 ring-[#715A5A]"
                       : selected
@@ -244,7 +244,7 @@ const TabBar = () => {
                       });
                     }}
                     aria-label={`Close ${label}`}
-                    className="ml-1 text-[#D3DAD9] hover:text-white p-1 rounded"
+                    className="ml-1 text-[#D3DAD9] hover:text-white hover:bg-[#37353E] px-1 rounded-lg"
                     type="button"
                   >
                     ✕
