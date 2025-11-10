@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 
 export type ContextMenuItem = {
   id: string;
@@ -47,7 +48,7 @@ const ContextMenu = ({ x, y, items, onSelect, onClose }: ContextMenuProps) => {
     minWidth: 160,
   };
 
-  return (
+  return createPortal(
     <div ref={ref} style={style} role="menu" aria-label="Tab context menu">
       {items.map((it) => (
         // biome-ignore lint/a11y/useKeyWithClickEvents: Tab focus alone is sufficient for now
@@ -69,7 +70,8 @@ const ContextMenu = ({ x, y, items, onSelect, onClose }: ContextMenuProps) => {
           {it.label}
         </div>
       ))}
-    </div>
+    </div>,
+    document.body,
   );
 };
 
