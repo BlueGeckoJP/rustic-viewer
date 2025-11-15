@@ -41,8 +41,13 @@ pnpm tauri dev
 ## Build
 
 ```bash
-# Build for production
+# Build and bundle for AppImage, .deb, .rpm
 pnpm tauri build
+
+# Build only
+# If you are unable to build and bundle due to AppImage errors or similar issues,
+# please use this instead
+pnpm tauri build --no-bundle
 ```
 
 The built application will be output to `src-tauri/target/release`.
