@@ -38,6 +38,9 @@ importers:
       uuid:
         specifier: ^11.1.0
         version: 11.1.0
+      zundo:
+        specifier: ^2.3.0
+        version: 2.3.0(zustand@5.0.8(@types/react@19.2.2)(react@19.2.0))
       zustand:
         specifier: ^5.0.8
         version: 5.0.8(@types/react@19.2.2)(react@19.2.0)
@@ -2401,6 +2404,11 @@ packages:
   yocto-queue@0.1.0:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
+
+  zundo@2.3.0:
+    resolution: {integrity: sha512-4GXYxXA17SIKYhVbWHdSEU04P697IMyVGXrC2TnzoyohEAWytFNOKqOp5gTGvaW93F/PM5Y0evbGtOPF0PWQwQ==}
+    peerDependencies:
+      zustand: ^4.3.0 || ^5.0.0
 
   zustand@5.0.8:
     resolution: {integrity: sha512-gyPKpIaxY9XcO2vSMrLbiER7QMAMGOQZVRdJ6Zi782jkbzZygq5GI9nG8g+sMgitRtndwaBSl7uiqC49o1SSiw==}
@@ -4778,6 +4786,10 @@ snapshots:
       yargs-parser: 21.1.1
 
   yocto-queue@0.1.0: {}
+
+  zundo@2.3.0(zustand@5.0.8(@types/react@19.2.2)(react@19.2.0)):
+    dependencies:
+      zustand: 5.0.8(@types/react@19.2.2)(react@19.2.0)
 
   zustand@5.0.8(@types/react@19.2.2)(react@19.2.0):
     optionalDependencies:
