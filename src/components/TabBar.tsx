@@ -1,5 +1,5 @@
 import type React from "react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import useTabMove from "../hooks/useTabMove";
 import {
   type ComparisonTabState,
@@ -26,6 +26,11 @@ const TabBar = () => {
   const setActiveSlotIndex = useTabStore((s) => s.setActiveSlotIndex);
   const detachAllChildren = useTabStore((s) => s.detachAllChildren);
 
+  const { undo, redo, pastStates, futureStates } =
+    useTabStore.temporal.getState();
+  const canUndo = pastStates.length > 0;
+  const canRedo = futureStates.length > 0;
+
   const [isOpen, setIsOpen] = useState(true);
   const [expandedComparisonIds, setExpandedComparisonIds] = useState<
     Set<string>
@@ -39,6 +44,31 @@ const TabBar = () => {
     });
   };
   const tabMove = useTabMove({ tabBarRef, gap: 8, isOpen });
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
+        switch (e.shiftKey) {
+          case true:
+            // Redo (Ctrl/Cmd + Shift + Z)
+            e.preventDefault();
+            if (canRedo) redo();
+            break;
+
+          case false:
+            // Undo (Ctrl/Cmd + Z)
+            e.preventDefault();
+            if (canUndo) undo();
+            break;
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [undo, redo, canUndo, canRedo]);
 
   // Multi-selection state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
