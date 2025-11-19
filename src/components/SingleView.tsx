@@ -79,6 +79,7 @@ const SingleView: React.FC<SingleViewProps> = (_props: SingleViewProps) => {
     ) {
       setCurrentImage(null);
       setFileName(null);
+      setRawPath("");
       return;
     }
     const path = singleTab.imageList[singleTab.currentIndex];
