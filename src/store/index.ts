@@ -60,19 +60,50 @@ export const useTabStore = create<TabStoreState>()(
 );
 
 if (typeof window !== "undefined") {
-  let timer: number | null = null;
+  const key = "__rustic_viewer_persist__";
 
-  useTabStore.subscribe((state) => {
-    if (timer !== null) window.clearTimeout(timer);
-    timer = window.setTimeout(() => {
-      timer = null;
+  type Persist = {
+    timer: number | null;
+    unsubscribe?: () => void;
+    beforeUnload?: () => void;
+  };
+
+  const g = globalThis as unknown as Record<string, Persist | undefined>;
+
+  // Unload any previous persist handlers (HMR)
+  const prev = g[key];
+  if (prev?.timer != null) window.clearTimeout(prev.timer);
+  prev?.unsubscribe?.();
+  if (prev?.beforeUnload) {
+    window.removeEventListener("beforeunload", prev.beforeUnload);
+  }
+
+  // Set up new persist handlers
+  const persist: Persist = { timer: null };
+  g[key] = persist;
+
+  persist.unsubscribe = useTabStore.subscribe((state) => {
+    if (persist.timer != null) window.clearTimeout(persist.timer);
+    persist.timer = window.setTimeout(() => {
+      persist.timer = null;
       saveSession(state);
     }, 300);
   });
 
-  window.addEventListener("beforeunload", () => {
-    saveSession(useTabStore.getState());
-  });
+  persist.beforeUnload = () => saveSession(useTabStore.getState());
+  window.addEventListener("beforeunload", persist.beforeUnload);
+
+  // Handle HMR cleanup
+  if (import.meta.hot) {
+    import.meta.hot.dispose(() => {
+      if (persist.timer != null) window.clearTimeout(persist.timer);
+      persist.unsubscribe?.();
+      if (persist.beforeUnload) {
+        window.removeEventListener("beforeunload", persist.beforeUnload);
+      }
+      g[key] = undefined;
+    });
+  }
 }
 
 export type {
