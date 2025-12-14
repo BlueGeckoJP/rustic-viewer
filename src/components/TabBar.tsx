@@ -212,7 +212,9 @@ const TabBar = () => {
                     tabMove.onTabMouseDown(e, tabId);
                   }}
                   onClick={(e) => {
-                    if (tabMove.draggingId) e.preventDefault();
+                    if (tabMove.draggingId) return;
+                    if (e.metaKey || e.ctrlKey || e.shiftKey) return;
+                    setActiveTab(tabId);
                   }}
                   onContextMenu={(e) => {
                     e.preventDefault();
@@ -253,13 +255,13 @@ const TabBar = () => {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
+                      let nextTabId: string | null = null;
                       if (activeTabId === tabId) {
                         const currentIndex = tabOrder.indexOf(tabId);
-                        const nextTabId =
+                        nextTabId =
                           tabOrder[
                             Math.min(tabOrder.length - 1, currentIndex + 1)
                           ];
-                        if (nextTabId) setActiveTab(nextTabId);
                       }
                       if (singleTab) {
                         removeSingleTab(tabId);
@@ -272,6 +274,7 @@ const TabBar = () => {
                         n.delete(tabId);
                         return n;
                       });
+                      if (nextTabId) setActiveTab(nextTabId);
                     }}
                     aria-label={`Close ${label}`}
                     className="ml-1 text-[#D3DAD9] hover:text-white hover:bg-[#37353E] px-1 rounded-lg"

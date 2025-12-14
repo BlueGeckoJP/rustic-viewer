@@ -46,6 +46,7 @@ export const useTabStore = create<TabStoreState>()(
           singleTabs: partialSingleTabs,
           comparisonTabs: state.comparisonTabs,
           tabOrder: state.tabOrder,
+          activeTabId: state.activeTabId,
         };
       },
       equality: (a, b) => {
