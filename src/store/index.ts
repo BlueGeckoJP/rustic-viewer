@@ -39,15 +39,13 @@ export const useTabStore = create<TabStoreState>()(
           singleTabs: partialSingleTabs,
           comparisonTabs: state.comparisonTabs,
           tabOrder: state.tabOrder,
-          activeTabId: state.activeTabId,
         };
       },
       equality: (a, b) => {
         return (
           JSON.stringify(a.singleTabs) === JSON.stringify(b.singleTabs) &&
           a.comparisonTabs === b.comparisonTabs &&
-          a.tabOrder === b.tabOrder &&
-          a.activeTabId === b.activeTabId
+          a.tabOrder === b.tabOrder
         );
       },
     },
