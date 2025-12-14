@@ -25,7 +25,6 @@ export function saveSession(state: TabStoreState) {
     const singleTabs: PersistedSessionV1["singleTabs"] = {};
     for (const [id, tab] of Object.entries(state.singleTabs)) {
       singleTabs[id] = {
-        id: tab.id,
         parentId: tab.parentId,
         directory: tab.directory,
         currentIndex: tab.currentIndex,

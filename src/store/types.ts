@@ -72,7 +72,6 @@ export type TabStoreState = {
 };
 
 export type ReducedSingleTabState = {
-  id: string;
   parentId: string | null;
   directory: string | null;
   currentIndex: number;
