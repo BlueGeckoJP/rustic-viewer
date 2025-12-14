@@ -16,6 +16,8 @@ export default function App() {
   const openImageRef = useRef<(rawPath: string, newTab?: boolean) => void>(
     () => {},
   );
+  const updateImageListRef = useRef<(tabId: string) => void>(() => {});
+  const rebuiltRef = useRef<Set<string>>(new Set());
   const activeTabId = useTabStore((s) => s.activeTabId);
   const singleTabs = useTabStore((s) => s.singleTabs);
   const comparisonTabs = useTabStore((s) => s.comparisonTabs);
@@ -83,10 +85,35 @@ export default function App() {
     ],
   );
 
+  const updateImageList = useCallback(
+    (tabId: string) => {
+      const tab = singleTabs[tabId];
+      if (!tab || !tab.directory) return;
+
+      readDir(tab.directory).then((entries) => {
+        const files = entries
+          .filter((e) => e.isFile && !!e.name && imageFileRegex.test(e.name))
+          .map((e) => `${tab.directory}/${e.name}`)
+          .sort((a, b) =>
+            a.localeCompare(b, undefined, {
+              numeric: true,
+              sensitivity: "base",
+            }),
+          );
+
+        updateSingleTab(tab.id, {
+          imageList: files,
+        });
+      });
+    },
+    [singleTabs, updateSingleTab],
+  );
+
   // Expose openImage through ref for parent (App) to call from Tauri events
   useEffect(() => {
     openImageRef.current = openImage;
-  }, [openImage]);
+    updateImageListRef.current = updateImageList;
+  }, [openImage, updateImageList]);
 
   // Add Tauri event listeners for 'open-image' and 'new-tab' events
   useEffect(() => {
@@ -139,6 +166,23 @@ export default function App() {
       });
     };
   }, [addSingleTab]);
+
+  useEffect(() => {
+    for (const tab of Object.values(singleTabs)) {
+      if (!tab.directory) continue;
+      if (rebuiltRef.current.has(tab.id)) continue;
+      if (tab.imageList.length > 0) continue;
+
+      rebuiltRef.current.add(tab.id);
+
+      updateImageListRef.current(tab.id);
+      const idx = tab.imageList.indexOf(tab.imageList[tab.currentIndex]);
+      updateSingleTab(tab.id, {
+        imageList: tab.imageList,
+        currentIndex: idx >= 0 ? idx : 0,
+      });
+    }
+  });
 
   // Arrow key navigation handled inside SingleView
 
