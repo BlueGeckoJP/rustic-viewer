@@ -13,7 +13,7 @@ export function parseSession(): PersistedSessionV1 | null {
 
     return parsed;
   } catch {
-    console.log("Failed to parse session from localStorage");
+    console.error("Failed to parse session from localStorage");
     return null;
   }
 }
