@@ -176,11 +176,6 @@ export default function App() {
       rebuiltRef.current.add(tab.id);
 
       updateImageListRef.current(tab.id);
-      const idx = tab.imageList.indexOf(tab.imageList[tab.currentIndex]);
-      updateSingleTab(tab.id, {
-        imageList: tab.imageList,
-        currentIndex: idx >= 0 ? idx : 0,
-      });
     }
   });
 
