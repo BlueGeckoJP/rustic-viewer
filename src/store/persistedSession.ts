@@ -11,6 +11,16 @@ export function parseSession(): PersistedSessionV1 | null {
     const parsed = JSON.parse(raw) as PersistedSessionV1;
     if (!parsed || parsed.version !== 1) return null;
 
+    if (
+      !parsed.tabOrder ||
+      !parsed.activeTabId ||
+      !parsed.singleTabs ||
+      !parsed.comparisonTabs
+    ) {
+      console.error("Invalid session format: missing required fields");
+      return null;
+    }
+
     return parsed;
   } catch {
     console.error("Failed to parse session from localStorage");
