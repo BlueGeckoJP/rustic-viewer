@@ -177,7 +177,7 @@ export default function App() {
 
       updateImageListRef.current(tab.id);
     }
-  });
+  }, [singleTabs]);
 
   // Arrow key navigation handled inside SingleView
 
