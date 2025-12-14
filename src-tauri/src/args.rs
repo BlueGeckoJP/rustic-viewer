@@ -11,7 +11,7 @@ pub struct Args {
 }
 
 pub fn handle_args(app: &AppHandle, parsed: Args, source: &str) {
-    log::info!("Handling args from {}: {:?}", source, parsed);
+    log::debug!("Handling args from {}: {:?}", source, parsed);
     if let Some(path) = parsed.open {
         let state: tauri::State<StartupState> = app.state();
         state.enqueue_or_emit(app, &path);
