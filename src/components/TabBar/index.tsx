@@ -1,15 +1,15 @@
 import { useRef, useState } from "react";
-import useTabHotkeysUndoRedo from "../hooks/useTabHotkeysUndoRedo";
-import useTabMove from "../hooks/useTabMove";
-import useTabSelection from "../hooks/useTabSelection";
+import useTabHotkeysUndoRedo from "../../hooks/useTabHotkeysUndoRedo";
+import useTabMove from "../../hooks/useTabMove";
+import useTabSelection from "../../hooks/useTabSelection";
 import {
   type ComparisonTabState,
   type SingleTabState,
   useTabStore,
-} from "../store";
-import ComparisonChildList from "./TabBar/ComparisonChildList";
-import TabContextMenu from "./TabBar/TabContextMenu";
-import TabRow from "./TabBar/TabRow";
+} from "../../store";
+import ComparisonChildList from "./ComparisonChildList";
+import TabContextMenu from "./TabContextMenu";
+import TabRow from "./TabRow";
 
 const TabBar = () => {
   const tabBarRef = useRef<HTMLDivElement | null>(null);
