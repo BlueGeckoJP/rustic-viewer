@@ -1,7 +1,7 @@
-import type React from "react";
 import { useRef, useState } from "react";
 import useTabHotkeysUndoRedo from "../hooks/useTabHotkeysUndoRedo";
 import useTabMove from "../hooks/useTabMove";
+import useTabSelection from "../hooks/useTabSelection";
 import {
   type ComparisonTabState,
   type SingleTabState,
@@ -48,31 +48,9 @@ const TabBar = () => {
 
   useTabHotkeysUndoRedo({ canUndo, canRedo, undo, redo });
 
-  // Multi-selection state
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const lastClickedIndexRef = useRef<number | null>(null);
-
-  const toggleSelect = (tabId: string, index: number, e: React.MouseEvent) => {
-    if (e.metaKey || e.ctrlKey) {
-      setSelectedIds((prev) => {
-        const n = new Set(prev);
-        if (n.has(tabId)) n.delete(tabId);
-        else n.add(tabId);
-        return n;
-      });
-      lastClickedIndexRef.current = index;
-      return;
-    }
-    if (e.shiftKey && lastClickedIndexRef.current != null) {
-      const start = Math.min(lastClickedIndexRef.current, index);
-      const end = Math.max(lastClickedIndexRef.current, index);
-      const ids = tabOrder.slice(start, end + 1);
-      setSelectedIds(new Set(ids));
-      return;
-    }
-    setSelectedIds(new Set([tabId]));
-    lastClickedIndexRef.current = index;
-  };
+  const { selectedIDs, setSelectedIDs, toggleSelect } = useTabSelection({
+    tabOrder,
+  });
 
   // Context menu
   const [menuOpenFor, setMenuOpenFor] = useState<string | null>(null);
@@ -107,7 +85,7 @@ const TabBar = () => {
       { id: "close-right", label: "Close Tabs to Right" },
     ];
     const singleSelectedCount = tabOrder.filter(
-      (id) => singleTabs[id] && selectedIds.has(id),
+      (id) => singleTabs[id] && selectedIDs.has(id),
     ).length;
     if (singleSelectedCount >= 2) {
       contextItems.unshift({
@@ -175,7 +153,7 @@ const TabBar = () => {
             const tab = isComp ? comparisonTab : singleTab;
             const label = getLabel(tab, isComp ? "comparison" : "single");
             const active = tabId === activeTabId;
-            const selected = selectedIds.has(tabId);
+            const selected = selectedIDs.has(tabId);
             const expanded = isComp && expandedComparisonIds.has(tabId);
             return (
               <div key={tabId} className="flex flex-col gap-1">
@@ -246,7 +224,7 @@ const TabBar = () => {
                       } else if (comparisonTab) {
                         detachAllChildren(tabId);
                       }
-                      setSelectedIds((prev) => {
+                      setSelectedIDs((prev) => {
                         if (!prev.has(tabId)) return prev;
                         const n = new Set(prev);
                         n.delete(tabId);
@@ -320,12 +298,12 @@ const TabBar = () => {
             if (!childMode) {
               if (id === "create-comparison") {
                 const singleIds = tabOrder.filter(
-                  (tid) => singleTabs[tid] && selectedIds.has(tid),
+                  (tid) => singleTabs[tid] && selectedIDs.has(tid),
                 );
                 if (singleIds.length >= 2) {
                   createComparison(singleIds);
                 }
-                setSelectedIds(new Set());
+                setSelectedIDs(new Set());
               } else if (id === "new") {
                 addSingleTab([], 0, null);
               } else if (id === "clone") {
@@ -342,7 +320,7 @@ const TabBar = () => {
                 } else if (comparisonTabs[targetId]) {
                   detachAllChildren(targetId);
                 }
-                setSelectedIds((prev) => {
+                setSelectedIDs((prev) => {
                   if (!prev.has(targetId)) return prev;
                   const n = new Set(prev);
                   n.delete(targetId);
@@ -358,7 +336,7 @@ const TabBar = () => {
                       detachAllChildren(tid);
                     }
                   });
-                setSelectedIds(new Set([targetId]));
+                setSelectedIDs(new Set([targetId]));
                 setActiveTab(targetId);
               } else if (id === "close-right") {
                 const idx = tabOrder.indexOf(targetId);
