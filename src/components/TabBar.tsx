@@ -1,5 +1,6 @@
 import type React from "react";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
+import useTabHotkeysUndoRedo from "../hooks/useTabHotkeysUndoRedo";
 import useTabMove from "../hooks/useTabMove";
 import {
   type ComparisonTabState,
@@ -45,30 +46,7 @@ const TabBar = () => {
   };
   const tabMove = useTabMove({ tabBarRef, gap: 8, isOpen });
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
-        switch (e.shiftKey) {
-          case true:
-            // Redo (Ctrl/Cmd + Shift + Z)
-            e.preventDefault();
-            if (canRedo) redo();
-            break;
-
-          case false:
-            // Undo (Ctrl/Cmd + Z)
-            e.preventDefault();
-            if (canUndo) undo();
-            break;
-        }
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [undo, redo, canUndo, canRedo]);
+  useTabHotkeysUndoRedo({ canUndo, canRedo, undo, redo });
 
   // Multi-selection state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
