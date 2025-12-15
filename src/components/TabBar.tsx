@@ -7,9 +7,8 @@ import {
   type SingleTabState,
   useTabStore,
 } from "../store";
-import TabContextMenu from "./TabContextMenu";
-
-const CHILD_PREFIX = "::child::";
+import TabContextMenu from "./TabBar/TabContextMenu";
+import ComparisonChildList from "./TabBar/ComparisonChildList";
 
 const TabBar = () => {
   const tabBarRef = useRef<HTMLDivElement | null>(null);
@@ -193,46 +192,18 @@ const TabBar = () => {
                     ✕
                   </button>
                 </div>
-                {isComp && expanded && comparisonTab && (
-                  <div className="flex flex-col gap-1 pl-6 pr-1">
-                    {comparisonTab.children.map((childId, cIdx) => {
-                      const child = singleTabs[childId];
-                      if (!child) return null;
-                      const file = child.imageList[child.currentIndex];
-                      const childActive =
-                        active && comparisonTab.activeSlotIndex === cIdx;
-                      return (
-                        <button
-                          key={childId}
-                          className={`group flex items-center gap-2 text-xs rounded-lg px-2 py-1 cursor-pointer min-w-0 transition-colors ${
-                            childActive
-                              ? "bg-[#4F4E58] ring-1 ring-[#715A5A]"
-                              : "hover:bg-[#44444E]"
-                          }`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setActiveTab(tabId);
-                            setActiveSlotIndex(tabId, cIdx);
-                          }}
-                          onContextMenu={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            setMenuOpenFor(`${tabId}${CHILD_PREFIX}${childId}`);
-                            setMenuPos({ x: e.clientX, y: e.clientY });
-                          }}
-                          type="button"
-                        >
-                          <span className="truncate flex-1" title={file}>
-                            {file ? file.split("/").pop() : "(empty)"}
-                          </span>
-                          <span className="opacity-50 text-[10px]">
-                            {child.currentIndex + 1}/{child.imageList.length}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
+                <ComparisonChildList
+                  isComp={isComp}
+                  expanded={expanded}
+                  comparisonTab={comparisonTab}
+                  singleTabs={singleTabs}
+                  active={active}
+                  tabId={tabId}
+                  setActiveTab={setActiveTab}
+                  setActiveSlotIndex={setActiveSlotIndex}
+                  setMenuOpenFor={setMenuOpenFor}
+                  setMenuPos={setMenuPos}
+                />
               </div>
             );
           })}

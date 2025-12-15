@@ -1,6 +1,6 @@
 import type React from "react";
-import { useTabStore } from "../store";
-import ContextMenu, { type ContextMenuItem } from "./ContextMenu";
+import { useTabStore } from "../../store";
+import ContextMenu, { type ContextMenuItem } from "../ContextMenu";
 
 const CHILD_PREFIX = "::child::";
 
