@@ -1,7 +1,7 @@
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
+import useImageBitmap from "../hooks/useImageBitmap";
 import { useTabStore } from "../store";
-import loadImage from "../utils/imageLoader";
 import ImageCanvas from "./ImageCanvas";
 
 /**
@@ -39,36 +39,12 @@ const SingleView: React.FC<SingleViewProps> = (_props: SingleViewProps) => {
     null,
   );
 
-  useEffect(() => {
-    let alive = true;
-    // Slight delay to avoid flicker on fast loads
-    setTimeout(() => {
-      if (alive) setIsLoading(true);
-    }, 100);
-    loadImage(rawPath)
-      .then((img) => {
-        if (alive) {
-          setCurrentImage(img ?? null);
-          setFileName(rawPath);
-        }
-      })
-      .catch((e) => {
-        console.error("Failed to load image:", e);
-        if (alive) {
-          setCurrentImage(null);
-          setFileName(null);
-        }
-      })
-      .finally(() => {
-        if (alive) {
-          setIsLoading(false);
-          alive = false;
-        }
-      });
-    return () => {
-      alive = false;
-    };
-  }, [rawPath]);
+  useImageBitmap({
+    rawPath,
+    setCurrentImage,
+    setFileName,
+    setIsLoading,
+  });
 
   // When active single tab changes, load its current image
   useEffect(() => {
