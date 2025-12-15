@@ -46,6 +46,8 @@ const useImageBitmap = ({
       .finally(() => {
         if (alive) {
           setIsLoading(false);
+          // Removing alive = false causes isLoading to stay true
+          alive = false;
         }
       });
 
