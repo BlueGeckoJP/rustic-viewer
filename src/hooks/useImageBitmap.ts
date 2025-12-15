@@ -4,14 +4,12 @@ import loadImage from "../utils/imageLoader";
 export type useImageBitmapProps = {
   rawPath: string;
   setCurrentImage: React.Dispatch<React.SetStateAction<ImageBitmap | null>>;
-  setFileName: React.Dispatch<React.SetStateAction<string | null>>;
   setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 const useImageBitmap = ({
   rawPath,
   setCurrentImage,
-  setFileName,
   setIsLoading,
 }: useImageBitmapProps) => {
   useEffect(() => {
@@ -19,7 +17,6 @@ const useImageBitmap = ({
 
     if (rawPath === "") {
       setCurrentImage(null);
-      setFileName(null);
       setIsLoading(false);
       return;
     }
@@ -33,14 +30,12 @@ const useImageBitmap = ({
       .then((img) => {
         if (alive) {
           setCurrentImage(img ?? null);
-          setFileName(rawPath);
         }
       })
       .catch((e) => {
         console.error("Failed to load image:", e);
         if (alive) {
           setCurrentImage(null);
-          setFileName(null);
         }
       })
       .finally(() => {
@@ -55,7 +50,7 @@ const useImageBitmap = ({
       alive = false;
       clearTimeout(timeoutId);
     };
-  }, [rawPath, setCurrentImage, setFileName, setIsLoading]);
+  }, [rawPath, setCurrentImage, setIsLoading]);
 };
 
 export default useImageBitmap;

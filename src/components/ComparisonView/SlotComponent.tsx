@@ -16,7 +16,6 @@ const SlotComponent: React.FC<SlotComponentProps> = ({
   childId,
 }) => {
   const [imgData, setImgData] = useState<ImageBitmap | null>(null);
-  const [fileName, setFileName] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isPanning, setIsPanning] = useState<boolean>(false);
@@ -34,7 +33,6 @@ const SlotComponent: React.FC<SlotComponentProps> = ({
   useImageBitmap({
     rawPath,
     setCurrentImage: setImgData,
-    setFileName,
     setIsLoading,
   });
 
@@ -47,8 +45,8 @@ const SlotComponent: React.FC<SlotComponentProps> = ({
       <div
         className={`text-xs text-[#D3DAD9] flex items-center gap-2 w-full h-6 ${isLoading ? "bg-[#715A5A] transition-colors duration-300" : "bg-[#44444E]"}`}
       >
-        <span className="truncate mx-2" title={fileName ? fileName : "(empty)"}>
-          {fileName ? fileName.split("/").pop() : "(empty)"}
+        <span className="truncate mx-2" title={rawPath ? rawPath : "(empty)"}>
+          {rawPath ? rawPath.split("/").pop() : "(empty)"}
         </span>
         <span className="opacity-60">
           {child.currentIndex + 1}/{child.imageList.length}
