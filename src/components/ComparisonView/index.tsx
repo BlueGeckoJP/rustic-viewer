@@ -1,5 +1,5 @@
 import type React from "react";
-import { useEffect } from "react";
+import useViewHotkeys from "../../hooks/useViewHotkeys";
 import { useTabStore } from "../../store";
 import SlotComponent from "./SlotComponent";
 
@@ -11,42 +11,15 @@ export const ComparisonView: React.FC<ComparisonViewProps> = ({ tabId }) => {
   const tab = useTabStore((s) => s.comparisonTabs[tabId] || null);
   const singleTabs = useTabStore((s) => s.singleTabs);
   const setActiveSlotIndex = useTabStore((s) => s.setActiveSlotIndex);
-  const setCurrentIndex = useTabStore((s) => s.setCurrentIndex);
-  const resetZoomAndPan = useTabStore((s) => s.resetZoomAndPan);
 
   // Arrow key navigation and keyboard shortcuts for active slot
-  useEffect(() => {
-    if (!tab) return;
-
-    const { children, activeSlotIndex } = tab;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const activeChildId = children[activeSlotIndex];
-      const activeChild = singleTabs[activeChildId];
-
-      if (!activeChild || activeChild.imageList.length === 0) return;
-
-      const { imageList, currentIndex } = activeChild;
-
-      if (e.key === "ArrowRight") {
-        const next = (currentIndex + 1) % imageList.length;
-        setCurrentIndex(activeChild.id, next);
-      } else if (e.key === "ArrowLeft") {
-        const prev = (currentIndex - 1 + imageList.length) % imageList.length;
-        setCurrentIndex(activeChild.id, prev);
-      } else if (e.key === "0" && (e.ctrlKey || e.metaKey)) {
-        e.preventDefault();
-        resetZoomAndPan(activeChild.id);
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [tab, setCurrentIndex, resetZoomAndPan, singleTabs]);
+  const { children, activeSlotIndex } = tab;
+  const activeChildId = children[activeSlotIndex];
+  const activeChild = singleTabs[activeChildId];
+  useViewHotkeys({ singleTab: activeChild, setRawPath: () => {} });
 
   if (!tab) return null;
 
-  const { children, activeSlotIndex } = tab;
   const n = children.length;
 
   // Basic layout rules (auto by number of children)

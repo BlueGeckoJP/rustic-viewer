@@ -1,6 +1,7 @@
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import useImageBitmap from "../hooks/useImageBitmap";
+import useViewHotkeys from "../hooks/useViewHotkeys";
 import { useTabStore } from "../store";
 import ImageCanvas from "./ImageCanvas";
 
@@ -60,27 +61,7 @@ const SingleView: React.FC<SingleViewProps> = (_props: SingleViewProps) => {
   }, [singleTab]);
 
   // Arrow key navigation and keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!singleTab) return;
-      const { imageList, currentIndex } = singleTab;
-      if (imageList.length === 0) return;
-      if (e.key === "ArrowRight") {
-        const next = (currentIndex + 1) % imageList.length;
-        setCurrentIndex(singleTab.id, next);
-        setRawPath(imageList[next]);
-      } else if (e.key === "ArrowLeft") {
-        const prev = (currentIndex - 1 + imageList.length) % imageList.length;
-        setCurrentIndex(singleTab.id, prev);
-        setRawPath(imageList[prev]);
-      } else if (e.key === "0" && (e.ctrlKey || e.metaKey)) {
-        e.preventDefault();
-        resetZoomAndPan(singleTab.id);
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [singleTab, setCurrentIndex, resetZoomAndPan]);
+  useViewHotkeys({ singleTab, setRawPath });
 
   // Render nothing if the active tab is not a single tab
   if (!singleTab) return null;
