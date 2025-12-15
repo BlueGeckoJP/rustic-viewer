@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import useImageBitmap from "../../hooks/useImageBitmap";
+import useImageNavigation from "../../hooks/useImageNavigation";
 import { useTabStore } from "../../store";
 import ImageCanvas from "../ImageCanvas";
 
@@ -26,9 +27,8 @@ const SlotComponent: React.FC<SlotComponentProps> = ({
   const tab = useTabStore((s) => s.comparisonTabs[tabId] || null);
   const singleTabs = useTabStore((s) => s.singleTabs);
   const setCurrentIndex = useTabStore((s) => s.setCurrentIndex);
-  const setZoom = useTabStore((s) => s.setZoom);
-  const setPanOffset = useTabStore((s) => s.setPanOffset);
-  const resetZoomAndPan = useTabStore((s) => s.resetZoomAndPan);
+
+  const child = singleTabs[childId] ?? null;
 
   useImageBitmap({
     rawPath,
@@ -36,8 +36,22 @@ const SlotComponent: React.FC<SlotComponentProps> = ({
     setIsLoading,
   });
 
+  const {
+    onWheel,
+    onMouseDown,
+    onMouseMove,
+    onMouseUp,
+    onMouseLeave,
+    onDoubleClick,
+  } = useImageNavigation({
+    singleTab: child,
+    isPanning,
+    panStart,
+    setIsPanning,
+    setPanStart,
+  });
+
   if (!tab) return null;
-  const child = singleTabs[childId] ?? null;
   if (!child) return null;
 
   return (
@@ -76,43 +90,12 @@ const SlotComponent: React.FC<SlotComponentProps> = ({
         className="flex-1 flex items-center justify-center w-full"
         role="img"
         aria-label="Comparison slot with zoom and pan controls"
-        onWheel={(e) => {
-          e.preventDefault();
-          const delta = -e.deltaY;
-          const zoomFactor = 1 + delta * 0.001;
-          const newZoom = Math.max(0.1, Math.min(10, child.zoom * zoomFactor));
-          setZoom(childId, newZoom);
-        }}
-        onMouseDown={(e) => {
-          if (e.button === 0) {
-            e.preventDefault();
-            e.stopPropagation();
-            setIsPanning(true);
-            setPanStart({ x: e.clientX, y: e.clientY });
-          }
-        }}
-        onMouseMove={(e) => {
-          if (!isPanning || !panStart) return;
-          const dx = e.clientX - panStart.x;
-          const dy = e.clientY - panStart.y;
-          setPanOffset(childId, {
-            x: child.panOffset.x + dx,
-            y: child.panOffset.y + dy,
-          });
-          setPanStart({ x: e.clientX, y: e.clientY });
-        }}
-        onMouseUp={() => {
-          setIsPanning(false);
-          setPanStart(null);
-        }}
-        onMouseLeave={() => {
-          setIsPanning(false);
-          setPanStart(null);
-        }}
-        onDoubleClick={(e) => {
-          e.stopPropagation();
-          resetZoomAndPan(childId);
-        }}
+        onWheel={onWheel}
+        onMouseDown={onMouseDown}
+        onMouseMove={onMouseMove}
+        onMouseUp={onMouseUp}
+        onMouseLeave={onMouseLeave}
+        onDoubleClick={onDoubleClick}
         style={{ cursor: isPanning ? "grabbing" : "default" }}
       >
         {rawPath ? (

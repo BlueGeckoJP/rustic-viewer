@@ -1,6 +1,7 @@
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import useImageBitmap from "../hooks/useImageBitmap";
+import useImageNavigation from "../hooks/useImageNavigation";
 import useViewHotkeys from "../hooks/useViewHotkeys";
 import { useTabStore } from "../store";
 import ImageCanvas from "./ImageCanvas";
@@ -25,9 +26,6 @@ const SingleView: React.FC<SingleViewProps> = (_props: SingleViewProps) => {
     activeTabId ? s.singleTabs[activeTabId] || null : null,
   );
   const setCurrentIndex = useTabStore((s) => s.setCurrentIndex);
-  const setZoom = useTabStore((s) => s.setZoom);
-  const setPanOffset = useTabStore((s) => s.setPanOffset);
-  const resetZoomAndPan = useTabStore((s) => s.resetZoomAndPan);
   const [rawPath, setRawPath] = useState<string>("");
 
   // Local view state
@@ -43,6 +41,21 @@ const SingleView: React.FC<SingleViewProps> = (_props: SingleViewProps) => {
     rawPath,
     setCurrentImage,
     setIsLoading,
+  });
+
+  const {
+    onWheel,
+    onMouseDown,
+    onMouseMove,
+    onMouseUp,
+    onMouseLeave,
+    onDoubleClick,
+  } = useImageNavigation({
+    singleTab,
+    isPanning,
+    panStart,
+    setIsPanning,
+    setPanStart,
   });
 
   // When active single tab changes, load its current image
@@ -103,48 +116,12 @@ const SingleView: React.FC<SingleViewProps> = (_props: SingleViewProps) => {
         className="flex-1 flex items-center justify-center"
         role="img"
         aria-label="Image viewer with zoom and pan controls"
-        onWheel={(e) => {
-          if (!singleTab) return;
-          e.preventDefault();
-          const delta = -e.deltaY;
-          const zoomFactor = 1 + delta * 0.001;
-          const newZoom = Math.max(
-            0.1,
-            Math.min(10, singleTab.zoom * zoomFactor),
-          );
-          setZoom(singleTab.id, newZoom);
-        }}
-        onMouseDown={(e) => {
-          if (!singleTab) return;
-          if (e.button === 0) {
-            // Left click to pan
-            e.preventDefault();
-            setIsPanning(true);
-            setPanStart({ x: e.clientX, y: e.clientY });
-          }
-        }}
-        onMouseMove={(e) => {
-          if (!singleTab || !isPanning || !panStart) return;
-          const dx = e.clientX - panStart.x;
-          const dy = e.clientY - panStart.y;
-          setPanOffset(singleTab.id, {
-            x: singleTab.panOffset.x + dx,
-            y: singleTab.panOffset.y + dy,
-          });
-          setPanStart({ x: e.clientX, y: e.clientY });
-        }}
-        onMouseUp={() => {
-          setIsPanning(false);
-          setPanStart(null);
-        }}
-        onMouseLeave={() => {
-          setIsPanning(false);
-          setPanStart(null);
-        }}
-        onDoubleClick={() => {
-          if (!singleTab) return;
-          resetZoomAndPan(singleTab.id);
-        }}
+        onWheel={onWheel}
+        onMouseDown={onMouseDown}
+        onMouseMove={onMouseMove}
+        onMouseUp={onMouseUp}
+        onMouseLeave={onMouseLeave}
+        onDoubleClick={onDoubleClick}
         style={{ cursor: isPanning ? "grabbing" : "default" }}
       >
         {currentImage ? (
