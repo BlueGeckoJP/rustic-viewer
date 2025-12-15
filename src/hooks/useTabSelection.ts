@@ -35,9 +35,9 @@ const useTabSelection = ({
       const end = Math.max(lastClickedIndexRef.current, index);
       const ids = tabOrder.slice(start, end + 1);
       setSelectedIDs(new Set(ids));
-      lastClickedIndexRef.current = index;
       return;
     }
+
     setSelectedIDs(new Set([tabId]));
     lastClickedIndexRef.current = index;
   };
