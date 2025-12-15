@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import useImageBitmap from "../../hooks/useImageBitmap";
 import { useTabStore } from "../../store";
 import ImageCanvas from "../ImageCanvas";
@@ -37,18 +37,6 @@ const SlotComponent: React.FC<SlotComponentProps> = ({
     setFileName,
     setIsLoading,
   });
-
-  // Keyboard shortcuts for zoom reset
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "0" && (e.ctrlKey || e.metaKey)) {
-        e.preventDefault();
-        resetZoomAndPan(childId);
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [childId, resetZoomAndPan]);
 
   if (!tab) return null;
   const child = singleTabs[childId] ?? null;
