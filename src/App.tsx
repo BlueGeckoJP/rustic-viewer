@@ -29,29 +29,33 @@ export default function App() {
     (rawPath: string, newTab: boolean = false) => {
       const dir = determineDirectory(rawPath);
 
-      getSortedImageFiles(dir).then((files) => {
-        const idx = files.indexOf(rawPath);
+      getSortedImageFiles(dir)
+        .then((files) => {
+          const idx = files.indexOf(rawPath);
 
-        if (!activeTab || newTab) {
-          const id = addSingleTab(files, idx >= 0 ? idx : 0, dir);
-          // Ensure this new tab becomes active (addTab already sets active but explicit for clarity)
-          setActiveTab(id);
-        } else {
-          const singleTab = singleTabs[activeTabId];
-          const comparisonTab = comparisonTabs[activeTabId];
+          if (!activeTab || newTab) {
+            const id = addSingleTab(files, idx >= 0 ? idx : 0, dir);
+            // Ensure this new tab becomes active (addTab already sets active but explicit for clarity)
+            setActiveTab(id);
+          } else {
+            const singleTab = singleTabs[activeTabId];
+            const comparisonTab = comparisonTabs[activeTabId];
 
-          const targetTabId =
-            singleTab?.id ??
-            comparisonTab?.children[comparisonTab.activeSlotIndex];
+            const targetTabId =
+              singleTab?.id ??
+              comparisonTab?.children[comparisonTab.activeSlotIndex];
 
-          if (targetTabId)
-            updateSingleTab(targetTabId, {
-              directory: dir,
-              imageList: files,
-              currentIndex: idx >= 0 ? idx : 0,
-            });
-        }
-      });
+            if (targetTabId)
+              updateSingleTab(targetTabId, {
+                directory: dir,
+                imageList: files,
+                currentIndex: idx >= 0 ? idx : 0,
+              });
+          }
+        })
+        .catch((e) => {
+          console.error("Failed to open image:", e);
+        });
     },
     [
       activeTab,
@@ -69,11 +73,17 @@ export default function App() {
       const tab = singleTabs[tabId];
       if (!tab || !tab.directory) return;
 
-      getSortedImageFiles(tab.directory).then((files) => {
-        updateSingleTab(tab.id, {
-          imageList: files,
+      getSortedImageFiles(tab.directory)
+        .then((files) => {
+          updateSingleTab(tab.id, {
+            imageList: files,
+            // Clamp currentIndex to new list length
+            currentIndex: Math.min(tab.currentIndex, files.length - 1),
+          });
+        })
+        .catch((e) => {
+          console.error("Failed to update image list:", e);
         });
-      });
     },
     [singleTabs, updateSingleTab],
   );
