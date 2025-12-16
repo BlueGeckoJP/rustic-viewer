@@ -125,15 +125,8 @@ const TabBar = () => {
                     expanded={expanded}
                     label={label}
                     tabId={tabId}
-                    activeTabId={activeTabId}
-                    tabOrder={tabOrder}
-                    singleTab={singleTab}
-                    comparisonTab={comparisonTab}
                     toggleExpanded={toggleExpanded}
-                    removeSingleTab={removeSingleTab}
-                    detachAllChildren={detachAllChildren}
                     setSelectedIDs={setSelectedIDs}
-                    setActiveTab={setActiveTab}
                   />
                 </div>
                 <ComparisonChildList

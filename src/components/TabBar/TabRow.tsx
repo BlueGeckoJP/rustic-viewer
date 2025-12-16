@@ -1,19 +1,12 @@
-import type { ComparisonTabState, SingleTabState } from "../../store";
+import { useTabStore } from "../../store";
 
 export type TabRowProps = {
   isComp: boolean;
   expanded: boolean;
   label: string;
   tabId: string;
-  activeTabId: string | null;
-  tabOrder: string[];
-  singleTab: SingleTabState | null;
-  comparisonTab: ComparisonTabState | null;
   toggleExpanded: (tabId: string) => void;
-  removeSingleTab: (tabId: string) => void;
-  detachAllChildren: (tabId: string) => void;
   setSelectedIDs: React.Dispatch<React.SetStateAction<Set<string>>>;
-  setActiveTab: (tabId: string) => void;
 };
 
 const TabRow = ({
@@ -21,16 +14,15 @@ const TabRow = ({
   expanded,
   label,
   tabId,
-  activeTabId,
-  tabOrder,
-  singleTab,
-  comparisonTab,
   toggleExpanded,
-  removeSingleTab,
-  detachAllChildren,
   setSelectedIDs,
-  setActiveTab,
 }: TabRowProps) => {
+  const tabOrder = useTabStore((s) => s.tabOrder);
+  const activeTabId = useTabStore((s) => s.activeTabId);
+  const removeSingleTab = useTabStore((s) => s.removeSingleTab);
+  const setActiveTab = useTabStore((s) => s.setActiveTab);
+  const detachAllChildren = useTabStore((s) => s.detachAllChildren);
+
   return (
     <>
       {isComp && (
@@ -61,11 +53,9 @@ const TabRow = ({
             nextTabId =
               tabOrder[Math.min(tabOrder.length - 1, currentIndex + 1)];
           }
-          if (singleTab) {
-            removeSingleTab(tabId);
-          } else if (comparisonTab) {
-            detachAllChildren(tabId);
-          }
+          if (isComp) detachAllChildren(tabId);
+          else removeSingleTab(tabId);
+
           setSelectedIDs((prev) => {
             if (!prev.has(tabId)) return prev;
             const n = new Set(prev);
