@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { useStore } from "zustand";
 import useTabHotkeysUndoRedo from "../../hooks/useTabHotkeysUndoRedo";
 import useTabMove from "../../hooks/useTabMove";
 import useTabSelection from "../../hooks/useTabSelection";
@@ -17,8 +18,10 @@ const TabBar = () => {
   const setActiveTab = useTabStore((s) => s.setActiveTab);
   const setActiveSlotIndex = useTabStore((s) => s.setActiveSlotIndex);
 
-  const { undo, redo, pastStates, futureStates } =
-    useTabStore.temporal.getState();
+  const undo = useStore(useTabStore.temporal, (s) => s.undo);
+  const redo = useStore(useTabStore.temporal, (s) => s.redo);
+  const pastStates = useStore(useTabStore.temporal, (s) => s.pastStates);
+  const futureStates = useStore(useTabStore.temporal, (s) => s.futureStates);
   const canUndo = pastStates.length > 0;
   const canRedo = futureStates.length > 0;
 
