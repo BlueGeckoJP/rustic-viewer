@@ -1,7 +1,11 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import useImageBitmap from "../../hooks/useImageBitmap";
 import useImageNavigation from "../../hooks/useImageNavigation";
-import { useTabStore } from "../../store";
+import {
+  type ComparisonTabState,
+  type SingleTabState,
+  useTabStore,
+} from "../../store";
 import ImageCanvas from "../ImageCanvas";
 import ViewerControls from "../ViewerControls";
 import ViewerHeader from "../ViewerHeader";
@@ -12,29 +16,25 @@ export type SlotComponentProps = {
   childId: string;
 };
 
-// Shared worker now encapsulated by decodeImageFromPath utility
-const SlotComponent: React.FC<SlotComponentProps> = ({
-  rawPath,
-  tabId,
-  childId,
-}) => {
-  const [imgData, setImgData] = useState<ImageBitmap | null>(null);
+const SlotComponent = ({ rawPath, tabId, childId }: SlotComponentProps) => {
+  const comparisonTab: ComparisonTabState | undefined = useTabStore(
+    (s) => s.comparisonTabs[tabId],
+  );
+  const childTab: SingleTabState | undefined = useTabStore(
+    (s) => s.singleTabs[childId],
+  );
+  const setCurrentIndex = useTabStore((s) => s.setCurrentIndex);
+
+  const [currentImage, setCurrentImage] = useState<ImageBitmap | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isPanning, setIsPanning] = useState<boolean>(false);
   const [panStart, setPanStart] = useState<{ x: number; y: number } | null>(
     null,
   );
 
-  const tab = useTabStore((s) => s.comparisonTabs[tabId] || null);
-  const singleTabs = useTabStore((s) => s.singleTabs);
-  const setCurrentIndex = useTabStore((s) => s.setCurrentIndex);
-
-  const child = singleTabs[childId] ?? null;
-
   useImageBitmap({
     rawPath,
-    setCurrentImage: setImgData,
+    setCurrentImage: setCurrentImage,
     setIsLoading,
   });
 
@@ -46,19 +46,23 @@ const SlotComponent: React.FC<SlotComponentProps> = ({
     onMouseLeave,
     onDoubleClick,
   } = useImageNavigation({
-    singleTab: child,
+    singleTab: childTab,
     isPanning,
     panStart,
     setIsPanning,
     setPanStart,
   });
 
-  if (!tab) return null;
-  if (!child) return null;
+  // Render nothing if the comparison tab or child tab is missing
+  if (!comparisonTab || !childTab) return null;
 
   return (
     <>
-      <ViewerHeader rawPath={rawPath} isLoading={isLoading} singleTab={child} />
+      <ViewerHeader
+        rawPath={rawPath}
+        isLoading={isLoading}
+        singleTab={childTab}
+      />
 
       {/* Canvas-based image rendering (matches SingleTab canvas behavior) */}
       <div
@@ -73,19 +77,16 @@ const SlotComponent: React.FC<SlotComponentProps> = ({
         onDoubleClick={onDoubleClick}
         style={{ cursor: isPanning ? "grabbing" : "default" }}
       >
-        {rawPath ? (
+        {currentImage ? (
           // NOTE: I left a 1rem gap with max-h because, without it, when the height is reduced even slightly,
           // the canvas rendering can’t keep up with the resize.
           // (Using max-h-[calc(100vh-2rem)] makes the size fit perfectly.)
           <div className="max-w-[calc(100vw-2rem)] max-h-[calc(100vh-3rem)] w-full h-full block">
             <ImageCanvas
-              image={imgData}
+              image={currentImage}
               className="w-full h-full max-w-full max-h-full block"
-              zoom={child.zoom}
-              panOffset={child.panOffset}
-              onInitCanvas={(c) => {
-                canvasRef.current = c;
-              }}
+              zoom={childTab.zoom}
+              panOffset={childTab.panOffset}
             />
           </div>
         ) : (
@@ -93,7 +94,7 @@ const SlotComponent: React.FC<SlotComponentProps> = ({
         )}
       </div>
 
-      <ViewerControls singleTab={child} setCurrentIndex={setCurrentIndex} />
+      <ViewerControls singleTab={childTab} setCurrentIndex={setCurrentIndex} />
     </>
   );
 };

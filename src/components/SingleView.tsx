@@ -1,37 +1,20 @@
-import type React from "react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import useImageBitmap from "../hooks/useImageBitmap";
 import useImageNavigation from "../hooks/useImageNavigation";
 import useViewHotkeys from "../hooks/useViewHotkeys";
-import { useTabStore } from "../store";
+import { type SingleTabState, useTabStore } from "../store";
 import ImageCanvas from "./ImageCanvas";
 import ViewerControls from "./ViewerControls";
 import ViewerHeader from "./ViewerHeader";
 
-/**
- * SingleView: handles all logic & UI for displaying a single image tab.
- * Extracted from App.tsx to keep App lean.
- *
- * Responsibilities:
- *  - Manage current decoded image + loading state
- *  - Directory listing & image sequence management
- *  - Arrow key navigation between images
- *  - High DPI canvas rendering via ImageCanvas
- *  - Expose openImage(rawPath) through provided ref for external triggers (e.g., Tauri events)
- */
-export type SingleViewProps = unknown;
-
-const SingleView: React.FC<SingleViewProps> = (_props: SingleViewProps) => {
-  // Store selectors
+const SingleView = () => {
   const activeTabId = useTabStore((s) => s.activeTabId);
-  const singleTab = useTabStore((s) =>
-    activeTabId ? s.singleTabs[activeTabId] || null : null,
+  const singleTab: SingleTabState | undefined = useTabStore(
+    (s) => s.singleTabs[activeTabId],
   );
   const setCurrentIndex = useTabStore((s) => s.setCurrentIndex);
   const [rawPath, setRawPath] = useState<string>("");
 
-  // Local view state
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [currentImage, setCurrentImage] = useState<ImageBitmap | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isPanning, setIsPanning] = useState<boolean>(false);
@@ -88,7 +71,6 @@ const SingleView: React.FC<SingleViewProps> = (_props: SingleViewProps) => {
         isLoading={isLoading}
         singleTab={singleTab}
       />
-
       <div
         className="flex-1 flex items-center justify-center"
         role="img"
@@ -107,19 +89,13 @@ const SingleView: React.FC<SingleViewProps> = (_props: SingleViewProps) => {
             className="w-screen h-screen max-w-screen max-h-[calc(100vh-24px)]"
             zoom={singleTab?.zoom ?? 1.0}
             panOffset={singleTab?.panOffset ?? { x: 0, y: 0 }}
-            onInitCanvas={(c) => {
-              canvasRef.current = c;
-            }}
           />
         ) : (
           <span className="text-[#888]">No Image</span>
         )}
-
-        <ViewerControls
-          singleTab={singleTab}
-          setCurrentIndex={setCurrentIndex}
-        />
       </div>
+
+      <ViewerControls singleTab={singleTab} setCurrentIndex={setCurrentIndex} />
     </div>
   );
 };
