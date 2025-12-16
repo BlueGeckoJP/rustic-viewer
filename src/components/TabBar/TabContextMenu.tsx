@@ -33,7 +33,6 @@ const TabContextMenu = ({
   const detachChild = useTabStore((s) => s.detachToSingleTab);
   const removeChild = useTabStore((s) => s.removeChild);
   const reorderChildren = useTabStore((s) => s.reorderComparisonChildren);
-  const setActiveSlotIndex = useTabStore((s) => s.setActiveSlotIndex);
   const detachAllChildren = useTabStore((s) => s.detachAllChildren);
 
   if (!menuOpenFor || !menuPos) return null;
@@ -47,7 +46,6 @@ const TabContextMenu = ({
       { id: "clone", label: "Clone Tab" },
       { id: "close", label: "Close" },
       { id: "close-others", label: "Close Others" },
-      { id: "close-right", label: "Close Tabs to Right" },
     ];
     const singleSelectedCount = tabOrder.filter(
       (id) => singleTabs[id] && selectedIDs.has(id),
@@ -70,7 +68,6 @@ const TabContextMenu = ({
   } else {
     // Child menu items
     contextItems = [
-      { id: "activate", label: "Activate" },
       { id: "move-up", label: "Move Up" },
       { id: "move-down", label: "Move Down" },
       { id: "detach", label: "Detach to Top" },
@@ -84,89 +81,101 @@ const TabContextMenu = ({
     const childMode = targetId.includes(CHILD_PREFIX);
 
     if (!childMode) {
-      if (id === "create-comparison") {
-        const singleIds = tabOrder.filter(
-          (tid) => singleTabs[tid] && selectedIDs.has(tid),
-        );
-        if (singleIds.length >= 2) {
-          createComparison(singleIds);
-        }
-        setSelectedIDs(new Set());
-      } else if (id === "new") {
-        addSingleTab([], 0, null);
-      } else if (id === "clone") {
-        const oldTab = singleTabs[targetId];
-        if (oldTab) {
-          const newDirectory = oldTab.directory;
-          const newImageList = [...oldTab.imageList];
-          const newIndex = oldTab.currentIndex;
-          addSingleTab(newImageList, newIndex, newDirectory);
-        }
-      } else if (id === "close") {
-        if (singleTabs[targetId]) {
-          removeSingleTab(targetId);
-        } else if (comparisonTabs[targetId]) {
-          detachAllChildren(targetId);
-        }
-        setSelectedIDs((prev) => {
-          if (!prev.has(targetId)) return prev;
-          const n = new Set(prev);
-          n.delete(targetId);
-          return n;
-        });
-      } else if (id === "close-others") {
-        tabOrder
-          .filter((tid) => tid !== targetId)
-          .forEach((tid) => {
-            if (singleTabs[tid]) {
-              removeSingleTab(tid);
-            } else if (comparisonTabs[tid]) {
-              detachAllChildren(tid);
-            }
-          });
-        setSelectedIDs(new Set([targetId]));
-        setActiveTab(targetId);
-      } else if (id === "close-right") {
-        const idx = tabOrder.indexOf(targetId);
-        if (idx >= 0) {
-          tabOrder.slice(idx + 1).forEach((tid) => {
-            if (singleTabs[tid]) {
-              removeSingleTab(tid);
-            } else if (comparisonTabs[tid]) {
-              detachAllChildren(tid);
-            }
-          });
-        }
-      } else if (id === "detach-all") {
-        detachAllChildren(targetId);
-      } else if (id === "toggle-expand") {
-        toggleExpanded(targetId);
+      switch (id) {
+        case "create-comparison":
+          handleCreateComparison();
+          break;
+        case "new":
+          handleNew();
+          break;
+        case "clone":
+          handleClone();
+          break;
+        case "close":
+          handleClose();
+          break;
+        case "close-others":
+          handleCloseOthers();
+          break;
+        case "detach-all":
+          handleDetachAll();
+          break;
+        case "toggle-expand":
+          handleToggleExpand();
+          break;
       }
     } else {
-      // Child actions
-      const [parentId, childId] = targetId.split(CHILD_PREFIX);
-      const parent = comparisonTabs[parentId];
-      if (!parent) return;
-      const childIndex = parent.children.indexOf(childId);
-      if (childIndex < 0) return;
-
-      if (id === "activate") {
-        setActiveTab(parent.id);
-        setActiveSlotIndex(parent.id, childIndex);
-      } else if (id === "move-up") {
-        if (childIndex > 0)
-          reorderChildren(parent.id, childIndex, childIndex - 1);
-      } else if (id === "move-down") {
-        if (childIndex < parent.children.length - 1)
-          reorderChildren(parent.id, childIndex, childIndex + 1);
-      } else if (id === "detach") {
-        detachChild(parent.id, childIndex);
-      } else if (id === "remove") {
-        removeChild(parent.id, childIndex);
-      }
+      handleChildActions(id);
     }
 
     onClose();
+  };
+
+  const handleCreateComparison = () => {
+    const selectedSingleIDs = tabOrder.filter(
+      (id) => singleTabs[id] && selectedIDs.has(id),
+    );
+    if (selectedSingleIDs.length >= 2) {
+      createComparison(selectedSingleIDs);
+    }
+    setSelectedIDs(new Set());
+  };
+
+  const handleNew = () => addSingleTab([], 0, null);
+
+  const handleClone = () => {
+    const oldTab = singleTabs[menuOpenFor];
+    if (!oldTab) return;
+    const newDirectory = oldTab.directory;
+    const newImageList = [...oldTab.imageList];
+    const newIndex = oldTab.currentIndex;
+    addSingleTab(newImageList, newIndex, newDirectory);
+  };
+
+  const handleClose = () => {
+    if (singleTabs[menuOpenFor]) removeSingleTab(menuOpenFor);
+    else if (comparisonTabs[menuOpenFor]) detachAllChildren(menuOpenFor);
+    setSelectedIDs((prev) => {
+      if (!prev.has(menuOpenFor)) return prev;
+      const n = new Set(prev);
+      n.delete(menuOpenFor);
+      return n;
+    });
+  };
+
+  const handleCloseOthers = () => {
+    tabOrder
+      .filter((id) => id !== menuOpenFor)
+      .forEach((id) => {
+        if (singleTabs[id]) removeSingleTab(id);
+        else if (comparisonTabs[id]) detachAllChildren(id);
+      });
+    setSelectedIDs(new Set([menuOpenFor]));
+    setActiveTab(menuOpenFor);
+  };
+
+  const handleDetachAll = () => detachAllChildren(menuOpenFor);
+
+  const handleToggleExpand = () => toggleExpanded(menuOpenFor);
+
+  const handleChildActions = (id: string) => {
+    const [parentId, childId] = menuOpenFor.split(CHILD_PREFIX);
+    const parent = comparisonTabs[parentId];
+    if (!parent) return;
+    const childIndex = parent.children.indexOf(childId);
+    if (childIndex < 0) return;
+
+    if (id === "move-up") {
+      if (childIndex > 0)
+        reorderChildren(parent.id, childIndex, childIndex - 1);
+    } else if (id === "move-down") {
+      if (childIndex < parent.children.length - 1)
+        reorderChildren(parent.id, childIndex, childIndex + 1);
+    } else if (id === "detach") {
+      detachChild(parent.id, childIndex);
+    } else if (id === "remove") {
+      removeChild(parent.id, childIndex);
+    }
   };
 
   return (
