@@ -15,6 +15,7 @@ const TabBar = () => {
   const tabOrder = useTabStore((s) => s.tabOrder);
   const activeTabId = useTabStore((s) => s.activeTabId);
   const setActiveTab = useTabStore((s) => s.setActiveTab);
+  const setActiveSlotIndex = useTabStore((s) => s.setActiveSlotIndex);
 
   const { undo, redo, pastStates, futureStates } =
     useTabStore.temporal.getState();
