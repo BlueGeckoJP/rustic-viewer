@@ -3,6 +3,7 @@ import useImageBitmap from "../../hooks/useImageBitmap";
 import useImageNavigation from "../../hooks/useImageNavigation";
 import { useTabStore } from "../../store";
 import ImageCanvas from "../ImageCanvas";
+import ViewerControls from "../ViewerControls";
 import ViewerHeader from "../ViewerHeader";
 
 export type SlotComponentProps = {
@@ -92,33 +93,7 @@ const SlotComponent: React.FC<SlotComponentProps> = ({
         )}
       </div>
 
-      {/* Simple per-child navigation controls (optional) */}
-      <div className="absolute bottom-1 right-2 flex gap-1 opacity-0 transition">
-        <button
-          className="px-2 py-1 bg-[#44444E] rounded text-xs hover:bg-[#555]"
-          onClick={(e) => {
-            e.stopPropagation();
-            const next =
-              (child.currentIndex - 1 + child.imageList.length) %
-              child.imageList.length;
-            setCurrentIndex(child.id, next);
-          }}
-          type="button"
-        >
-          ◀
-        </button>
-        <button
-          className="px-2 py-1 bg-[#44444E] rounded text-xs hover:bg-[#555]"
-          onClick={(e) => {
-            e.stopPropagation();
-            const next = (child.currentIndex + 1) % child.imageList.length;
-            setCurrentIndex(child.id, next);
-          }}
-          type="button"
-        >
-          ▶
-        </button>
-      </div>
+      <ViewerControls singleTab={child} setCurrentIndex={setCurrentIndex} />
     </>
   );
 };

@@ -5,6 +5,7 @@ import useImageNavigation from "../hooks/useImageNavigation";
 import useViewHotkeys from "../hooks/useViewHotkeys";
 import { useTabStore } from "../store";
 import ImageCanvas from "./ImageCanvas";
+import ViewerControls from "./ViewerControls";
 import ViewerHeader from "./ViewerHeader";
 
 /**
@@ -114,34 +115,10 @@ const SingleView: React.FC<SingleViewProps> = (_props: SingleViewProps) => {
           <span className="text-[#888]">No Image</span>
         )}
 
-        {/* Simple per-child navigation controls (optional) */}
-        <div className="absolute bottom-1 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition">
-          <button
-            className="px-2 py-1 bg-[#44444E] rounded text-xs hover:bg-[#555]"
-            onClick={(e) => {
-              e.stopPropagation();
-              const next =
-                (singleTab.currentIndex - 1 + singleTab.imageList.length) %
-                singleTab.imageList.length;
-              setCurrentIndex(singleTab.id, next);
-            }}
-            type="button"
-          >
-            ◀
-          </button>
-          <button
-            className="px-2 py-1 bg-[#44444E] rounded text-xs hover:bg-[#555]"
-            onClick={(e) => {
-              e.stopPropagation();
-              const next =
-                (singleTab.currentIndex + 1) % singleTab.imageList.length;
-              setCurrentIndex(singleTab.id, next);
-            }}
-            type="button"
-          >
-            ▶
-          </button>
-        </div>
+        <ViewerControls
+          singleTab={singleTab}
+          setCurrentIndex={setCurrentIndex}
+        />
       </div>
     </div>
   );
