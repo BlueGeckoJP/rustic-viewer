@@ -1,5 +1,5 @@
 import imageCache, { type CacheItem } from "./imageCache";
-import { decodeImageFromPath } from "./imageDecoder";
+import { imageDecoderPool } from "./imageDecoder";
 import { type ImageLoadMetrics, monitor } from "./imagePerfMonitor";
 
 export default async function loadImage(
@@ -28,7 +28,7 @@ export default async function loadImage(
 
 const returnDecodeImagePromise = async (path: string, startTotal: number) => {
   const { imageBitmap, fileReadTime, decodeTime } =
-    await decodeImageFromPath(path);
+    await imageDecoderPool.decodeImageFromPath(path);
 
   const cacheItem: CacheItem = {
     bitmap: imageBitmap,

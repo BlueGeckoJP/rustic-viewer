@@ -18,151 +18,146 @@ type WorkerInstance = {
   currentRequestId: number | null;
 };
 
-// Worker pool configuration
-const WORKER_POOL_SIZE = 4; // Can decode 4 images simultaneously
-const workerPool: WorkerInstance[] = [];
-let nextId = 0;
-const pending = new Map<number, Pending>();
-
-function initializeWorkerPool() {
-  if (workerPool.length > 0) return;
-
-  for (let i = 0; i < WORKER_POOL_SIZE; i++) {
-    const worker = new ImageWorker();
-    const instance: WorkerInstance = {
-      worker,
-      busy: false,
-      currentRequestId: null,
-    };
-
-    worker.onmessage = (e: MessageEvent) => {
-      const data = e.data as { img?: ImageBitmap; requestId?: number };
-      if (data && typeof data.requestId === "number") {
-        const p = pending.get(data.requestId);
-        if (p) {
-          pending.delete(data.requestId);
-          if (data.img) p.resolve(data.img);
-          else p.reject(new Error("No image in worker response"));
-        }
-
-        // Mark worker as available
-        instance.busy = false;
-        instance.currentRequestId = null;
-
-        // Process queued requests
-        processQueue();
-      }
-    };
-
-    worker.onerror = (err) => {
-      // Fail current request
-      if (instance.currentRequestId !== null) {
-        const p = pending.get(instance.currentRequestId);
-        if (p) {
-          p.reject(err);
-          pending.delete(instance.currentRequestId);
-        }
-      }
-      instance.busy = false;
-      instance.currentRequestId = null;
-    };
-
-    workerPool.push(instance);
-  }
-}
-
 type QueuedRequest = {
   content: Uint8Array;
   requestId: number;
 };
 
-const requestQueue: QueuedRequest[] = [];
+export class ImageDecoderPool {
+  private poolSize = 4; // Can decode 4 images simultaneously
+  private workerPool: WorkerInstance[] = [];
+  private nextId = 0;
+  private pending = new Map<number, Pending>();
+  private requestQueue: QueuedRequest[] = [];
 
-function getAvailableWorker(): WorkerInstance | null {
-  return workerPool.find((w) => !w.busy) ?? null;
-}
+  private initializeWorkerPool() {
+    if (this.workerPool.length > 0) return;
 
-function processQueue() {
-  while (requestQueue.length > 0) {
-    const availableWorker = getAvailableWorker();
-    if (!availableWorker) break;
+    for (let i = 0; i < this.poolSize; i++) {
+      const worker = new ImageWorker();
+      const instance: WorkerInstance = {
+        worker,
+        busy: false,
+        currentRequestId: null,
+      };
 
-    const request = requestQueue.shift();
-    if (request) {
-      availableWorker.busy = true;
-      availableWorker.currentRequestId = request.requestId;
-      availableWorker.worker.postMessage({
-        content: request.content,
-        requestId: request.requestId,
-      });
+      worker.onmessage = (e: MessageEvent) => {
+        const data = e.data as { img?: ImageBitmap; requestId?: number };
+        if (data && typeof data.requestId === "number") {
+          const p = this.pending.get(data.requestId);
+          if (p) {
+            this.pending.delete(data.requestId);
+            if (data.img) p.resolve(data.img);
+            else p.reject(new Error("No image in worker response"));
+          }
+
+          // Mark worker as available
+          instance.busy = false;
+          instance.currentRequestId = null;
+
+          // Process queued requests
+          this.processQueue();
+        }
+      };
+
+      worker.onerror = (err) => {
+        // Fail current request
+        if (instance.currentRequestId !== null) {
+          const p = this.pending.get(instance.currentRequestId);
+          if (p) {
+            p.reject(err);
+            this.pending.delete(instance.currentRequestId);
+          }
+        }
+        instance.busy = false;
+        instance.currentRequestId = null;
+      };
+
+      this.workerPool.push(instance);
     }
+  }
+
+  private getAvailableWorker(): WorkerInstance | null {
+    return this.workerPool.find((w) => !w.busy) ?? null;
+  }
+
+  private processQueue() {
+    while (this.requestQueue.length > 0) {
+      const availableWorker = this.getAvailableWorker();
+      if (!availableWorker) break;
+
+      const request = this.requestQueue.shift();
+      if (request) {
+        availableWorker.busy = true;
+        availableWorker.currentRequestId = request.requestId;
+        availableWorker.worker.postMessage({
+          content: request.content,
+          requestId: request.requestId,
+        });
+      }
+    }
+  }
+
+  private enqueueDecodeRequest(content: Uint8Array): Promise<ImageBitmap> {
+    this.initializeWorkerPool();
+
+    const requestId = this.nextId++;
+
+    return new Promise<ImageBitmap>((resolve, reject) => {
+      this.pending.set(requestId, { resolve, reject });
+
+      const availableWorker = this.getAvailableWorker();
+      if (availableWorker) {
+        // Process immediately if a worker is available
+        availableWorker.busy = true;
+        availableWorker.currentRequestId = requestId;
+        availableWorker.worker.postMessage({ content, requestId });
+      } else {
+        // Queue the request if all workers are busy
+        this.requestQueue.push({ content, requestId });
+      }
+    });
+  }
+
+  async decodeImageFromPath(path: string): Promise<{
+    imageBitmap: ImageBitmap;
+    fileReadTime: number;
+    decodeTime: number;
+  }> {
+    const startFileRead = performance.now();
+    const fileUrl = convertFileSrc(path);
+    const content = await readFile(fileUrl);
+    const fileReadTime = performance.now() - startFileRead;
+
+    const startDecode = performance.now();
+    const imageBitmap = await this.enqueueDecodeRequest(content);
+    const decodeTime = performance.now() - startDecode;
+
+    return {
+      imageBitmap,
+      fileReadTime,
+      decodeTime,
+    };
+  }
+
+  terminate() {
+    this.workerPool.forEach((instance) => {
+      instance.worker.terminate();
+    });
+    this.workerPool.length = 0;
+    this.pending.clear();
+    this.requestQueue.length = 0;
+  }
+
+  /** Debug utility: Get worker pool statistics */
+  getWorkerPoolStats() {
+    return {
+      totalWorkers: this.workerPool.length,
+      busyWorkers: this.workerPool.filter((w) => w.busy).length,
+      queuedRequests: this.requestQueue.length,
+      pendingRequests: this.pending.size,
+    };
   }
 }
 
-function enqueueDecodeRequest(content: Uint8Array): Promise<ImageBitmap> {
-  initializeWorkerPool();
-
-  const requestId = nextId++;
-
-  return new Promise<ImageBitmap>((resolve, reject) => {
-    pending.set(requestId, { resolve, reject });
-
-    const availableWorker = getAvailableWorker();
-    if (availableWorker) {
-      // Process immediately if a worker is available
-      availableWorker.busy = true;
-      availableWorker.currentRequestId = requestId;
-      availableWorker.worker.postMessage({ content, requestId });
-    } else {
-      // Queue the request if all workers are busy
-      requestQueue.push({ content, requestId });
-    }
-  });
-}
-
-export async function decodeImageFromPath(path: string): Promise<{
-  imageBitmap: ImageBitmap;
-  fileReadTime: number;
-  decodeTime: number;
-}> {
-  const startFileRead = performance.now();
-  const fileUrl = convertFileSrc(path);
-  const content = await readFile(fileUrl);
-  const fileReadTime = performance.now() - startFileRead;
-
-  const startDecode = performance.now();
-  const imageBitmap = await enqueueDecodeRequest(content);
-  const decodeTime = performance.now() - startDecode;
-
-  return {
-    imageBitmap,
-    fileReadTime,
-    decodeTime,
-  };
-}
-
-/** Optional: allow direct Uint8Array decoding if already loaded elsewhere */
-export async function decodeImageBytes(
-  bytes: Uint8Array,
-): Promise<ImageBitmap> {
-  return enqueueDecodeRequest(bytes);
-}
-
-export function terminateDecoder() {
-  workerPool.forEach((instance) => {
-    instance.worker.terminate();
-  });
-  workerPool.length = 0;
-  pending.clear();
-  requestQueue.length = 0;
-}
-
-/** Debug utility: Get worker pool statistics */
-export function getWorkerPoolStats() {
-  return {
-    totalWorkers: workerPool.length,
-    busyWorkers: workerPool.filter((w) => w.busy).length,
-    queuedRequests: requestQueue.length,
-    pendingRequests: pending.size,
-  };
-}
+export const imageDecoderPool = new ImageDecoderPool();
