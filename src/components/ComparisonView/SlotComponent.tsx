@@ -1,6 +1,4 @@
-import { useState } from "react";
-import useImageBitmap from "../../hooks/useImageBitmap";
-import useImageNavigation from "../../hooks/useImageNavigation";
+import useImageViewer from "../../hooks/useImageViewer";
 import {
   type ComparisonTabState,
   type SingleTabState,
@@ -11,12 +9,11 @@ import ViewerControls from "../ViewerControls";
 import ViewerHeader from "../ViewerHeader";
 
 export type SlotComponentProps = {
-  rawPath: string;
   tabId: string;
   childId: string;
 };
 
-const SlotComponent = ({ rawPath, tabId, childId }: SlotComponentProps) => {
+const SlotComponent = ({ tabId, childId }: SlotComponentProps) => {
   const comparisonTab: ComparisonTabState | undefined = useTabStore(
     (s) => s.comparisonTabs[tabId],
   );
@@ -25,33 +22,18 @@ const SlotComponent = ({ rawPath, tabId, childId }: SlotComponentProps) => {
   );
   const setCurrentIndex = useTabStore((s) => s.setCurrentIndex);
 
-  const [currentImage, setCurrentImage] = useState<ImageBitmap | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [isPanning, setIsPanning] = useState<boolean>(false);
-  const [panStart, setPanStart] = useState<{ x: number; y: number } | null>(
-    null,
-  );
-
-  useImageBitmap({
-    rawPath,
-    setCurrentImage: setCurrentImage,
-    setIsLoading,
-  });
-
   const {
+    currentImage,
+    rawPath,
+    isLoading,
+    isPanning,
     onWheel,
     onMouseDown,
     onMouseMove,
     onMouseUp,
     onMouseLeave,
     onDoubleClick,
-  } = useImageNavigation({
-    singleTab: childTab,
-    isPanning,
-    panStart,
-    setIsPanning,
-    setPanStart,
-  });
+  } = useImageViewer({ singleTab: childTab });
 
   // Render nothing if the comparison tab or child tab is missing
   if (!comparisonTab || !childTab) return null;

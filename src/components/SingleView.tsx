@@ -1,6 +1,4 @@
-import { useEffect, useState } from "react";
-import useImageBitmap from "../hooks/useImageBitmap";
-import useImageNavigation from "../hooks/useImageNavigation";
+import useImageViewer from "../hooks/useImageViewer";
 import useViewHotkeys from "../hooks/useViewHotkeys";
 import { type SingleTabState, useTabStore } from "../store";
 import ImageCanvas from "./ImageCanvas";
@@ -13,53 +11,22 @@ const SingleView = () => {
     (s) => s.singleTabs[activeTabId],
   );
   const setCurrentIndex = useTabStore((s) => s.setCurrentIndex);
-  const [rawPath, setRawPath] = useState<string>("");
-
-  const [currentImage, setCurrentImage] = useState<ImageBitmap | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [isPanning, setIsPanning] = useState<boolean>(false);
-  const [panStart, setPanStart] = useState<{ x: number; y: number } | null>(
-    null,
-  );
-
-  useImageBitmap({
-    rawPath,
-    setCurrentImage,
-    setIsLoading,
-  });
 
   const {
+    currentImage,
+    rawPath,
+    isLoading,
+    isPanning,
     onWheel,
     onMouseDown,
     onMouseMove,
     onMouseUp,
     onMouseLeave,
     onDoubleClick,
-  } = useImageNavigation({
-    singleTab,
-    isPanning,
-    panStart,
-    setIsPanning,
-    setPanStart,
-  });
-
-  // When active single tab changes, load its current image
-  useEffect(() => {
-    if (
-      !singleTab ||
-      !singleTab.directory ||
-      singleTab.imageList.length === 0
-    ) {
-      setCurrentImage(null);
-      setRawPath("");
-      return;
-    }
-    const path = singleTab.imageList[singleTab.currentIndex];
-    setRawPath(path);
-  }, [singleTab]);
+  } = useImageViewer({ singleTab });
 
   // Arrow key navigation and keyboard shortcuts
-  useViewHotkeys({ singleTab, setRawPath });
+  useViewHotkeys({ singleTab });
 
   // Render nothing if the active tab is not a single tab
   if (!singleTab) return null;

@@ -3,10 +3,9 @@ import { type SingleTabState, useTabStore } from "../store";
 
 export type UseViewHotkeysProps = {
   singleTab: SingleTabState | null;
-  setRawPath: React.Dispatch<React.SetStateAction<string>>;
 };
 
-const useViewHotkeys = ({ singleTab, setRawPath }: UseViewHotkeysProps) => {
+const useViewHotkeys = ({ singleTab }: UseViewHotkeysProps) => {
   const setCurrentIndex = useTabStore((s) => s.setCurrentIndex);
   const resetZoomAndPan = useTabStore((s) => s.resetZoomAndPan);
 
@@ -19,11 +18,9 @@ const useViewHotkeys = ({ singleTab, setRawPath }: UseViewHotkeysProps) => {
       if (e.key === "ArrowRight") {
         const next = (currentIndex + 1) % imageList.length;
         setCurrentIndex(singleTab.id, next);
-        setRawPath(imageList[next]);
       } else if (e.key === "ArrowLeft") {
         const prev = (currentIndex - 1 + imageList.length) % imageList.length;
         setCurrentIndex(singleTab.id, prev);
-        setRawPath(imageList[prev]);
       } else if (e.key === "0" && (e.ctrlKey || e.metaKey)) {
         // Reset zoom & pan
         e.preventDefault();
@@ -33,7 +30,7 @@ const useViewHotkeys = ({ singleTab, setRawPath }: UseViewHotkeysProps) => {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [singleTab, resetZoomAndPan, setCurrentIndex, setRawPath]);
+  }, [singleTab, resetZoomAndPan, setCurrentIndex]);
 };
 
 export default useViewHotkeys;

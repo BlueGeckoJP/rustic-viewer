@@ -16,7 +16,7 @@ export const ComparisonView: React.FC<ComparisonViewProps> = ({ tabId }) => {
   const { children, activeSlotIndex } = tab;
   const activeChildId = children[activeSlotIndex];
   const activeChild = singleTabs[activeChildId];
-  useViewHotkeys({ singleTab: activeChild, setRawPath: () => {} });
+  useViewHotkeys({ singleTab: activeChild });
 
   if (!tab) return null;
 
@@ -48,11 +48,7 @@ export const ComparisonView: React.FC<ComparisonViewProps> = ({ tabId }) => {
             onClick={() => setActiveSlotIndex(tab.id, idx)}
             type="button"
           >
-            <SlotComponent
-              rawPath={child.imageList[child.currentIndex] || ""}
-              tabId={tab.id}
-              childId={child.id}
-            />
+            <SlotComponent tabId={tab.id} childId={child.id} />
           </button>
         );
       })}
