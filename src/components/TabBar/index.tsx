@@ -4,10 +4,9 @@ import useTabHotkeysUndoRedo from "../../hooks/useTabHotkeysUndoRedo";
 import useTabMove from "../../hooks/useTabMove";
 import useTabSelection from "../../hooks/useTabSelection";
 import { useTabStore } from "../../store";
-import { getLabel } from "../../utils/tabHelpers";
 import ComparisonChildList from "./ComparisonChildList";
 import TabContextMenu from "./TabContextMenu";
-import TabRow from "./TabRow";
+import TabItem from "./TabItem";
 
 const TabBar = () => {
   const tabBarRef = useRef<HTMLDivElement | null>(null);
@@ -84,52 +83,24 @@ const TabBar = () => {
             if (singleTab?.parentId) return null;
 
             const isComp = !!comparisonTab;
-            const tab = isComp ? comparisonTab : singleTab;
-            const label = getLabel(tab, isComp ? "comparison" : "single");
             const active = tabId === activeTabId;
-            const selected = selectedIDs.has(tabId);
             const expanded = isComp && expandedComparisonIds.has(tabId);
             return (
               <div key={tabId} className="flex flex-col gap-1">
-                {/** biome-ignore lint/a11y/useKeyWithClickEvents: Currently only mouse support is available. Key bindings will be added later if needed */}
-                <div
-                  role="tab"
-                  tabIndex={0}
-                  aria-selected={active}
-                  aria-label={label}
-                  onMouseDown={(e) => {
-                    toggleSelect(tabId, idx, e);
-                    tabMove.onTabMouseDown(e, tabId);
-                  }}
-                  onClick={(e) => {
-                    if (tabMove.draggingId) return;
-                    if (e.metaKey || e.ctrlKey || e.shiftKey) return;
-                    setActiveTab(tabId);
-                  }}
-                  onContextMenu={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setMenuOpenFor(tabId);
-                    setMenuPos({ x: e.clientX, y: e.clientY });
-                  }}
-                  className={`flex items-center gap-2 cursor-pointer select-none px-2 py-1 transition-colors duration-150 min-w-0 rounded-xl text-[#D3DAD9] ${
-                    active
-                      ? "shadow-md bg-[#44444E] ring-2 ring-[#715A5A]"
-                      : selected
-                        ? "bg-[#44444E]"
-                        : "hover:bg-[#44444E]"
-                  }`}
-                  ref={(el) => tabMove.registerTabRef(tabId, el)}
-                >
-                  <TabRow
-                    isComp={isComp}
-                    expanded={expanded}
-                    label={label}
-                    tabId={tabId}
-                    toggleExpanded={toggleExpanded}
-                    setSelectedIDs={setSelectedIDs}
-                  />
-                </div>
+                <TabItem
+                  tabId={tabId}
+                  index={idx}
+                  tabMove={tabMove}
+                  selectedIDs={selectedIDs}
+                  isComp={isComp}
+                  active={active}
+                  expanded={expanded}
+                  toggleSelect={toggleSelect}
+                  setMenuOpenFor={setMenuOpenFor}
+                  setMenuPos={setMenuPos}
+                  toggleExpanded={toggleExpanded}
+                  setSelectedIDs={setSelectedIDs}
+                />
                 <ComparisonChildList
                   isComp={isComp}
                   expanded={expanded}
