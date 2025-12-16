@@ -20,13 +20,13 @@ export default async function loadImage(
       imageSize: { width: item.width, height: item.height },
     };
     monitor.recordMetric(metrics);
-    return Promise.resolve(item.bitmap);
+    return item.bitmap;
   }
 
-  return returnDecodeImagePromise(path, startTotal);
+  return decodeAndCacheImage(path, startTotal);
 }
 
-const returnDecodeImagePromise = async (path: string, startTotal: number) => {
+const decodeAndCacheImage = async (path: string, startTotal: number) => {
   const { imageBitmap, fileReadTime, decodeTime } =
     await imageDecoderPool.decodeImageFromPath(path);
 
