@@ -1,6 +1,7 @@
 import type React from "react";
 import useViewHotkeys from "../../hooks/useViewHotkeys";
 import { useTabStore } from "../../store";
+import { getComparisonLayoutClass } from "../../utils/layoutUtils";
 import SlotComponent from "./SlotComponent";
 
 type ComparisonViewProps = {
@@ -23,12 +24,7 @@ export const ComparisonView: React.FC<ComparisonViewProps> = ({ tabId }) => {
   const n = children.length;
 
   // Basic layout rules (auto by number of children)
-  let containerClass = "";
-  if (n === 2) containerClass = "flex flex-row gap-2 h-full";
-  else if (n === 3) containerClass = "flex flex-row gap-2 h-full";
-  else if (n === 4)
-    containerClass = "grid grid-cols-2 grid-rows-2 gap-2 h-full";
-  else containerClass = "flex flex-row gap-2 h-full"; // fallback
+  const containerClass = getComparisonLayoutClass(n);
 
   return (
     <div className={`p-2 box-border w-full h-full ${containerClass}`}>
