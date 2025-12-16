@@ -2,11 +2,8 @@ import { useRef, useState } from "react";
 import useTabHotkeysUndoRedo from "../../hooks/useTabHotkeysUndoRedo";
 import useTabMove from "../../hooks/useTabMove";
 import useTabSelection from "../../hooks/useTabSelection";
-import {
-  type ComparisonTabState,
-  type SingleTabState,
-  useTabStore,
-} from "../../store";
+import { useTabStore } from "../../store";
+import { getLabel } from "../../utils/tabHelpers";
 import ComparisonChildList from "./ComparisonChildList";
 import TabContextMenu from "./TabContextMenu";
 import TabRow from "./TabRow";
@@ -50,24 +47,6 @@ const TabBar = () => {
   // Context menu
   const [menuOpenFor, setMenuOpenFor] = useState<string | null>(null);
   const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
-
-  const getLabel = (
-    tab: SingleTabState | ComparisonTabState,
-    type: "single" | "comparison",
-  ) => {
-    if (type === "comparison") {
-      const compTab = tab as ComparisonTabState;
-      return `Compare (${compTab.children.length})`;
-    }
-    const singleTab = tab as SingleTabState;
-    if (singleTab.imageList?.length > 0) {
-      const base = singleTab.imageList[singleTab.currentIndex]
-        ?.split("/")
-        .pop();
-      return base || "Untitled";
-    }
-    return "New Tab";
-  };
 
   return (
     <div
