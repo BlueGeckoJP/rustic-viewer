@@ -37,152 +37,171 @@ const TabContextMenu = ({
 
   if (!menuOpenFor || !menuPos) return null;
 
+  const contextItemDefinitions: Record<
+    string,
+    {
+      label: string;
+      handle: () => void;
+      disabled?: boolean;
+    }
+  > = {
+    new: {
+      label: "New Tab",
+      handle: () => addSingleTab([], 0, null),
+    },
+    clone: {
+      label: "Clone Tab",
+      handle: () => {
+        const oldTab = singleTabs[menuOpenFor];
+        if (!oldTab) return;
+        const newDirectory = oldTab.directory;
+        const newImageList = [...oldTab.imageList];
+        const newIndex = oldTab.currentIndex;
+        addSingleTab(newImageList, newIndex, newDirectory);
+      },
+    },
+    close: {
+      label: "Close",
+      handle: () => {
+        if (singleTabs[menuOpenFor]) removeSingleTab(menuOpenFor);
+        else if (comparisonTabs[menuOpenFor]) detachAllChildren(menuOpenFor);
+        setSelectedIDs((prev) => {
+          if (!prev.has(menuOpenFor)) return prev;
+          const n = new Set(prev);
+          n.delete(menuOpenFor);
+          return n;
+        });
+      },
+    },
+    "close-others": {
+      label: "Close Others",
+      handle: () => {
+        tabOrder
+          .filter((id) => id !== menuOpenFor)
+          .forEach((id) => {
+            if (singleTabs[id]) removeSingleTab(id);
+            else if (comparisonTabs[id]) detachAllChildren(id);
+          });
+        setSelectedIDs(new Set([menuOpenFor]));
+        setActiveTab(menuOpenFor);
+      },
+    },
+    "create-comparison": {
+      label: `Create Comparison (${tabOrder.filter((id) => singleTabs[id] && selectedIDs.has(id)).length})`,
+      handle: () => {
+        const selectedSingleIDs = tabOrder.filter(
+          (id) => singleTabs[id] && selectedIDs.has(id),
+        );
+        if (selectedSingleIDs.length >= 2) {
+          createComparison(selectedSingleIDs);
+        }
+        setSelectedIDs(new Set());
+      },
+      disabled:
+        tabOrder.filter((id) => singleTabs[id] && selectedIDs.has(id)).length <
+        2,
+    },
+    "detach-all": {
+      label: "Detach All Children",
+      handle: () => detachAllChildren(menuOpenFor),
+    },
+    "toggle-expand": {
+      label: expandedComparisonIds.has(menuOpenFor) ? "Collapse" : "Expand",
+      handle: () => toggleExpanded(menuOpenFor),
+    },
+    "move-up": {
+      label: "Move Up",
+      handle: () => {
+        const [parentId, childId] = menuOpenFor.split(CHILD_PREFIX);
+        const parent = comparisonTabs[parentId];
+        if (!parent) return;
+        const childIndex = parent.children.indexOf(childId);
+        if (childIndex < 0) return;
+        if (childIndex > 0)
+          reorderChildren(parent.id, childIndex, childIndex - 1);
+      },
+    },
+    "move-down": {
+      label: "Move Down",
+      handle: () => {
+        const [parentId, childId] = menuOpenFor.split(CHILD_PREFIX);
+        const parent = comparisonTabs[parentId];
+        if (!parent) return;
+        const childIndex = parent.children.indexOf(childId);
+        if (childIndex < 0) return;
+        if (childIndex < parent.children.length - 1)
+          reorderChildren(parent.id, childIndex, childIndex + 1);
+      },
+    },
+    detach: {
+      label: "Detach to Top",
+      handle: () => {
+        const [parentId, childId] = menuOpenFor.split(CHILD_PREFIX);
+        const parent = comparisonTabs[parentId];
+        if (!parent) return;
+        const childIndex = parent.children.indexOf(childId);
+        if (childIndex < 0) return;
+        detachChild(parent.id, childIndex);
+      },
+    },
+    remove: {
+      label: "Remove From Comparison",
+      handle: () => {
+        const [parentId, childId] = menuOpenFor.split(CHILD_PREFIX);
+        const parent = comparisonTabs[parentId];
+        if (!parent) return;
+        const childIndex = parent.children.indexOf(childId);
+        if (childIndex < 0) return;
+        removeChild(parent.id, childIndex);
+      },
+    },
+  };
+
   const isChildContext = menuOpenFor.includes(CHILD_PREFIX);
-  let contextItems: ContextMenuItem[] = [];
+  let contextItemIds: string[] = [];
 
   if (!isChildContext) {
-    contextItems = [
-      { id: "new", label: "New Tab" },
-      { id: "clone", label: "Clone Tab" },
-      { id: "close", label: "Close" },
-      { id: "close-others", label: "Close Others" },
-    ];
+    contextItemIds = ["new", "clone", "close", "close-others"];
+
     const singleSelectedCount = tabOrder.filter(
       (id) => singleTabs[id] && selectedIDs.has(id),
     ).length;
     if (singleSelectedCount >= 2) {
-      contextItems.unshift({
-        id: "create-comparison",
-        label: `Create Comparison (${singleSelectedCount})`,
-      });
+      contextItemIds.unshift("create-comparison");
     }
+
     // Add comparison-specific actions if target is a comparison
     const target = comparisonTabs[menuOpenFor];
     if (target) {
-      contextItems.push({ id: "detach-all", label: "Detach All Children" });
-      contextItems.push({
-        id: "toggle-expand",
-        label: expandedComparisonIds.has(target.id) ? "Collapse" : "Expand",
-      });
+      contextItemIds.push("detach-all", "toggle-expand");
     }
   } else {
     // Child menu items
-    contextItems = [
-      { id: "move-up", label: "Move Up" },
-      { id: "move-down", label: "Move Down" },
-      { id: "detach", label: "Detach to Top" },
-      { id: "remove", label: "Remove From Comparison" },
-    ];
+    contextItemIds = ["move-up", "move-down", "detach", "remove"];
   }
 
+  const contextItems: ContextMenuItem[] = contextItemIds.map((id) => {
+    const def = contextItemDefinitions[id];
+    return {
+      id,
+      label: def.label,
+      disabled: def.disabled ?? false,
+    };
+  });
+
   const handleSelect = (id: string) => {
-    const targetId = menuOpenFor;
-    if (!targetId) return;
-    const childMode = targetId.includes(CHILD_PREFIX);
-
-    if (!childMode) {
-      switch (id) {
-        case "create-comparison":
-          handleCreateComparison();
-          break;
-        case "new":
-          handleNew();
-          break;
-        case "clone":
-          handleClone();
-          break;
-        case "close":
-          handleClose();
-          break;
-        case "close-others":
-          handleCloseOthers();
-          break;
-        case "detach-all":
-          handleDetachAll();
-          break;
-        case "toggle-expand":
-          handleToggleExpand();
-          break;
-      }
-    } else {
-      handleChildActions(id);
+    const definition = contextItemDefinitions[id];
+    if (definition && !definition.disabled) {
+      definition.handle();
     }
-
     onClose();
-  };
-
-  const handleCreateComparison = () => {
-    const selectedSingleIDs = tabOrder.filter(
-      (id) => singleTabs[id] && selectedIDs.has(id),
-    );
-    if (selectedSingleIDs.length >= 2) {
-      createComparison(selectedSingleIDs);
-    }
-    setSelectedIDs(new Set());
-  };
-
-  const handleNew = () => addSingleTab([], 0, null);
-
-  const handleClone = () => {
-    const oldTab = singleTabs[menuOpenFor];
-    if (!oldTab) return;
-    const newDirectory = oldTab.directory;
-    const newImageList = [...oldTab.imageList];
-    const newIndex = oldTab.currentIndex;
-    addSingleTab(newImageList, newIndex, newDirectory);
-  };
-
-  const handleClose = () => {
-    if (singleTabs[menuOpenFor]) removeSingleTab(menuOpenFor);
-    else if (comparisonTabs[menuOpenFor]) detachAllChildren(menuOpenFor);
-    setSelectedIDs((prev) => {
-      if (!prev.has(menuOpenFor)) return prev;
-      const n = new Set(prev);
-      n.delete(menuOpenFor);
-      return n;
-    });
-  };
-
-  const handleCloseOthers = () => {
-    tabOrder
-      .filter((id) => id !== menuOpenFor)
-      .forEach((id) => {
-        if (singleTabs[id]) removeSingleTab(id);
-        else if (comparisonTabs[id]) detachAllChildren(id);
-      });
-    setSelectedIDs(new Set([menuOpenFor]));
-    setActiveTab(menuOpenFor);
-  };
-
-  const handleDetachAll = () => detachAllChildren(menuOpenFor);
-
-  const handleToggleExpand = () => toggleExpanded(menuOpenFor);
-
-  const handleChildActions = (id: string) => {
-    const [parentId, childId] = menuOpenFor.split(CHILD_PREFIX);
-    const parent = comparisonTabs[parentId];
-    if (!parent) return;
-    const childIndex = parent.children.indexOf(childId);
-    if (childIndex < 0) return;
-
-    if (id === "move-up") {
-      if (childIndex > 0)
-        reorderChildren(parent.id, childIndex, childIndex - 1);
-    } else if (id === "move-down") {
-      if (childIndex < parent.children.length - 1)
-        reorderChildren(parent.id, childIndex, childIndex + 1);
-    } else if (id === "detach") {
-      detachChild(parent.id, childIndex);
-    } else if (id === "remove") {
-      removeChild(parent.id, childIndex);
-    }
   };
 
   return (
     <ContextMenu
       x={menuPos.x}
       y={menuPos.y}
-      items={contextItems.map((it) => ({ ...it, disabled: false }))}
+      items={contextItems}
       onSelect={handleSelect}
       onClose={onClose}
     />
