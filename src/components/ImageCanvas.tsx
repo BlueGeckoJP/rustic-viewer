@@ -8,22 +8,19 @@ import { useCallback, useEffect, useRef } from "react";
  * Props:
  *  - image: ImageBitmap | null -> when provided triggers drawing
  *  - className/style: styling
- *  - onInitCanvas?: (canvas: HTMLCanvasElement) => void  (for parent to keep a ref if needed)
  *  - zoom?: number (1.0 = 100%, 2.0 = 200%, etc.)
  *  - panOffset?: { x: number, y: number } (pan offset in CSS pixels)
  */
 export interface ImageCanvasProps {
   image: ImageBitmap | null;
-  className?: string;
-  onInitCanvas?: (canvas: HTMLCanvasElement) => void;
-  zoom?: number;
-  panOffset?: { x: number; y: number };
+  className: string;
+  zoom: number;
+  panOffset: { x: number; y: number };
 }
 
 const ImageCanvas: React.FC<ImageCanvasProps> = ({
   image,
   className,
-  onInitCanvas,
   zoom = 1.0,
   panOffset = { x: 0, y: 0 },
 }) => {
@@ -71,16 +68,9 @@ const ImageCanvas: React.FC<ImageCanvasProps> = ({
     const offsetX = centerX - drawWidth / 2 + panOffset.x;
     const offsetY = centerY - drawHeight / 2 + panOffset.y;
 
-    const srcCanvas = document.createElement("canvas");
-    srcCanvas.width = image.width;
-    srcCanvas.height = image.height;
-    const srcCtx = srcCanvas.getContext("2d");
-    if (!srcCtx) return;
-    srcCtx.drawImage(image, 0, 0);
-
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(
-      srcCanvas,
+      image,
       0,
       0,
       image.width,
@@ -123,10 +113,6 @@ const ImageCanvas: React.FC<ImageCanvasProps> = ({
   useEffect(() => {
     draw();
   }, [draw]);
-
-  useEffect(() => {
-    if (canvasRef.current && onInitCanvas) onInitCanvas(canvasRef.current);
-  }, [onInitCanvas]);
 
   return <canvas ref={canvasRef} className={className} />;
 };
