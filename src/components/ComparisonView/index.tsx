@@ -1,4 +1,5 @@
 import type React from "react";
+import { useMemo } from "react";
 import useViewHotkeys from "../../hooks/useViewHotkeys";
 import { useTabStore } from "../../store";
 import { getComparisonLayoutClass } from "../../utils/layoutUtils";
@@ -19,12 +20,12 @@ export const ComparisonView: React.FC<ComparisonViewProps> = ({ tabId }) => {
   const activeChild = singleTabs[activeChildId];
   useViewHotkeys({ singleTab: activeChild });
 
-  if (!tab) return null;
-
   const n = children.length;
 
   // Basic layout rules (auto by number of children)
-  const containerClass = getComparisonLayoutClass(n);
+  const containerClass = useMemo(() => getComparisonLayoutClass(n), [n]);
+
+  if (!tab) return null;
 
   return (
     <div className={`p-2 box-border w-full h-full ${containerClass}`}>
