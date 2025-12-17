@@ -66,20 +66,29 @@ export const createSingleTabActions: StateCreator<
     });
   },
 
-  setCurrentIndex: (id, index) => {
-    set((state) => updateTabField(state, id, "currentIndex", index));
-  },
+  setCurrentIndex: (id, index) =>
+    set((state) => updateTabField(state, id, "currentIndex", index)),
 
-  setZoom: (id, zoom) => {
-    set((state) => updateTabField(state, id, "zoom", zoom));
-  },
+  setZoom: (id, zoom) =>
+    set((state) => updateTabField(state, id, "zoom", zoom)),
 
-  setPanOffset: (id, offset) => {
-    set((state) => updateTabField(state, id, "panOffset", offset));
-  },
+  setPanOffset: (id, offset) =>
+    set((state) => updateTabField(state, id, "panOffset", offset)),
 
   resetZoomAndPan: (id) => {
-    set((state) => updateTabField(state, id, "zoom", 1.0));
-    set((state) => updateTabField(state, id, "panOffset", { x: 0, y: 0 }));
+    set((state) => {
+      const tab = state.singleTabs[id];
+      if (!tab) return state;
+      return {
+        singleTabs: {
+          ...state.singleTabs,
+          [id]: {
+            ...tab,
+            zoom: 1.0,
+            panOffset: { x: 0, y: 0 },
+          },
+        },
+      };
+    });
   },
 });
