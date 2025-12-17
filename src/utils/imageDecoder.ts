@@ -1,6 +1,7 @@
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { readFile } from "@tauri-apps/plugin-fs";
 import ImageWorker from "../imageWorker.ts?worker";
+import { WORKER_POOL_SIZE } from "../store/constants";
 
 /**
  * Worker Pool based image decode service.
@@ -24,7 +25,7 @@ type QueuedRequest = {
 };
 
 export class ImageDecoderPool {
-  private poolSize = 4; // Can decode 4 images simultaneously
+  private poolSize = WORKER_POOL_SIZE;
   private workerPool: WorkerInstance[] = [];
   private nextId = 0;
   private pending = new Map<number, Pending>();

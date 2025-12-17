@@ -1,3 +1,5 @@
+import { IMAGE_CACHE_SIZE } from "../store/constants";
+
 export type CacheItem = {
   width: number;
   height: number;
@@ -51,5 +53,5 @@ export class ImageCache {
   }
 }
 
-const imageCache = new ImageCache(500); // Default capacity
+const imageCache = new ImageCache(IMAGE_CACHE_SIZE); // Default capacity
 export default imageCache;

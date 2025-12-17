@@ -5,6 +5,7 @@ import { createCommonActions } from "./actions/commonActions";
 import { createComparisonTabActions } from "./actions/comparisonTabActions";
 import { createSingleTabActions } from "./actions/singleTabActions";
 import { createTabOrderActions } from "./actions/tabOrderActions";
+import { PERSIST_SAVE_DELAY_MS } from "./constants";
 import {
   parseSession,
   reducedToSingleTabs,
@@ -88,7 +89,7 @@ if (typeof window !== "undefined") {
     persist.timer = window.setTimeout(() => {
       persist.timer = null;
       saveSession(state);
-    }, 300);
+    }, PERSIST_SAVE_DELAY_MS);
   });
 
   persist.beforeUnload = () => saveSession(useTabStore.getState());

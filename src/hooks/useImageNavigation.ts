@@ -1,4 +1,5 @@
 import { type SingleTabState, useTabStore } from "../store";
+import { MAX_ZOOM, MIN_ZOOM } from "../store/constants";
 
 export type UseImageNavigationProps = {
   singleTab: SingleTabState | null;
@@ -33,7 +34,10 @@ const useImageNavigation = ({
     e.preventDefault();
     const delta = -e.deltaY;
     const zoomFactor = 1 + delta * 0.001;
-    const newZoom = Math.max(0.1, Math.min(10, singleTab.zoom * zoomFactor));
+    const newZoom = Math.max(
+      MIN_ZOOM,
+      Math.min(MAX_ZOOM, singleTab.zoom * zoomFactor),
+    );
     setZoom(singleTab.id, newZoom);
   };
 
