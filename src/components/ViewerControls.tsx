@@ -10,7 +10,7 @@ const ViewerControls = ({
   setCurrentIndex,
 }: ViewerControlsProps) => {
   return (
-    <div className="absolute bottom-1 right-2 flex gap-1 opacity-0 transition">
+    <div className="absolute bottom-1 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition">
       <button
         className="px-2 py-1 bg-[#44444E] rounded text-xs hover:bg-[#555]"
         onClick={(e) => {
