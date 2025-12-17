@@ -15,7 +15,7 @@ const useTabHotkeysUndoRedo = ({
 }: UseTabHotkeysUndoRedoProps): void => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "z") {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
         switch (e.shiftKey) {
           case true:
             // Redo (Ctrl/Cmd + Shift + Z)
