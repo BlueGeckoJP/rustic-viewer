@@ -39,7 +39,7 @@ const SlotComponent = ({ tabId, childId }: SlotComponentProps) => {
   if (!comparisonTab || !childTab) return null;
 
   return (
-    <>
+    <div>
       <ViewerHeader
         rawPath={rawPath}
         isLoading={isLoading}
@@ -77,7 +77,7 @@ const SlotComponent = ({ tabId, childId }: SlotComponentProps) => {
       </div>
 
       <ViewerControls singleTab={childTab} setCurrentIndex={setCurrentIndex} />
-    </>
+    </div>
   );
 };
 
