@@ -39,7 +39,7 @@ const SlotComponent = ({ tabId, childId }: SlotComponentProps) => {
   if (!comparisonTab || !childTab) return null;
 
   return (
-    <div>
+    <div className="flex flex-col w-full h-full">
       <ViewerHeader
         rawPath={rawPath}
         isLoading={isLoading}
