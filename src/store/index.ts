@@ -11,7 +11,7 @@ import {
   reducedToSingleTabs,
   saveSession,
 } from "./persistedSession";
-import type { SingleTabState, TabStoreState } from "./types";
+import type { TabStoreState } from "./types";
 
 const restored = parseSession();
 
@@ -32,30 +32,15 @@ export const useTabStore = create<TabStoreState>()(
     {
       limit: 100,
       partialize: (state) => {
-        const partialSingleTabs: SingleTabState[] = Object.fromEntries(
-          Object.entries(state.singleTabs).map(([id, tab]) => [
-            [id],
-            {
-              ...tab,
-              zoom: 1,
-              panOffset: { x: 0, y: 0 },
-            },
-          ]),
-        );
-
         return {
-          singleTabs: partialSingleTabs,
+          singleTabs: state.singleTabs,
           comparisonTabs: state.comparisonTabs,
           tabOrder: state.tabOrder,
           activeTabId: state.activeTabId,
         };
       },
       equality: (a, b) => {
-        return (
-          JSON.stringify(a.singleTabs) === JSON.stringify(b.singleTabs) &&
-          a.comparisonTabs === b.comparisonTabs &&
-          a.tabOrder === b.tabOrder
-        );
+        return a.tabOrder.sort().toString() === b.tabOrder.sort().toString();
       },
     },
   ),
