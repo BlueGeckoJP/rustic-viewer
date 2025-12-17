@@ -15,9 +15,10 @@ export const ComparisonView: React.FC<ComparisonViewProps> = ({ tabId }) => {
   const setActiveSlotIndex = useTabStore((s) => s.setActiveSlotIndex);
 
   // Arrow key navigation and keyboard shortcuts for active slot
-  const { children, activeSlotIndex } = tab;
+  const children = tab?.children ?? [];
+  const activeSlotIndex = tab?.activeSlotIndex ?? 0;
   const activeChildId = children[activeSlotIndex];
-  const activeChild = singleTabs[activeChildId];
+  const activeChild = activeChildId ? singleTabs[activeChildId] : null;
   useViewHotkeys({ singleTab: activeChild });
 
   const n = children.length;
