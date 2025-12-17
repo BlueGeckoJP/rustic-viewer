@@ -58,7 +58,7 @@ const ComparisonChildList = ({
                 }}
                 type="button"
               >
-                <span className="truncate flex-1" title={file}>
+                <span className="truncate flex-1 text-start" title={file}>
                   {file ? file.split("/").pop() : "(empty)"}
                 </span>
                 <span className="opacity-50 text-[10px]">
