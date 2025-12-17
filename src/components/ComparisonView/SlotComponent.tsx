@@ -17,8 +17,8 @@ const SlotComponent = ({ tabId, childId }: SlotComponentProps) => {
   const comparisonTab: ComparisonTabState | undefined = useTabStore(
     (s) => s.comparisonTabs[tabId],
   );
-  const childTab: SingleTabState | undefined = useTabStore(
-    (s) => s.singleTabs[childId],
+  const childTab: SingleTabState | null = useTabStore(
+    (s) => s.singleTabs[childId] ?? null,
   );
   const setCurrentIndex = useTabStore((s) => s.setCurrentIndex);
 
