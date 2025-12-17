@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import loadImage from "../utils/imageLoader";
 
-export type useImageBitmapProps = {
+export type UseImageBitmapProps = {
   rawPath: string;
   setCurrentImage: React.Dispatch<React.SetStateAction<ImageBitmap | null>>;
   setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
@@ -11,7 +11,7 @@ const useImageBitmap = ({
   rawPath,
   setCurrentImage,
   setIsLoading,
-}: useImageBitmapProps) => {
+}: UseImageBitmapProps) => {
   useEffect(() => {
     let alive = true;
 
