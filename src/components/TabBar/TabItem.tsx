@@ -1,94 +1,111 @@
 import type { UseTabMoveReturn } from "../../hooks/useTabMove";
+import type { VerticalTabItem } from "../../selectors/selectVerticalTabs";
 import { useTabStore } from "../../store";
 import { getLabel } from "../../utils/tabHelpers";
 import TabRow from "./TabRow";
 
 export type TabItemProps = {
-  tabId: string;
+  item: VerticalTabItem;
   index: number;
-  tabMove: UseTabMoveReturn;
+  expandedComparisonIds: Set<string>;
   selectedIDs: Set<string>;
-  isComp: boolean;
-  active: boolean;
-  expanded: boolean;
-  toggleSelect: (tabId: string, index: number, e: React.MouseEvent) => void;
-  setMenuOpenFor: React.Dispatch<React.SetStateAction<string | null>>;
-  setMenuPos: React.Dispatch<
-    React.SetStateAction<{ x: number; y: number } | null>
-  >;
-  toggleExpanded: (id: string) => void;
+  tabMove: UseTabMoveReturn;
   setSelectedIDs: React.Dispatch<React.SetStateAction<Set<string>>>;
+  toggleExpanded: (id: string) => void;
+  toggleSelect: (id: string, index: number, e: React.MouseEvent) => void;
+  setMenuOpenFor: (id: string | null) => void;
+  setMenuPos: (pos: { x: number; y: number } | null) => void;
 };
 
 const TabItem = ({
-  tabId,
+  item,
   index,
-  tabMove,
+  expandedComparisonIds,
   selectedIDs,
-  isComp,
-  active,
-  expanded,
+  tabMove,
+  setSelectedIDs,
+  toggleExpanded,
   toggleSelect,
   setMenuOpenFor,
   setMenuPos,
-  toggleExpanded,
-  setSelectedIDs,
 }: TabItemProps) => {
   const singleTabs = useTabStore((s) => s.singleTabs);
   const comparisonTabs = useTabStore((s) => s.comparisonTabs);
   const setActiveTab = useTabStore((s) => s.setActiveTab);
+  const setActiveSlotIndex = useTabStore((s) => s.setActiveSlotIndex);
 
-  const singleTab = singleTabs[tabId];
-  const comparisonTab = comparisonTabs[tabId];
+  const isComp = item.kind === "comparison";
+  const isChild = item.kind === "single" && item.parentId !== null;
+  const expanded = isComp && expandedComparisonIds.has(item.id);
 
-  if (!singleTab && !comparisonTab) return null;
-  if (singleTab?.parentId) return null; // If the tab is a child tab (parentId !== null), early return
+  // If the tab is a children of a comparison tab and the parent is collapsed, don't render it
+  if (isChild && item.parentId && !expandedComparisonIds.has(item.parentId)) {
+    return null;
+  }
 
-  const tab = singleTabs[tabId] || comparisonTabs[tabId];
-  const selected = selectedIDs.has(tabId);
+  const tab = isComp ? comparisonTabs[item.id] : singleTabs[item.id];
+  if (!tab) return null;
+
   const label = getLabel(tab, isComp ? "comparison" : "single");
+  const selected = selectedIDs.has(item.id);
 
   return (
     <div
+      key={item.id}
       role="tab"
       tabIndex={0}
-      aria-selected={active}
+      aria-selected={selected}
       aria-label={label}
+      style={isChild ? { marginLeft: "1.5rem" } : {}}
       onMouseDown={(e) => {
-        toggleSelect(tabId, index, e);
-        tabMove.onTabMouseDown(e, tabId);
+        if (!isComp) {
+          toggleSelect(item.id, index, e);
+          tabMove.onTabMouseDown(e, item.id);
+        }
       }}
       onClick={(e) => {
         if (tabMove.draggingId) return;
         if (e.metaKey || e.ctrlKey || e.shiftKey) return;
-        setActiveTab(tabId);
+
+        if (isChild && item.parentId) {
+          setActiveTab(item.id);
+          setActiveSlotIndex(item.parentId, item.slotIndex ?? 0);
+        } else {
+          setActiveTab(item.id);
+        }
       }}
       onKeyDown={(e) => {
         if (e.key !== "Enter" && e.key !== " ") return;
         e.preventDefault();
         if (e.metaKey || e.ctrlKey || e.shiftKey) return;
-        setActiveTab(tabId);
+
+        if (isChild && item.parentId) {
+          setActiveTab(item.id);
+          setActiveSlotIndex(item.parentId, item.slotIndex ?? 0);
+        } else {
+          setActiveTab(item.id);
+        }
       }}
       onContextMenu={(e) => {
         e.preventDefault();
         e.stopPropagation();
-        setMenuOpenFor(tabId);
+        setMenuOpenFor(item.id);
         setMenuPos({ x: e.clientX, y: e.clientY });
       }}
       className={`flex items-center gap-2 cursor-pointer select-none px-2 py-1 transition-colors duration-150 min-w-0 rounded-xl text-[#D3DAD9] ${
-        active
+        item.active
           ? "shadow-md bg-[#44444E] ring-2 ring-[#715A5A]"
           : selected
             ? "bg-[#44444E]"
             : "hover:bg-[#44444E]"
       }`}
-      ref={(el) => tabMove.registerTabRef(tabId, el)}
+      ref={!isComp ? (el) => tabMove.registerTabRef(item.id, el) : null}
     >
       <TabRow
         isComp={isComp}
         expanded={expanded}
         label={label}
-        tabId={tabId}
+        tabId={item.id}
         toggleExpanded={toggleExpanded}
         setSelectedIDs={setSelectedIDs}
       />

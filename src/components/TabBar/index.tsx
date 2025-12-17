@@ -1,21 +1,17 @@
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useStore } from "zustand";
 import useTabHotkeysUndoRedo from "../../hooks/useTabHotkeysUndoRedo";
 import useTabMove from "../../hooks/useTabMove";
 import useTabSelection from "../../hooks/useTabSelection";
+import { selectVerticalTabs } from "../../selectors/selectVerticalTabs";
 import { useTabStore } from "../../store";
-import ComparisonChildList from "./ComparisonChildList";
 import TabContextMenu from "./TabContextMenu";
 import TabItem from "./TabItem";
 
 const TabBar = () => {
   const tabBarRef = useRef<HTMLDivElement | null>(null);
-  const singleTabs = useTabStore((s) => s.singleTabs);
-  const comparisonTabs = useTabStore((s) => s.comparisonTabs);
   const tabOrder = useTabStore((s) => s.tabOrder);
-  const activeTabId = useTabStore((s) => s.activeTabId);
-  const setActiveTab = useTabStore((s) => s.setActiveTab);
-  const setActiveSlotIndex = useTabStore((s) => s.setActiveSlotIndex);
+  const tabStore = useTabStore();
 
   const undo = useStore(useTabStore.temporal, (s) => s.undo);
   const redo = useStore(useTabStore.temporal, (s) => s.redo);
@@ -24,10 +20,13 @@ const TabBar = () => {
   const canUndo = pastStates.length > 0;
   const canRedo = futureStates.length > 0;
 
+  const verticalTabs = useMemo(() => selectVerticalTabs(tabStore), [tabStore]);
+
   const [isOpen, setIsOpen] = useState(true);
   const [expandedComparisonIds, setExpandedComparisonIds] = useState<
     Set<string>
   >(new Set());
+
   const toggleExpanded = (id: string) => {
     setExpandedComparisonIds((prev) => {
       const n = new Set(prev);
@@ -36,10 +35,9 @@ const TabBar = () => {
       return n;
     });
   };
+
   const tabMove = useTabMove({ tabBarRef, gap: 8, isOpen });
-
   useTabHotkeysUndoRedo({ canUndo, canRedo, undo, redo });
-
   const { selectedIDs, setSelectedIDs, toggleSelect } = useTabSelection({
     tabOrder,
   });
@@ -76,44 +74,21 @@ const TabBar = () => {
           aria-orientation="vertical"
           className="flex flex-col gap-2"
         >
-          {tabOrder.map((tabId, idx) => {
-            const singleTab = singleTabs[tabId];
-            const comparisonTab = comparisonTabs[tabId];
-            if (!singleTab && !comparisonTab) return null;
-            if (singleTab?.parentId) return null;
-
-            const isComp = !!comparisonTab;
-            const active = tabId === activeTabId;
-            const expanded = isComp && expandedComparisonIds.has(tabId);
+          {verticalTabs.map((item, index) => {
             return (
-              <div key={tabId} className="flex flex-col gap-1">
-                <TabItem
-                  tabId={tabId}
-                  index={idx}
-                  tabMove={tabMove}
-                  selectedIDs={selectedIDs}
-                  isComp={isComp}
-                  active={active}
-                  expanded={expanded}
-                  toggleSelect={toggleSelect}
-                  setMenuOpenFor={setMenuOpenFor}
-                  setMenuPos={setMenuPos}
-                  toggleExpanded={toggleExpanded}
-                  setSelectedIDs={setSelectedIDs}
-                />
-                <ComparisonChildList
-                  isComp={isComp}
-                  expanded={expanded}
-                  comparisonTab={comparisonTab}
-                  singleTabs={singleTabs}
-                  active={active}
-                  tabId={tabId}
-                  setActiveTab={setActiveTab}
-                  setActiveSlotIndex={setActiveSlotIndex}
-                  setMenuOpenFor={setMenuOpenFor}
-                  setMenuPos={setMenuPos}
-                />
-              </div>
+              <TabItem
+                key={item.id}
+                item={item}
+                index={index}
+                expandedComparisonIds={expandedComparisonIds}
+                selectedIDs={selectedIDs}
+                tabMove={tabMove}
+                setSelectedIDs={setSelectedIDs}
+                toggleExpanded={toggleExpanded}
+                toggleSelect={toggleSelect}
+                setMenuOpenFor={setMenuOpenFor}
+                setMenuPos={setMenuPos}
+              />
             );
           })}
         </div>
