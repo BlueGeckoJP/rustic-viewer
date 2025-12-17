@@ -7,8 +7,8 @@ import ViewerHeader from "./ViewerHeader";
 
 const SingleView = () => {
   const activeTabId = useTabStore((s) => s.activeTabId);
-  const singleTab: SingleTabState | undefined = useTabStore(
-    (s) => s.singleTabs[activeTabId],
+  const singleTab: SingleTabState | null = useTabStore(
+    (s) => s.singleTabs[activeTabId] ?? null,
   );
   const setCurrentIndex = useTabStore((s) => s.setCurrentIndex);
 
