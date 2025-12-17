@@ -14,8 +14,8 @@ export type SlotComponentProps = {
 };
 
 const SlotComponent = ({ tabId, childId }: SlotComponentProps) => {
-  const comparisonTab: ComparisonTabState | undefined = useTabStore(
-    (s) => s.comparisonTabs[tabId],
+  const comparisonTab: ComparisonTabState | null = useTabStore(
+    (s) => s.comparisonTabs[tabId] ?? null,
   );
   const childTab: SingleTabState | null = useTabStore(
     (s) => s.singleTabs[childId] ?? null,
