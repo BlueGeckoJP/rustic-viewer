@@ -1,5 +1,5 @@
+import { MAX_ZOOM, MIN_ZOOM } from "../constants";
 import { type SingleTabState, useTabStore } from "../store";
-import { MAX_ZOOM, MIN_ZOOM } from "../store/constants";
 
 export type UseImageNavigationProps = {
   singleTab: SingleTabState | null;

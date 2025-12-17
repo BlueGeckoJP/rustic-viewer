@@ -1,7 +1,7 @@
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { readFile } from "@tauri-apps/plugin-fs";
+import { WORKER_POOL_SIZE } from "../constants";
 import ImageWorker from "../imageWorker.ts?worker";
-import { WORKER_POOL_SIZE } from "../store/constants";
 
 /**
  * Worker Pool based image decode service.
@@ -34,7 +34,7 @@ export class ImageDecoderPool {
   private initializeWorkerPool() {
     if (this.workerPool.length > 0) return;
 
-    for (let i = 0; i < this.poolSize; i++) {
+    for (let i = 0; i < this.poolSize(); i++) {
       const worker = new ImageWorker();
       const instance: WorkerInstance = {
         worker,

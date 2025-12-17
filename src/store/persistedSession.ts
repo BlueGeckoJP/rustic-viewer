@@ -1,4 +1,4 @@
-import { STORAGE_KEY } from "./constants";
+import { STORAGE_KEY } from "../constants";
 import type { PersistedSessionV1, TabStoreState } from "./types";
 
 export function parseSession(): PersistedSessionV1 | null {

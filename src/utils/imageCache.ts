@@ -1,4 +1,4 @@
-import { IMAGE_CACHE_SIZE } from "../store/constants";
+import { IMAGE_CACHE_SIZE } from "../constants";
 
 export type CacheItem = {
   width: number;
