@@ -1,12 +1,10 @@
 import { emit, listen } from "@tauri-apps/api/event";
-import { readDir } from "@tauri-apps/plugin-fs";
 import { useCallback, useEffect, useRef } from "react";
 import ComparisonView from "./components/ComparisonView";
 import SingleView from "./components/SingleView";
 import TabBar from "./components/TabBar";
 import { useTabStore } from "./store";
-
-const imageFileRegex = /\.(png|jpg|jpeg|gif|bmp|webp)$/i;
+import { determineDirectory, getSortedImageFiles } from "./utils/fileUtils";
 
 // Main App component: manages tab state, image loading, canvas rendering, and Tauri events
 export default function App() {
@@ -29,50 +27,35 @@ export default function App() {
 
   const openImage = useCallback(
     (rawPath: string, newTab: boolean = false) => {
-      // Determine directory
-      const lastSlash = rawPath.lastIndexOf("/");
-      const dir = lastSlash >= 0 ? rawPath.substring(0, lastSlash) : "";
+      const dir = determineDirectory(rawPath);
 
-      readDir(dir).then((entries) => {
-        const files = entries
-          .filter((e) => e.isFile && !!e.name && imageFileRegex.test(e.name))
-          .map((e) => `${dir}/${e.name}`)
-          .sort((a, b) =>
-            a.localeCompare(b, undefined, {
-              numeric: true,
-              sensitivity: "base",
-            }),
-          );
-        const idx = files.indexOf(rawPath);
+      getSortedImageFiles(dir)
+        .then((files) => {
+          const idx = files.indexOf(rawPath);
 
-        if (!activeTab || newTab) {
-          const id = addSingleTab(files, idx >= 0 ? idx : 0, dir);
-          // Ensure this new tab becomes active (addTab already sets active but explicit for clarity)
-          setActiveTab(id);
-        } else {
-          const singleTab = singleTabs[activeTabId];
-          const comparisonTab = comparisonTabs[activeTabId];
+          if (!activeTab || newTab) {
+            const id = addSingleTab(files, idx >= 0 ? idx : 0, dir);
+            // Ensure this new tab becomes active (addTab already sets active but explicit for clarity)
+            setActiveTab(id);
+          } else {
+            const singleTab = singleTabs[activeTabId];
+            const comparisonTab = comparisonTabs[activeTabId];
 
-          if (singleTab) {
-            updateSingleTab(singleTab.id, {
-              directory: dir,
-              imageList: files,
-              currentIndex: idx >= 0 ? idx : 0,
-            });
-          } else if (comparisonTab) {
-            const childId =
-              comparisonTab.children[comparisonTab.activeSlotIndex];
-            const child = singleTabs[childId];
-            if (!child) return;
-            // Update the child tab inside the comparison tab
-            updateSingleTab(childId, {
-              directory: dir,
-              imageList: files,
-              currentIndex: idx >= 0 ? idx : 0,
-            });
+            const targetTabId =
+              singleTab?.id ??
+              comparisonTab?.children[comparisonTab.activeSlotIndex];
+
+            if (targetTabId)
+              updateSingleTab(targetTabId, {
+                directory: dir,
+                imageList: files,
+                currentIndex: idx >= 0 ? idx : 0,
+              });
           }
-        }
-      });
+        })
+        .catch((e) => {
+          console.error("Failed to open image:", e);
+        });
     },
     [
       activeTab,
@@ -90,21 +73,17 @@ export default function App() {
       const tab = singleTabs[tabId];
       if (!tab || !tab.directory) return;
 
-      readDir(tab.directory).then((entries) => {
-        const files = entries
-          .filter((e) => e.isFile && !!e.name && imageFileRegex.test(e.name))
-          .map((e) => `${tab.directory}/${e.name}`)
-          .sort((a, b) =>
-            a.localeCompare(b, undefined, {
-              numeric: true,
-              sensitivity: "base",
-            }),
-          );
-
-        updateSingleTab(tab.id, {
-          imageList: files,
+      getSortedImageFiles(tab.directory)
+        .then((files) => {
+          updateSingleTab(tab.id, {
+            imageList: files,
+            // Clamp currentIndex to new list length
+            currentIndex: Math.min(tab.currentIndex, files.length - 1),
+          });
+        })
+        .catch((e) => {
+          console.error("Failed to update image list:", e);
         });
-      });
     },
     [singleTabs, updateSingleTab],
   );

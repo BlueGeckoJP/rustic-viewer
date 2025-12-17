@@ -1,3 +1,5 @@
+import { IMAGE_CACHE_SIZE } from "../constants";
+
 export type CacheItem = {
   width: number;
   height: number;
@@ -33,7 +35,11 @@ export class ImageCache {
     } else if (this.cache.size >= this.capacity) {
       // Remove least recently used (first item in Map)
       const oldestKey = this.cache.keys().next().value;
-      if (oldestKey) this.cache.delete(oldestKey);
+      if (oldestKey) {
+        const oldest = this.cache.get(oldestKey);
+        if (oldest?.bitmap) oldest.bitmap.close(); // Free up ImageBitmap resources
+        this.cache.delete(oldestKey);
+      }
     }
     this.cache.set(key, item);
   }
@@ -47,5 +53,5 @@ export class ImageCache {
   }
 }
 
-const imageCache = new ImageCache(500); // Default capacity
+const imageCache = new ImageCache(IMAGE_CACHE_SIZE); // Default capacity
 export default imageCache;

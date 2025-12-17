@@ -2,6 +2,22 @@ import { v4 as uuid } from "uuid";
 import type { StateCreator } from "zustand";
 import type { SingleTabState, TabStoreState } from "../types";
 
+const updateTabField = <K extends keyof SingleTabState>(
+  state: TabStoreState,
+  id: string,
+  field: K,
+  value: SingleTabState[K],
+) => {
+  const tab = state.singleTabs[id];
+  if (!tab) return state;
+  return {
+    singleTabs: {
+      ...state.singleTabs,
+      [id]: { ...tab, [field]: value },
+    },
+  };
+};
+
 export const createSingleTabActions: StateCreator<
   TabStoreState,
   [],
@@ -50,44 +66,14 @@ export const createSingleTabActions: StateCreator<
     });
   },
 
-  setCurrentIndex: (id, index) => {
-    set((state) => {
-      const tab = state.singleTabs[id];
-      if (!tab) return state;
-      return {
-        singleTabs: {
-          ...state.singleTabs,
-          [id]: { ...tab, currentIndex: index },
-        },
-      };
-    });
-  },
+  setCurrentIndex: (id, index) =>
+    set((state) => updateTabField(state, id, "currentIndex", index)),
 
-  setZoom: (id, zoom) => {
-    set((state) => {
-      const tab = state.singleTabs[id];
-      if (!tab) return state;
-      return {
-        singleTabs: {
-          ...state.singleTabs,
-          [id]: { ...tab, zoom },
-        },
-      };
-    });
-  },
+  setZoom: (id, zoom) =>
+    set((state) => updateTabField(state, id, "zoom", zoom)),
 
-  setPanOffset: (id, offset) => {
-    set((state) => {
-      const tab = state.singleTabs[id];
-      if (!tab) return state;
-      return {
-        singleTabs: {
-          ...state.singleTabs,
-          [id]: { ...tab, panOffset: offset },
-        },
-      };
-    });
-  },
+  setPanOffset: (id, offset) =>
+    set((state) => updateTabField(state, id, "panOffset", offset)),
 
   resetZoomAndPan: (id) => {
     set((state) => {

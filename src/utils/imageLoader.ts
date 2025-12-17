@@ -1,5 +1,5 @@
 import imageCache, { type CacheItem } from "./imageCache";
-import { decodeImageFromPath } from "./imageDecoder";
+import { imageDecoderPool } from "./imageDecoder";
 import { type ImageLoadMetrics, monitor } from "./imagePerfMonitor";
 
 export default async function loadImage(
@@ -20,15 +20,15 @@ export default async function loadImage(
       imageSize: { width: item.width, height: item.height },
     };
     monitor.recordMetric(metrics);
-    return Promise.resolve(item.bitmap);
+    return item.bitmap;
   }
 
-  return returnDecodeImagePromise(path, startTotal);
+  return decodeAndCacheImage(path, startTotal);
 }
 
-const returnDecodeImagePromise = async (path: string, startTotal: number) => {
+const decodeAndCacheImage = async (path: string, startTotal: number) => {
   const { imageBitmap, fileReadTime, decodeTime } =
-    await decodeImageFromPath(path);
+    await imageDecoderPool.decodeImageFromPath(path);
 
   const cacheItem: CacheItem = {
     bitmap: imageBitmap,

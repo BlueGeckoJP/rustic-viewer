@@ -9,10 +9,7 @@ export interface ImageLoadMetrics {
 }
 
 class ImagePerformanceMonitor {
-  private metrics: ImageLoadMetrics[] = [];
-
   recordMetric(metric: ImageLoadMetrics) {
-    this.metrics.push(metric);
     this.logMetric(metric);
   }
 
