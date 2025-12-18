@@ -58,10 +58,8 @@ const TabItem = ({
       aria-label={label}
       style={isChild ? { marginLeft: "1.5rem" } : {}}
       onMouseDown={(e) => {
-        if (!isComp) {
-          toggleSelect(item.id, index, e);
-          tabMove.onMouseDown(e, item.id);
-        }
+        toggleSelect(item.id, index, e);
+        tabMove.onMouseDown(e, item.id);
       }}
       onClick={(e) => {
         if (tabMove.draggingTabId) return;
@@ -99,7 +97,7 @@ const TabItem = ({
             ? "bg-[#44444E]"
             : "hover:bg-[#44444E]"
       }`}
-      ref={!isComp ? (el) => tabMove.registerTab(item.id, el) : null}
+      ref={(el) => tabMove.registerTab(item.id, el)}
     >
       <TabRow
         isComp={isComp}

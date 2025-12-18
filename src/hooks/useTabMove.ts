@@ -123,11 +123,10 @@ const useTabMove = ({
           return { id: t.id, midY: r.top + r.height / 2 };
         });
 
-      const index = dstMidpointsY.findIndex((t) => t.midY > e.clientY);
-      const insertionIndex =
-        index === -1 ? dstMidpointsY.length - 1 : index;
-      const dstPreviousTabId = dstMidpointsY[insertionIndex]?.id;
-      const toIndex = tabOrder.indexOf(dstPreviousTabId) + 1;
+      const firstTabBelowCursor = dstMidpointsY.findIndex((t) => t.midY > e.clientY);
+      const targetIndex = firstTabBelowCursor === -1 ? dstMidpointsY.length - 1 : firstTabBelowCursor;
+      const targetTabId = dstMidpointsY[targetIndex]?.id;
+      const toIndex = tabOrder.indexOf(targetTabId);
       currentIndexRef.current = toIndex;
     },
     [draggingTabId, tabBarRef, verticalTabs, tabOrder],
