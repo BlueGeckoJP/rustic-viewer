@@ -1,206 +1,155 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { VerticalTabItem } from "../selectors/selectVerticalTabs";
 import { useTabStore } from "../store";
 
 export type UseTabMoveProps = {
+  verticalTabs: VerticalTabItem[];
   tabBarRef: React.RefObject<HTMLDivElement | null>;
-  gap: number;
-  isOpen: boolean;
 };
 
 export type UseTabMoveReturn = {
-  registerTabRef: (id: string, element: HTMLElement | null) => void;
-  onTabMouseDown: (e: React.MouseEvent, id: string) => void;
-  draggingId: string | null;
+  draggingTabId: string | null;
+  onMouseDown: (e: React.MouseEvent, tabId: string) => void;
+  registerTab: (tabId: string, element: HTMLDivElement | null) => void;
 };
 
-const useTabMove = ({ tabBarRef, gap = 8, isOpen }: UseTabMoveProps) => {
-  const tabRefs = useRef<Map<string, HTMLElement>>(new Map());
-  const tabHeightsRef = useRef<Map<string, number>>(new Map());
-  const originIndexRef = useRef<number | null>(null);
-  const currentIndexRef = useRef<number | null>(null);
-  const dragOffsetRef = useRef<number>(0);
-  const dragStartYRef = useRef<number>(0);
-
-  const [draggingId, setDraggingId] = useState<string | null>(null);
-
+const useTabMove = ({
+  verticalTabs,
+  tabBarRef,
+}: UseTabMoveProps): UseTabMoveReturn => {
+  const setActiveTab = useTabStore((s) => s.setActiveTab);
   const reorderTab = useTabStore((s) => s.reorderTab);
   const tabOrder = useTabStore((s) => s.tabOrder);
-  const setActiveTab = useTabStore((s) => s.setActiveTab);
 
-  const registerTabRef = (id: string, element: HTMLElement | null) => {
-    if (element) tabRefs.current.set(id, element);
-    else tabRefs.current.delete(id);
-  };
+  const dragStartYRef = useRef<number | null>(null);
+  const originalIndexRef = useRef<number | null>(null);
+  const currentIndexRef = useRef<number | null>(null);
+  const tabElements = useRef<Map<string, HTMLDivElement>>(new Map());
 
-  const measureTabs = useCallback(() => {
-    tabRefs.current.forEach((element, id) => {
-      tabHeightsRef.current.set(id, element.getBoundingClientRect().height);
-    });
-  }, []);
+  const [draggingTabId, setDraggingTabId] = useState<string | null>(null);
 
-  const clearDragVisuals = useCallback(() => {
-    tabRefs.current.forEach((element) => {
+  const clearDraggingVisuals = useCallback(() => {
+    tabElements.current.forEach((element) => {
       element.style.transform = "";
-      element.style.transition = "";
       element.style.zIndex = "";
       element.style.opacity = "";
-      element.style.pointerEvents = "";
     });
   }, []);
 
-  const endDrag = useCallback(
-    (commit: boolean) => {
-      if (
-        draggingId &&
-        commit &&
-        originIndexRef.current !== null &&
-        currentIndexRef.current !== null &&
-        originIndexRef.current !== currentIndexRef.current
-      ) {
-        reorderTab(originIndexRef.current, currentIndexRef.current);
-      }
-      setDraggingId(null);
-      originIndexRef.current = null;
-      currentIndexRef.current = null;
-      dragOffsetRef.current = 0;
-      clearDragVisuals();
+  const endDrag = useCallback(() => {
+    if (
+      draggingTabId &&
+      originalIndexRef.current !== null &&
+      currentIndexRef.current !== null &&
+      originalIndexRef.current !== currentIndexRef.current
+    ) {
+      reorderTab(originalIndexRef.current, currentIndexRef.current);
+    }
+
+    setDraggingTabId(null);
+    dragStartYRef.current = null;
+    originalIndexRef.current = null;
+    currentIndexRef.current = null;
+    clearDraggingVisuals();
+  }, [clearDraggingVisuals, draggingTabId, reorderTab]);
+
+  const onMouseDown = (e: React.MouseEvent, tabId: string) => {
+    if (e.button !== 0) return; // Only left click
+
+    setActiveTab(tabId);
+    dragStartYRef.current = e.clientY;
+    originalIndexRef.current = tabOrder.indexOf(tabId);
+    currentIndexRef.current = originalIndexRef.current;
+
+    setDraggingTabId(tabId);
+  };
+
+  const registerTab = (tabId: string, element: HTMLDivElement | null) => {
+    if (element) {
+      tabElements.current.set(tabId, element);
+    } else {
+      tabElements.current.delete(tabId);
+    }
+  };
+
+  const onMouseUp = useCallback(
+    (e: MouseEvent) => {
+      if (e.button !== 0) return; // Only left click
+      if (!draggingTabId) return;
+
+      const barElem = tabBarRef.current;
+      if (!barElem) return;
+
+      const rect = barElem.getBoundingClientRect();
+      const isInside =
+        e.clientX >= rect.left &&
+        e.clientX <= rect.right &&
+        e.clientY >= rect.top &&
+        e.clientY <= rect.bottom;
+      if (!isInside) return;
+
+      endDrag();
     },
-    [clearDragVisuals, draggingId, reorderTab],
+    [draggingTabId, endDrag, tabBarRef],
   );
 
   const onMouseMove = useCallback(
     (e: MouseEvent) => {
-      if (!draggingId) return;
-      const barEl = tabBarRef.current;
-      const draggedEl = tabRefs.current.get(draggingId);
-      if (!barEl || !draggedEl) return;
+      const barElem = tabBarRef.current;
+      const draggingElem = tabElements.current.get(draggingTabId || "");
+      if (!draggingElem || !barElem) return;
 
-      const startY = dragStartYRef.current;
-      let delta = e.clientY - startY;
+      const dragStartY = dragStartYRef.current;
+      const delta = e.clientY - (dragStartY || 0);
 
-      const origIndex = originIndexRef.current;
-      if (origIndex === null) return;
-      const preHeights = tabOrder
-        .slice(0, origIndex)
-        .reduce(
-          (acc, id) =>
-            acc +
-            (tabHeightsRef.current.get(id) || draggedEl.offsetHeight) +
-            gap,
-          0,
-        );
-      const draggedHeight =
-        tabHeightsRef.current.get(draggingId) || draggedEl.offsetHeight;
-
-      const totalHeight = tabOrder.reduce(
-        (acc, id) =>
-          acc + (tabHeightsRef.current.get(id) || draggedEl.offsetHeight) + gap,
-        -gap,
-      );
-      const maxTop = totalHeight - draggedHeight;
-      const minTop = 0;
-
-      const currentTopRelative = preHeights + delta;
-      const clampedTop = Math.min(Math.max(currentTopRelative, minTop), maxTop);
-      delta = clampedTop - preHeights;
-
-      dragOffsetRef.current = delta;
-      draggedEl.style.transform = `translateY(${delta}px)`;
-      draggedEl.style.zIndex = "10";
-      draggedEl.style.pointerEvents = "none";
-      draggedEl.style.transition = "none";
-      draggedEl.style.opacity = "0.9";
-
-      let newIndex = origIndex;
-      let cumulative = 0;
-      for (let i = 0; i < tabOrder.length; i++) {
-        if (tabOrder[i] === draggingId) continue;
-        const h =
-          tabHeightsRef.current.get(tabOrder[i]) || draggedEl.offsetHeight;
-        const midpoint = cumulative + h / 2;
-        if (preHeights + delta + draggedHeight / 2 < midpoint) {
-          newIndex = i <= origIndex ? i : i - 1;
-          break;
-        }
-        cumulative += h + gap;
-        newIndex = i + 1;
+      const draggingElement = tabElements.current.get(draggingTabId || "");
+      if (draggingElement) {
+        draggingElement.style.transform = `translateY(${delta}px)`;
+        draggingElement.style.zIndex = "1000";
+        draggingElement.style.opacity = "0.9";
       }
 
-      const oldIndex = origIndex;
-      currentIndexRef.current = newIndex;
+      const originalIndex = originalIndexRef.current;
+      if (originalIndex === null) return;
 
-      tabOrder.forEach((id, idx) => {
-        if (id === draggingId) return;
-        const el = tabRefs.current.get(id);
-        if (!el) return;
-        el.style.transition = "transform 120ms";
-        let translate = 0;
-        if (oldIndex < newIndex) {
-          if (idx > oldIndex && idx <= newIndex)
-            translate = -draggedHeight - gap;
-        } else if (newIndex < oldIndex) {
-          if (idx >= newIndex && idx < oldIndex)
-            translate = draggedHeight + gap;
-        }
-        el.style.transform = translate ? `translateY(${translate}px)` : "";
-      });
+      const dstMidpointsY = verticalTabs
+        .filter(
+          (t, _) => t.id !== draggingTabId && tabElements.current.has(t.id),
+        )
+        .map((t) => {
+          const elem = tabElements.current.get(t.id);
+          if (!elem) return { id: t.id, midY: 0 };
+          const r = elem.getBoundingClientRect();
+          return { id: t.id, midY: r.top + r.height / 2 };
+        });
+
+      const index = dstMidpointsY.findIndex((t) => t.midY > e.clientY);
+      const insertionIndex =
+        index === -1 ? dstMidpointsY.length - 1 : index;
+      const dstPreviousTabId = dstMidpointsY[insertionIndex]?.id;
+      const toIndex = tabOrder.indexOf(dstPreviousTabId) + 1;
+      currentIndexRef.current = toIndex;
     },
-    [draggingId, gap, tabBarRef, tabOrder],
+    [draggingTabId, tabBarRef, verticalTabs, tabOrder],
   );
 
-  const onMouseUp = useCallback(
-    (e: MouseEvent) => {
-      if (!draggingId) return;
-      const barElement = tabBarRef.current;
-      if (barElement) {
-        const rect = barElement.getBoundingClientRect();
-        const inside =
-          e.clientX >= rect.left &&
-          e.clientX <= rect.right &&
-          e.clientY >= rect.top &&
-          e.clientY <= rect.bottom;
-        endDrag(inside);
-      } else {
-        endDrag(false);
-      }
-    },
-    [draggingId, endDrag, tabBarRef],
-  );
+  useEffect(() => {
+    if (!draggingTabId) return;
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
 
-  const onMouseLeaveWindow = useCallback(() => {
-    if (draggingId) endDrag(false);
-  }, [draggingId, endDrag]);
+    return () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+      endDrag();
+    };
+  }, [draggingTabId, endDrag, onMouseMove, onMouseUp]);
 
-  const onTabMouseDown = (e: React.MouseEvent, id: string) => {
-    if (e.button !== 0) return;
-    setActiveTab(id);
-    dragStartYRef.current = e.clientY;
-    originIndexRef.current = tabOrder.indexOf(id);
-    currentIndexRef.current = originIndexRef.current;
-    setDraggingId(id);
-    measureTabs();
+  return {
+    draggingTabId,
+    onMouseDown,
+    registerTab,
   };
-
-  useEffect(() => {
-    if (isOpen) {
-      requestAnimationFrame(measureTabs);
-    }
-  }, [isOpen, measureTabs]);
-
-  useEffect(() => {
-    if (draggingId) {
-      window.addEventListener("mousemove", onMouseMove);
-      window.addEventListener("mouseup", onMouseUp);
-      window.addEventListener("mouseleave", onMouseLeaveWindow);
-      return () => {
-        window.removeEventListener("mousemove", onMouseMove);
-        window.removeEventListener("mouseup", onMouseUp);
-        window.removeEventListener("mouseleave", onMouseLeaveWindow);
-      };
-    }
-  }, [draggingId, onMouseMove, onMouseUp, onMouseLeaveWindow]);
-
-  return { registerTabRef, onTabMouseDown, draggingId } as UseTabMoveReturn;
 };
 
 export default useTabMove;

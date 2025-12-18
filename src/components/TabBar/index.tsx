@@ -36,7 +36,7 @@ const TabBar = () => {
     });
   };
 
-  const tabMove = useTabMove({ tabBarRef, gap: 8, isOpen });
+  const tabMove = useTabMove({ tabBarRef, verticalTabs });
   useTabHotkeysUndoRedo({ canUndo, canRedo, undo, redo });
   const { selectedIDs, setSelectedIDs, toggleSelect } = useTabSelection({
     tabOrder,

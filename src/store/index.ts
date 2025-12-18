@@ -40,7 +40,7 @@ export const useTabStore = create<TabStoreState>()(
         };
       },
       equality: (a, b) => {
-        return a.tabOrder.sort().toString() === b.tabOrder.sort().toString();
+        return a.tabOrder.toString() === b.tabOrder.toString();
       },
     },
   ),

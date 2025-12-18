@@ -60,11 +60,11 @@ const TabItem = ({
       onMouseDown={(e) => {
         if (!isComp) {
           toggleSelect(item.id, index, e);
-          tabMove.onTabMouseDown(e, item.id);
+          tabMove.onMouseDown(e, item.id);
         }
       }}
       onClick={(e) => {
-        if (tabMove.draggingId) return;
+        if (tabMove.draggingTabId) return;
         if (e.metaKey || e.ctrlKey || e.shiftKey) return;
 
         if (isChild && item.parentId) {
@@ -99,7 +99,7 @@ const TabItem = ({
             ? "bg-[#44444E]"
             : "hover:bg-[#44444E]"
       }`}
-      ref={!isComp ? (el) => tabMove.registerTabRef(item.id, el) : null}
+      ref={!isComp ? (el) => tabMove.registerTab(item.id, el) : null}
     >
       <TabRow
         isComp={isComp}
