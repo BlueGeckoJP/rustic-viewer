@@ -24,6 +24,7 @@ const useTabMove = ({
 
   const originalIndexRef = useRef<number | null>(null);
   const currentIndexRef = useRef<number | null>(null);
+  const initialMouseYRef = useRef<number | null>(null);
   const tabElements = useRef<Map<string, HTMLDivElement>>(new Map());
 
   const [draggingTabId, setDraggingTabId] = useState<string | null>(null);
@@ -62,6 +63,7 @@ const useTabMove = ({
     setActiveTab(tabId);
     originalIndexRef.current = tabOrder.indexOf(tabId);
     currentIndexRef.current = originalIndexRef.current;
+    initialMouseYRef.current = e.clientY;
 
     setDraggingTabId(tabId);
   };
@@ -105,7 +107,7 @@ const useTabMove = ({
       if (draggingElement) {
         draggingElement.style.width = `${draggingElement.offsetWidth}px`;
         draggingElement.style.position = "fixed";
-        draggingElement.style.top = `${e.clientY}px`;
+        draggingElement.style.top = `${e.clientY - draggingElement.offsetHeight / 2}px`;
         draggingElement.style.zIndex = "1000";
         draggingElement.style.opacity = "0.9";
       }
@@ -153,6 +155,17 @@ const useTabMove = ({
 
   useEffect(() => {
     if (!draggingTabId) return;
+
+    const draggingElement = tabElements.current.get(draggingTabId);
+    const initialMouseY = initialMouseYRef.current;
+    if (draggingElement && initialMouseY !== null) {
+      draggingElement.style.width = `${draggingElement.offsetWidth}px`;
+      draggingElement.style.position = "fixed";
+      draggingElement.style.top = `${initialMouseY - draggingElement.offsetHeight / 2}px`;
+      draggingElement.style.zIndex = "1000";
+      draggingElement.style.opacity = "0.9";
+    }
+
     window.addEventListener("mousemove", onMouseMove);
     window.addEventListener("mouseup", onMouseUp);
 
