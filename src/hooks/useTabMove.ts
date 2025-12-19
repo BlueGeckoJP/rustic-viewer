@@ -9,6 +9,7 @@ export type UseTabMoveProps = {
 
 export type UseTabMoveReturn = {
   draggingTabId: string | null;
+  dropTargetTabId: string | null;
   onMouseDown: (e: React.MouseEvent, tabId: string) => void;
   registerTab: (tabId: string, element: HTMLDivElement | null) => void;
 };
@@ -21,16 +22,18 @@ const useTabMove = ({
   const reorderTab = useTabStore((s) => s.reorderTab);
   const tabOrder = useTabStore((s) => s.tabOrder);
 
-  const dragStartYRef = useRef<number | null>(null);
   const originalIndexRef = useRef<number | null>(null);
   const currentIndexRef = useRef<number | null>(null);
   const tabElements = useRef<Map<string, HTMLDivElement>>(new Map());
 
   const [draggingTabId, setDraggingTabId] = useState<string | null>(null);
+  const [dropTargetTabId, setDropTargetTabId] = useState<string | null>(null);
 
   const clearDraggingVisuals = useCallback(() => {
     tabElements.current.forEach((element) => {
-      element.style.transform = "";
+      element.style.position = "";
+      element.style.top = "";
+      element.style.width = "";
       element.style.zIndex = "";
       element.style.opacity = "";
     });
@@ -47,7 +50,7 @@ const useTabMove = ({
     }
 
     setDraggingTabId(null);
-    dragStartYRef.current = null;
+    setDropTargetTabId(null);
     originalIndexRef.current = null;
     currentIndexRef.current = null;
     clearDraggingVisuals();
@@ -57,7 +60,6 @@ const useTabMove = ({
     if (e.button !== 0) return; // Only left click
 
     setActiveTab(tabId);
-    dragStartYRef.current = e.clientY;
     originalIndexRef.current = tabOrder.indexOf(tabId);
     currentIndexRef.current = originalIndexRef.current;
 
@@ -99,12 +101,11 @@ const useTabMove = ({
       const draggingElem = tabElements.current.get(draggingTabId || "");
       if (!draggingElem || !barElem) return;
 
-      const dragStartY = dragStartYRef.current;
-      const delta = e.clientY - (dragStartY || 0);
-
       const draggingElement = tabElements.current.get(draggingTabId || "");
       if (draggingElement) {
-        draggingElement.style.transform = `translateY(${delta}px)`;
+        draggingElement.style.width = `${draggingElement.offsetWidth}px`;
+        draggingElement.style.position = "fixed";
+        draggingElement.style.top = `${e.clientY}px`;
         draggingElement.style.zIndex = "1000";
         draggingElement.style.opacity = "0.9";
       }
@@ -123,11 +124,29 @@ const useTabMove = ({
           return { id: t.id, midY: r.top + r.height / 2 };
         });
 
-      const firstTabBelowCursor = dstMidpointsY.findIndex((t) => t.midY > e.clientY);
-      const targetIndex = firstTabBelowCursor === -1 ? dstMidpointsY.length - 1 : firstTabBelowCursor;
-      const targetTabId = dstMidpointsY[targetIndex]?.id;
-      const toIndex = tabOrder.indexOf(targetTabId);
-      currentIndexRef.current = toIndex;
+      const firstTabBelowCursor = dstMidpointsY.findIndex(
+        (t) => t.midY > e.clientY,
+      );
+      if (firstTabBelowCursor === -1) {
+        // If the cursor is below all tabs, add to the end
+        setDropTargetTabId(null);
+        currentIndexRef.current = tabOrder.length - 1;
+      } else {
+        // If the cursor is above one of the tabs, insert before it
+        const targetIndex = firstTabBelowCursor;
+        const targetTabId = dstMidpointsY[targetIndex].id;
+        setDropTargetTabId(targetTabId);
+
+        let toIndex = tabOrder.indexOf(targetTabId);
+        // If moving top to bottom, we need to adjust the index
+        if (
+          originalIndexRef.current !== null &&
+          originalIndexRef.current < toIndex
+        ) {
+          toIndex -= 1;
+        }
+        currentIndexRef.current = toIndex;
+      }
     },
     [draggingTabId, tabBarRef, verticalTabs, tabOrder],
   );
@@ -146,6 +165,7 @@ const useTabMove = ({
 
   return {
     draggingTabId,
+    dropTargetTabId,
     onMouseDown,
     registerTab,
   };

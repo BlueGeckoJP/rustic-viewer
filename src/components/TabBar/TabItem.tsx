@@ -38,11 +38,6 @@ const TabItem = ({
   const isChild = item.kind === "single" && item.parentId !== null;
   const expanded = isComp && expandedComparisonIds.has(item.id);
 
-  // If the tab is a children of a comparison tab and the parent is collapsed, don't render it
-  if (isChild && item.parentId && !expandedComparisonIds.has(item.parentId)) {
-    return null;
-  }
-
   const tab = isComp ? comparisonTabs[item.id] : singleTabs[item.id];
   if (!tab) return null;
 

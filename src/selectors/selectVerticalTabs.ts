@@ -12,6 +12,11 @@ export type VerticalTabItem =
       active: boolean;
       parentId: string | null;
       slotIndex?: number;
+    }
+  | {
+      kind: "spacer";
+      id: string;
+      active: false;
     };
 
 export const selectVerticalTabs = (state: TabStoreState): VerticalTabItem[] => {

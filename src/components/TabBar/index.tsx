@@ -42,6 +42,35 @@ const TabBar = () => {
     tabOrder,
   });
 
+  const renderItems = useMemo(() => {
+    const tabs = [...verticalTabs];
+    const index = tabs.findIndex((tab) => tab.id === tabMove.dropTargetTabId);
+    tabs.splice(index === -1 ? tabs.length : index, 0, {
+      kind: "spacer",
+      id: `__spacer_${index}__`,
+      active: false,
+    });
+
+    return tabs.filter((tab) => {
+      if (
+        tab.kind === "single" &&
+        tab.parentId !== null &&
+        !expandedComparisonIds.has(tab.parentId)
+      ) {
+        return false;
+      }
+
+      if (tab.id === tabMove.draggingTabId) return false;
+
+      return true;
+    });
+  }, [
+    expandedComparisonIds,
+    tabMove.dropTargetTabId,
+    tabMove.draggingTabId,
+    verticalTabs,
+  ]);
+
   // Context menu
   const [menuOpenFor, setMenuOpenFor] = useState<string | null>(null);
   const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
@@ -72,9 +101,13 @@ const TabBar = () => {
         <div
           role="tablist"
           aria-orientation="vertical"
-          className="flex flex-col gap-2"
+          className="flex flex-col gap-2 relative"
         >
-          {verticalTabs.map((item, index) => {
+          {renderItems.map((item, index) => {
+            if (item.kind === "spacer") {
+              return <div className="h-10" />;
+            }
+
             return (
               <TabItem
                 key={item.id}
@@ -91,6 +124,30 @@ const TabBar = () => {
               />
             );
           })}
+
+          {tabMove.draggingTabId &&
+            (() => {
+              const tab = verticalTabs.find(
+                (t) => t.id === tabMove.draggingTabId,
+              );
+              if (!tab) return null;
+
+              return (
+                <TabItem
+                  key={tab.id}
+                  item={tab}
+                  index={-1}
+                  expandedComparisonIds={expandedComparisonIds}
+                  selectedIDs={selectedIDs}
+                  tabMove={tabMove}
+                  setSelectedIDs={setSelectedIDs}
+                  toggleExpanded={toggleExpanded}
+                  toggleSelect={toggleSelect}
+                  setMenuOpenFor={setMenuOpenFor}
+                  setMenuPos={setMenuPos}
+                />
+              );
+            })()}
         </div>
       )}
 
