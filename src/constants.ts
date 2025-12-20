@@ -20,3 +20,5 @@ export const WORKER_POOL_SIZE = () => {
 
   return MIN_POOL_SIZE;
 };
+
+export const DRAG_THRESHOLD_PX = 5;

@@ -1,21 +1,16 @@
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useStore } from "zustand";
 import useTabHotkeysUndoRedo from "../../hooks/useTabHotkeysUndoRedo";
 import useTabMove from "../../hooks/useTabMove";
 import useTabSelection from "../../hooks/useTabSelection";
+import { selectVerticalTabs } from "../../selectors/selectVerticalTabs";
 import { useTabStore } from "../../store";
-import ComparisonChildList from "./ComparisonChildList";
 import TabContextMenu from "./TabContextMenu";
 import TabItem from "./TabItem";
 
 const TabBar = () => {
-  const tabBarRef = useRef<HTMLDivElement | null>(null);
-  const singleTabs = useTabStore((s) => s.singleTabs);
-  const comparisonTabs = useTabStore((s) => s.comparisonTabs);
   const tabOrder = useTabStore((s) => s.tabOrder);
-  const activeTabId = useTabStore((s) => s.activeTabId);
-  const setActiveTab = useTabStore((s) => s.setActiveTab);
-  const setActiveSlotIndex = useTabStore((s) => s.setActiveSlotIndex);
+  const tabStore = useTabStore();
 
   const undo = useStore(useTabStore.temporal, (s) => s.undo);
   const redo = useStore(useTabStore.temporal, (s) => s.redo);
@@ -24,10 +19,15 @@ const TabBar = () => {
   const canUndo = pastStates.length > 0;
   const canRedo = futureStates.length > 0;
 
+  const tablistRef = useRef<HTMLDivElement | null>(null);
+
+  const verticalTabs = useMemo(() => selectVerticalTabs(tabStore), [tabStore]);
+
   const [isOpen, setIsOpen] = useState(true);
   const [expandedComparisonIds, setExpandedComparisonIds] = useState<
     Set<string>
   >(new Set());
+
   const toggleExpanded = (id: string) => {
     setExpandedComparisonIds((prev) => {
       const n = new Set(prev);
@@ -36,13 +36,52 @@ const TabBar = () => {
       return n;
     });
   };
-  const tabMove = useTabMove({ tabBarRef, gap: 8, isOpen });
 
+  const tabMove = useTabMove({ tablistRef });
   useTabHotkeysUndoRedo({ canUndo, canRedo, undo, redo });
-
   const { selectedIDs, setSelectedIDs, toggleSelect } = useTabSelection({
     tabOrder,
   });
+
+  const renderItems = useMemo(() => {
+    // If you don't insert the spacer first, it won't be inserted when you start dragging
+    const tabs = [...verticalTabs];
+    const index = tabs.findIndex((tab) => tab.id === tabMove.dropTargetTabId);
+    const spacerIndex = index === -1 ? tabs.length : index;
+    const spacerId = index === -1 ? "__spacer_end__" : `__spacer_${index}__`;
+    tabs.splice(spacerIndex, 0, {
+      kind: "spacer",
+      id: spacerId,
+      active: false,
+    });
+
+    return tabs.filter((tab) => {
+      if (
+        tab.kind === "single" &&
+        tab.parentId !== null &&
+        !expandedComparisonIds.has(tab.parentId)
+      )
+        return false;
+
+      // Prevent rendering child tabs of the dragging tab
+      if (
+        tab.kind === "single" &&
+        tab.parentId !== null &&
+        tab.parentId === tabMove.draggingTabId &&
+        tabMove.dropTargetTabId !== tab.parentId
+      )
+        return false;
+
+      if (tab.id === tabMove.draggingTabId) return false;
+
+      return true;
+    });
+  }, [
+    expandedComparisonIds,
+    tabMove.dropTargetTabId,
+    tabMove.draggingTabId,
+    verticalTabs,
+  ]);
 
   // Context menu
   const [menuOpenFor, setMenuOpenFor] = useState<string | null>(null);
@@ -59,7 +98,6 @@ const TabBar = () => {
           ? "top-0 bottom-0 w-64 p-3 space-y-2 overflow-y-auto pr-5"
           : "top-1/2 -translate-y-1/2 h-8 w-4 p-1 rounded-r"
       }`}
-      ref={tabBarRef}
     >
       <button
         aria-label={isOpen ? "Collapse sidebar" : "Expand sidebar"}
@@ -74,48 +112,52 @@ const TabBar = () => {
         <div
           role="tablist"
           aria-orientation="vertical"
-          className="flex flex-col gap-2"
+          className="flex flex-col gap-2 relative h-full"
+          ref={tablistRef}
         >
-          {tabOrder.map((tabId, idx) => {
-            const singleTab = singleTabs[tabId];
-            const comparisonTab = comparisonTabs[tabId];
-            if (!singleTab && !comparisonTab) return null;
-            if (singleTab?.parentId) return null;
+          {renderItems.map((item) => {
+            if (item.kind === "spacer") {
+              return <div className="h-8" />;
+            }
 
-            const isComp = !!comparisonTab;
-            const active = tabId === activeTabId;
-            const expanded = isComp && expandedComparisonIds.has(tabId);
             return (
-              <div key={tabId} className="flex flex-col gap-1">
+              <TabItem
+                key={item.id}
+                item={item}
+                expandedComparisonIds={expandedComparisonIds}
+                selectedIDs={selectedIDs}
+                tabMove={tabMove}
+                setSelectedIDs={setSelectedIDs}
+                toggleExpanded={toggleExpanded}
+                toggleSelect={toggleSelect}
+                setMenuOpenFor={setMenuOpenFor}
+                setMenuPos={setMenuPos}
+              />
+            );
+          })}
+
+          {tabMove.draggingTabId &&
+            (() => {
+              const tab = verticalTabs.find(
+                (t) => t.id === tabMove.draggingTabId,
+              );
+              if (!tab) return null;
+
+              return (
                 <TabItem
-                  tabId={tabId}
-                  index={idx}
-                  tabMove={tabMove}
+                  key={tab.id}
+                  item={tab}
+                  expandedComparisonIds={expandedComparisonIds}
                   selectedIDs={selectedIDs}
-                  isComp={isComp}
-                  active={active}
-                  expanded={expanded}
+                  tabMove={tabMove}
+                  setSelectedIDs={setSelectedIDs}
+                  toggleExpanded={toggleExpanded}
                   toggleSelect={toggleSelect}
                   setMenuOpenFor={setMenuOpenFor}
                   setMenuPos={setMenuPos}
-                  toggleExpanded={toggleExpanded}
-                  setSelectedIDs={setSelectedIDs}
                 />
-                <ComparisonChildList
-                  isComp={isComp}
-                  expanded={expanded}
-                  comparisonTab={comparisonTab}
-                  singleTabs={singleTabs}
-                  active={active}
-                  tabId={tabId}
-                  setActiveTab={setActiveTab}
-                  setActiveSlotIndex={setActiveSlotIndex}
-                  setMenuOpenFor={setMenuOpenFor}
-                  setMenuPos={setMenuPos}
-                />
-              </div>
-            );
-          })}
+              );
+            })()}
         </div>
       )}
 

@@ -7,7 +7,7 @@ export type UseTabSelectionProps = {
 export type UseTabSelectionReturn = {
   selectedIDs: Set<string>;
   setSelectedIDs: React.Dispatch<React.SetStateAction<Set<string>>>;
-  toggleSelect: (tabId: string, index: number, e: React.MouseEvent) => void;
+  toggleSelect: (tabId: string, e: React.MouseEvent) => void;
 };
 
 const useTabSelection = ({
@@ -16,7 +16,10 @@ const useTabSelection = ({
   const [selectedIDs, setSelectedIDs] = useState<Set<string>>(new Set());
   const lastClickedIndexRef = useRef<number | null>(null);
 
-  const toggleSelect = (tabId: string, index: number, e: React.MouseEvent) => {
+  const toggleSelect = (tabId: string, e: React.MouseEvent) => {
+    const index = tabOrder.indexOf(tabId);
+    if (index === -1) return;
+
     // Choose one by one
     if (e.metaKey || e.ctrlKey) {
       setSelectedIDs((prev) => {
