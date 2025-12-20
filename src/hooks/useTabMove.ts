@@ -69,17 +69,20 @@ const useTabMove = ({ verticalTabs }: UseTabMoveProps): UseTabMoveReturn => {
     clearDraggingVisuals();
   }, [clearDraggingVisuals, draggingTabId, reorderTab]);
 
-  const onMouseDown = (e: React.MouseEvent, tabId: string) => {
-    if (e.button !== 0) return; // Only left click
+  const onMouseDown = useCallback(
+    (e: React.MouseEvent, tabId: string) => {
+      if (e.button !== 0) return; // Only left click
 
-    setActiveTab(tabId);
-    originalIndexRef.current = tabOrder.indexOf(tabId);
-    currentIndexRef.current = originalIndexRef.current;
-    initialMouseYRef.current = e.clientY;
+      setActiveTab(tabId);
+      originalIndexRef.current = tabOrder.indexOf(tabId);
+      currentIndexRef.current = originalIndexRef.current;
+      initialMouseYRef.current = e.clientY;
 
-    setDraggingTabId(tabId);
-    setDropTargetTabId(tabId);
-  };
+      setDraggingTabId(tabId);
+      setDropTargetTabId(tabId);
+    },
+    [setActiveTab, tabOrder],
+  );
 
   const registerTab = useCallback(
     (tabId: string, element: HTMLDivElement | null) => {
