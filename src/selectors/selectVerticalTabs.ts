@@ -10,8 +10,15 @@ export type VerticalTabItem =
       kind: "single";
       id: string;
       active: boolean;
-      parentId: string | null;
-      slotIndex?: number;
+      parentId: string;
+      slotIndex: number;
+    }
+  | {
+      kind: "single";
+      id: string;
+      active: boolean;
+      parentId: null;
+      slotIndex?: never;
     }
   | {
       kind: "spacer";
