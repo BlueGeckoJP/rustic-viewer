@@ -60,9 +60,17 @@ const TabBar = () => {
         tab.kind === "single" &&
         tab.parentId !== null &&
         !expandedComparisonIds.has(tab.parentId)
-      ) {
+      )
         return false;
-      }
+
+      // Prevent rendering child tabs of the dragging tab
+      if (
+        tab.kind === "single" &&
+        tab.parentId !== null &&
+        tab.parentId === tabMove.draggingTabId &&
+        tabMove.dropTargetTabId !== tab.parentId
+      )
+        return false;
 
       if (tab.id === tabMove.draggingTabId) return false;
 
