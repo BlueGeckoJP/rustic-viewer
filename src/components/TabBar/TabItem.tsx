@@ -6,20 +6,18 @@ import TabRow from "./TabRow";
 
 export type TabItemProps = {
   item: VerticalTabItem;
-  index: number;
   expandedComparisonIds: Set<string>;
   selectedIDs: Set<string>;
   tabMove: UseTabMoveReturn;
   setSelectedIDs: React.Dispatch<React.SetStateAction<Set<string>>>;
   toggleExpanded: (id: string) => void;
-  toggleSelect: (id: string, index: number, e: React.MouseEvent) => void;
+  toggleSelect: (id: string, e: React.MouseEvent) => void;
   setMenuOpenFor: (id: string | null) => void;
   setMenuPos: (pos: { x: number; y: number } | null) => void;
 };
 
 const TabItem = ({
   item,
-  index,
   expandedComparisonIds,
   selectedIDs,
   tabMove,
@@ -60,8 +58,10 @@ const TabItem = ({
       aria-label={label}
       style={isChild ? { marginLeft: "1.5rem" } : {}}
       onMouseDown={(e) => {
-        toggleSelect(item.id, index, e);
-        tabMove.onMouseDown(e, item.id);
+        toggleSelect(item.id, e);
+        if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+          tabMove.onMouseDown(e, item.id);
+        }
       }}
       onClick={(e) => {
         if (tabMove.draggingTabId) return;

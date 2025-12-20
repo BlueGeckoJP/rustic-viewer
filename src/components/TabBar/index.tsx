@@ -104,7 +104,7 @@ const TabBar = () => {
           aria-orientation="vertical"
           className="flex flex-col gap-2 relative"
         >
-          {renderItems.map((item, index) => {
+          {renderItems.map((item) => {
             if (item.kind === "spacer") {
               return <div className="h-8" />;
             }
@@ -113,7 +113,6 @@ const TabBar = () => {
               <TabItem
                 key={item.id}
                 item={item}
-                index={index}
                 expandedComparisonIds={expandedComparisonIds}
                 selectedIDs={selectedIDs}
                 tabMove={tabMove}
@@ -137,7 +136,6 @@ const TabBar = () => {
                 <TabItem
                   key={tab.id}
                   item={tab}
-                  index={-1}
                   expandedComparisonIds={expandedComparisonIds}
                   selectedIDs={selectedIDs}
                   tabMove={tabMove}
