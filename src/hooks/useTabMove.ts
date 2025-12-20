@@ -81,20 +81,9 @@ const useTabMove = ({
       if (e.button !== 0) return; // Only left click
       if (!draggingTabId) return;
 
-      const barElem = tabBarRef.current;
-      if (!barElem) return;
-
-      const rect = barElem.getBoundingClientRect();
-      const isInside =
-        e.clientX >= rect.left &&
-        e.clientX <= rect.right &&
-        e.clientY >= rect.top &&
-        e.clientY <= rect.bottom;
-      if (!isInside) return;
-
       endDrag();
     },
-    [draggingTabId, endDrag, tabBarRef],
+    [draggingTabId, endDrag],
   );
 
   const onMouseMove = useCallback(
