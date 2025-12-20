@@ -106,7 +106,7 @@ const TabBar = () => {
         >
           {renderItems.map((item, index) => {
             if (item.kind === "spacer") {
-              return <div className="h-10" />;
+              return <div className="h-8" />;
             }
 
             return (
