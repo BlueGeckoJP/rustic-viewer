@@ -58,6 +58,7 @@ const TabItem = ({
       aria-label={label}
       style={isChild ? { marginLeft: "1.5rem" } : {}}
       onMouseDown={(e) => {
+        if (e.button !== 0) return;
         toggleSelect(item.id, e);
         if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
           tabMove.onMouseDown(e, item.id);
