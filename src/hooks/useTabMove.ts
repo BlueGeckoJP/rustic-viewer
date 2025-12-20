@@ -1,10 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { VerticalTabItem } from "../selectors/selectVerticalTabs";
 import { useTabStore } from "../store";
-
-export type UseTabMoveProps = {
-  verticalTabs: VerticalTabItem[];
-};
 
 export type UseTabMoveReturn = {
   draggingTabId: string | null;
@@ -13,7 +8,7 @@ export type UseTabMoveReturn = {
   registerTab: (tabId: string, element: HTMLDivElement | null) => void;
 };
 
-const useTabMove = ({ verticalTabs }: UseTabMoveProps): UseTabMoveReturn => {
+const useTabMove = (): UseTabMoveReturn => {
   const setActiveTab = useTabStore((s) => s.setActiveTab);
   const reorderTab = useTabStore((s) => s.reorderTab);
   const tabOrder = useTabStore((s) => s.tabOrder);
@@ -115,13 +110,11 @@ const useTabMove = ({ verticalTabs }: UseTabMoveProps): UseTabMoveReturn => {
       const originalIndex = originalIndexRef.current;
       if (originalIndex === null) return;
 
-      const dstMidpointsY = verticalTabs
-        .filter((t) => t.id !== draggingTabId && tabElements.current.has(t.id))
-        .map((t) => {
-          const elem = tabElements.current.get(t.id);
-          if (!elem) return { id: t.id, midY: 0 };
+      const dstMidpointsY = Array.from(tabElements.current.entries())
+        .filter(([id]) => id !== draggingTabId)
+        .map(([id, elem]) => {
           const r = elem.getBoundingClientRect();
-          return { id: t.id, midY: r.top + r.height / 2 };
+          return { id: id, midY: r.top + r.height / 2 };
         });
 
       const firstTabBelowCursor = dstMidpointsY.findIndex(
@@ -147,7 +140,7 @@ const useTabMove = ({ verticalTabs }: UseTabMoveProps): UseTabMoveReturn => {
         currentIndexRef.current = toIndex;
       }
     },
-    [draggingTabId, verticalTabs, tabOrder, updateDraggingVisuals],
+    [draggingTabId, tabOrder, updateDraggingVisuals],
   );
 
   useEffect(() => {
