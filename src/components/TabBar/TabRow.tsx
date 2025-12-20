@@ -32,6 +32,7 @@ const TabRow = ({
             e.stopPropagation();
             toggleExpanded(tabId);
           }}
+          onMouseDown={(e) => e.stopPropagation()}
           aria-label={expanded ? "Collapse comparison" : "Expand comparison"}
           type="button"
         >
@@ -64,6 +65,7 @@ const TabRow = ({
           });
           if (nextTabId) setActiveTab(nextTabId);
         }}
+        onMouseDown={(e) => e.stopPropagation()}
         aria-label={`Close ${label}`}
         className="ml-1 text-[#D3DAD9] hover:text-white hover:bg-[#37353E] px-1 rounded-lg"
         type="button"
