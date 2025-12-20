@@ -56,7 +56,7 @@ const TabItem = ({
       key={item.id}
       role="tab"
       tabIndex={0}
-      aria-selected={selected}
+      aria-selected={item.active}
       aria-label={label}
       style={isChild ? { marginLeft: "1.5rem" } : {}}
       onMouseDown={(e) => {
