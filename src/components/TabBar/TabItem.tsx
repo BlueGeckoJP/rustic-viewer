@@ -59,6 +59,7 @@ const TabItem = ({
       style={isChild ? { marginLeft: "1.5rem" } : {}}
       onMouseDown={(e) => {
         if (e.button !== 0) return;
+        if (item.kind === "single" && item.parentId !== null) return;
         toggleSelect(item.id, e);
         if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
           tabMove.onMouseDown(e, item.id);
