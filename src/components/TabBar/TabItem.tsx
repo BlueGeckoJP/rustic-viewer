@@ -47,7 +47,7 @@ const TabItem = ({
   const setActive = () => {
     setActiveTab(item.id);
     if (isChild && item.parentId) {
-      setActiveSlotIndex(item.parentId, item.slotIndex ?? 0);
+      setActiveSlotIndex(item.parentId, item.slotIndex);
     }
   };
 
