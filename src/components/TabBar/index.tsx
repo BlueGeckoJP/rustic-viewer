@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { useStore } from "zustand";
 import useTabHotkeysUndoRedo from "../../hooks/useTabHotkeysUndoRedo";
 import useTabMove from "../../hooks/useTabMove";
@@ -9,7 +9,6 @@ import TabContextMenu from "./TabContextMenu";
 import TabItem from "./TabItem";
 
 const TabBar = () => {
-  const tabBarRef = useRef<HTMLDivElement | null>(null);
   const tabOrder = useTabStore((s) => s.tabOrder);
   const tabStore = useTabStore();
 
@@ -36,7 +35,7 @@ const TabBar = () => {
     });
   };
 
-  const tabMove = useTabMove({ tabBarRef, verticalTabs });
+  const tabMove = useTabMove({ verticalTabs });
   useTabHotkeysUndoRedo({ canUndo, canRedo, undo, redo });
   const { selectedIDs, setSelectedIDs, toggleSelect } = useTabSelection({
     tabOrder,
@@ -87,7 +86,6 @@ const TabBar = () => {
           ? "top-0 bottom-0 w-64 p-3 space-y-2 overflow-y-auto pr-5"
           : "top-1/2 -translate-y-1/2 h-8 w-4 p-1 rounded-r"
       }`}
-      ref={tabBarRef}
     >
       <button
         aria-label={isOpen ? "Collapse sidebar" : "Expand sidebar"}

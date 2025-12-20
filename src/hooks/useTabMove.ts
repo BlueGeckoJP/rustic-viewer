@@ -4,7 +4,6 @@ import { useTabStore } from "../store";
 
 export type UseTabMoveProps = {
   verticalTabs: VerticalTabItem[];
-  tabBarRef: React.RefObject<HTMLDivElement | null>;
 };
 
 export type UseTabMoveReturn = {
@@ -14,10 +13,7 @@ export type UseTabMoveReturn = {
   registerTab: (tabId: string, element: HTMLDivElement | null) => void;
 };
 
-const useTabMove = ({
-  verticalTabs,
-  tabBarRef,
-}: UseTabMoveProps): UseTabMoveReturn => {
+const useTabMove = ({ verticalTabs }: UseTabMoveProps): UseTabMoveReturn => {
   const setActiveTab = useTabStore((s) => s.setActiveTab);
   const reorderTab = useTabStore((s) => s.reorderTab);
   const tabOrder = useTabStore((s) => s.tabOrder);
@@ -108,9 +104,8 @@ const useTabMove = ({
 
   const onMouseMove = useCallback(
     (e: MouseEvent) => {
-      const barElem = tabBarRef.current;
       const draggingElem = tabElements.current.get(draggingTabId || "");
-      if (!draggingElem || !barElem) return;
+      if (!draggingElem) return;
 
       updateDraggingVisuals(e.clientY);
 
@@ -150,7 +145,7 @@ const useTabMove = ({
         currentIndexRef.current = toIndex;
       }
     },
-    [draggingTabId, tabBarRef, verticalTabs, tabOrder, updateDraggingVisuals],
+    [draggingTabId, verticalTabs, tabOrder, updateDraggingVisuals],
   );
 
   useEffect(() => {
