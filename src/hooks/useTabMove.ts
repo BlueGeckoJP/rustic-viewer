@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { DRAG_THRESHOLD_PX } from "../constants";
 import { useTabStore } from "../store";
 
 export type UseTabMoveProps = {
@@ -24,6 +25,9 @@ const useTabMove = ({ tablistRef }: UseTabMoveProps): UseTabMoveReturn => {
 
   const [draggingTabId, setDraggingTabId] = useState<string | null>(null);
   const [dropTargetTabId, setDropTargetTabId] = useState<string | null>(null);
+  const [potentialDragTabId, setPotentialDragTabId] = useState<string | null>(
+    null,
+  );
 
   const clearDraggingVisuals = useCallback(() => {
     tabElements.current.forEach((element) => {
@@ -71,6 +75,7 @@ const useTabMove = ({ tablistRef }: UseTabMoveProps): UseTabMoveReturn => {
 
     setDraggingTabId(null);
     setDropTargetTabId(null);
+    setPotentialDragTabId(null);
     originalIndexRef.current = null;
     currentIndexRef.current = null;
     clearDraggingVisuals();
@@ -81,13 +86,12 @@ const useTabMove = ({ tablistRef }: UseTabMoveProps): UseTabMoveReturn => {
       if (e.button !== 0) return; // Only left click
 
       setActiveTab(tabId);
+      setPotentialDragTabId(tabId);
       originalIndexRef.current = tabOrder.indexOf(tabId);
       currentIndexRef.current = originalIndexRef.current;
       initialMouseYRef.current = e.clientY;
-
-      setDraggingTabId(tabId);
-      setDropTargetTabId(tabId);
     },
+
     [setActiveTab, tabOrder],
   );
 
@@ -105,15 +109,26 @@ const useTabMove = ({ tablistRef }: UseTabMoveProps): UseTabMoveReturn => {
   const onMouseUp = useCallback(
     (e: MouseEvent) => {
       if (e.button !== 0) return; // Only left click
-      if (!draggingTabId) return;
 
       endDrag();
     },
-    [draggingTabId, endDrag],
+    [endDrag],
   );
 
   const onMouseMove = useCallback(
     (e: MouseEvent) => {
+      if (potentialDragTabId && !draggingTabId) {
+        const dragDistance = Math.abs(
+          e.clientY - (initialMouseYRef.current || 0),
+        );
+        if (dragDistance >= DRAG_THRESHOLD_PX) {
+          setDraggingTabId(potentialDragTabId);
+          setDropTargetTabId(potentialDragTabId);
+          setPotentialDragTabId(null);
+        }
+        return;
+      }
+
       const draggingElem = tabElements.current.get(draggingTabId || "");
       if (!draggingElem) return;
 
@@ -149,12 +164,11 @@ const useTabMove = ({ tablistRef }: UseTabMoveProps): UseTabMoveReturn => {
         currentIndexRef.current = toIndex;
       }
     },
-    [draggingTabId, tabOrder, updateDraggingVisuals],
+    [draggingTabId, potentialDragTabId, tabOrder, updateDraggingVisuals],
   );
 
   useEffect(() => {
-    if (!draggingTabId) return;
-
+    if (!draggingTabId && !potentialDragTabId) return;
     const initialMouseY = initialMouseYRef.current;
     if (initialMouseY !== null) updateDraggingVisuals(initialMouseY);
 
@@ -165,7 +179,13 @@ const useTabMove = ({ tablistRef }: UseTabMoveProps): UseTabMoveReturn => {
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mouseup", onMouseUp);
     };
-  }, [draggingTabId, onMouseMove, onMouseUp, updateDraggingVisuals]);
+  }, [
+    draggingTabId,
+    potentialDragTabId,
+    onMouseMove,
+    onMouseUp,
+    updateDraggingVisuals,
+  ]);
 
   return {
     draggingTabId,
