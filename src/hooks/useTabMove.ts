@@ -130,8 +130,7 @@ const useTabMove = ({ verticalTabs }: UseTabMoveProps): UseTabMoveReturn => {
         currentIndexRef.current = tabOrder.length - 1;
       } else {
         // If the cursor is above one of the tabs, insert before it
-        const targetIndex = firstTabBelowCursor;
-        const targetTabId = dstMidpointsY[targetIndex].id;
+        const targetTabId = dstMidpointsY[firstTabBelowCursor].id;
         setDropTargetTabId(targetTabId);
 
         let toIndex = tabOrder.indexOf(targetTabId);
