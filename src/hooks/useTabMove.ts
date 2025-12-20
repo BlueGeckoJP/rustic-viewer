@@ -85,13 +85,16 @@ const useTabMove = ({
     setDropTargetTabId(tabId);
   };
 
-  const registerTab = (tabId: string, element: HTMLDivElement | null) => {
-    if (element) {
-      tabElements.current.set(tabId, element);
-    } else {
-      tabElements.current.delete(tabId);
-    }
-  };
+  const registerTab = useCallback(
+    (tabId: string, element: HTMLDivElement | null) => {
+      if (element) {
+        tabElements.current.set(tabId, element);
+      } else {
+        tabElements.current.delete(tabId);
+      }
+    },
+    [],
+  );
 
   const onMouseUp = useCallback(
     (e: MouseEvent) => {
@@ -115,9 +118,7 @@ const useTabMove = ({
       if (originalIndex === null) return;
 
       const dstMidpointsY = verticalTabs
-        .filter(
-          (t) => t.id !== draggingTabId && tabElements.current.has(t.id),
-        )
+        .filter((t) => t.id !== draggingTabId && tabElements.current.has(t.id))
         .map((t) => {
           const elem = tabElements.current.get(t.id);
           if (!elem) return { id: t.id, midY: 0 };
