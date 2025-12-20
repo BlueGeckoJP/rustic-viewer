@@ -45,9 +45,11 @@ const TabBar = () => {
     // If you don't insert the spacer first, it won't be inserted when you start dragging
     const tabs = [...verticalTabs];
     const index = tabs.findIndex((tab) => tab.id === tabMove.dropTargetTabId);
-    tabs.splice(index === -1 ? tabs.length : index, 0, {
+    const spacerIndex = index === -1 ? tabs.length : index;
+    const spacerId = index === -1 ? "__spacer_end__" : `__spacer_${index}__`;
+    tabs.splice(spacerIndex, 0, {
       kind: "spacer",
-      id: `__spacer_${index}__`,
+      id: spacerId,
       active: false,
     });
 
