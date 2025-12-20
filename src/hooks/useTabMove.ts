@@ -107,9 +107,6 @@ const useTabMove = (): UseTabMoveReturn => {
 
       updateDraggingVisuals(e.clientY);
 
-      const originalIndex = originalIndexRef.current;
-      if (originalIndex === null) return;
-
       const dstMidpointsY = Array.from(tabElements.current.entries())
         .filter(([id]) => id !== draggingTabId)
         .map(([id, elem]) => {
