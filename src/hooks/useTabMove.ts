@@ -40,6 +40,22 @@ const useTabMove = ({
     });
   }, []);
 
+  const updateDraggingVisuals = useCallback(
+    (top: number) => {
+      if (!draggingTabId) return;
+
+      const draggingElement = tabElements.current.get(draggingTabId);
+      if (!draggingElement) return;
+
+      draggingElement.style.width = `${draggingElement.offsetWidth}px`;
+      draggingElement.style.position = "fixed";
+      draggingElement.style.top = `${top - draggingElement.offsetHeight / 2}px`;
+      draggingElement.style.zIndex = "1000";
+      draggingElement.style.opacity = "0.9";
+    },
+    [draggingTabId],
+  );
+
   const endDrag = useCallback(() => {
     if (
       draggingTabId &&
@@ -92,14 +108,7 @@ const useTabMove = ({
       const draggingElem = tabElements.current.get(draggingTabId || "");
       if (!draggingElem || !barElem) return;
 
-      const draggingElement = tabElements.current.get(draggingTabId || "");
-      if (draggingElement) {
-        draggingElement.style.width = `${draggingElement.offsetWidth}px`;
-        draggingElement.style.position = "fixed";
-        draggingElement.style.top = `${e.clientY - draggingElement.offsetHeight / 2}px`;
-        draggingElement.style.zIndex = "1000";
-        draggingElement.style.opacity = "0.9";
-      }
+      updateDraggingVisuals(e.clientY);
 
       const originalIndex = originalIndexRef.current;
       if (originalIndex === null) return;
@@ -139,21 +148,14 @@ const useTabMove = ({
         currentIndexRef.current = toIndex;
       }
     },
-    [draggingTabId, tabBarRef, verticalTabs, tabOrder],
+    [draggingTabId, tabBarRef, verticalTabs, tabOrder, updateDraggingVisuals],
   );
 
   useEffect(() => {
     if (!draggingTabId) return;
 
-    const draggingElement = tabElements.current.get(draggingTabId);
     const initialMouseY = initialMouseYRef.current;
-    if (draggingElement && initialMouseY !== null) {
-      draggingElement.style.width = `${draggingElement.offsetWidth}px`;
-      draggingElement.style.position = "fixed";
-      draggingElement.style.top = `${initialMouseY - draggingElement.offsetHeight / 2}px`;
-      draggingElement.style.zIndex = "1000";
-      draggingElement.style.opacity = "0.9";
-    }
+    if (initialMouseY !== null) updateDraggingVisuals(initialMouseY);
 
     window.addEventListener("mousemove", onMouseMove);
     window.addEventListener("mouseup", onMouseUp);
@@ -163,7 +165,7 @@ const useTabMove = ({
       window.removeEventListener("mouseup", onMouseUp);
       endDrag();
     };
-  }, [draggingTabId, endDrag, onMouseMove, onMouseUp]);
+  }, [draggingTabId, endDrag, onMouseMove, onMouseUp, updateDraggingVisuals]);
 
   return {
     draggingTabId,
