@@ -43,7 +43,16 @@ const TabBar = () => {
   });
 
   const renderItems = useMemo(() => {
-    const filtered = verticalTabs.filter((tab) => {
+    // If you don't insert the spacer first, it won't be inserted when you start dragging
+    const tabs = [...verticalTabs];
+    const index = tabs.findIndex((tab) => tab.id === tabMove.dropTargetTabId);
+    tabs.splice(index === -1 ? tabs.length : index, 0, {
+      kind: "spacer",
+      id: `__spacer_${index}__`,
+      active: false,
+    });
+
+    return tabs.filter((tab) => {
       if (
         tab.kind === "single" &&
         tab.parentId !== null &&
@@ -56,21 +65,6 @@ const TabBar = () => {
 
       return true;
     });
-
-    if (!tabMove.dropTargetTabId) return filtered;
-
-    const dropIndex = filtered.findIndex(
-      (tab) => tab.id === tabMove.dropTargetTabId,
-    );
-
-    const result = [...filtered];
-    result.splice(dropIndex === -1 ? result.length : dropIndex, 0, {
-      kind: "spacer",
-      id: `__spacer_${dropIndex}__`,
-      active: false,
-    });
-
-    return result;
   }, [
     expandedComparisonIds,
     tabMove.dropTargetTabId,

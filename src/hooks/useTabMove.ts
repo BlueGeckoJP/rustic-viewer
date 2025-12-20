@@ -82,6 +82,7 @@ const useTabMove = ({
     initialMouseYRef.current = e.clientY;
 
     setDraggingTabId(tabId);
+    setDropTargetTabId(tabId);
   };
 
   const registerTab = (tabId: string, element: HTMLDivElement | null) => {
