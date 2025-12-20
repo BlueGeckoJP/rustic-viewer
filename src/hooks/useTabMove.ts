@@ -116,7 +116,7 @@ const useTabMove = ({
 
       const dstMidpointsY = verticalTabs
         .filter(
-          (t, _) => t.id !== draggingTabId && tabElements.current.has(t.id),
+          (t) => t.id !== draggingTabId && tabElements.current.has(t.id),
         )
         .map((t) => {
           const elem = tabElements.current.get(t.id);
