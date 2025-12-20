@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useStore } from "zustand";
 import useTabHotkeysUndoRedo from "../../hooks/useTabHotkeysUndoRedo";
 import useTabMove from "../../hooks/useTabMove";
@@ -19,6 +19,8 @@ const TabBar = () => {
   const canUndo = pastStates.length > 0;
   const canRedo = futureStates.length > 0;
 
+  const tablistRef = useRef<HTMLDivElement | null>(null);
+
   const verticalTabs = useMemo(() => selectVerticalTabs(tabStore), [tabStore]);
 
   const [isOpen, setIsOpen] = useState(true);
@@ -35,7 +37,7 @@ const TabBar = () => {
     });
   };
 
-  const tabMove = useTabMove();
+  const tabMove = useTabMove({ tablistRef });
   useTabHotkeysUndoRedo({ canUndo, canRedo, undo, redo });
   const { selectedIDs, setSelectedIDs, toggleSelect } = useTabSelection({
     tabOrder,
@@ -102,7 +104,8 @@ const TabBar = () => {
         <div
           role="tablist"
           aria-orientation="vertical"
-          className="flex flex-col gap-2 relative"
+          className="flex flex-col gap-2 relative h-full"
+          ref={tablistRef}
         >
           {renderItems.map((item) => {
             if (item.kind === "spacer") {

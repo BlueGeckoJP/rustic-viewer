@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTabStore } from "../store";
 
+export type UseTabMoveProps = {
+  tablistRef: React.RefObject<HTMLDivElement | null>;
+};
+
 export type UseTabMoveReturn = {
   draggingTabId: string | null;
   dropTargetTabId: string | null;
@@ -8,7 +12,7 @@ export type UseTabMoveReturn = {
   registerTab: (tabId: string, element: HTMLDivElement | null) => void;
 };
 
-const useTabMove = (): UseTabMoveReturn => {
+const useTabMove = ({ tablistRef }: UseTabMoveProps): UseTabMoveReturn => {
   const setActiveTab = useTabStore((s) => s.setActiveTab);
   const reorderTab = useTabStore((s) => s.reorderTab);
   const tabOrder = useTabStore((s) => s.tabOrder);
@@ -36,15 +40,23 @@ const useTabMove = (): UseTabMoveReturn => {
       if (!draggingTabId) return;
 
       const draggingElement = tabElements.current.get(draggingTabId);
-      if (!draggingElement) return;
+      const tablistElement = tablistRef.current;
+      if (!draggingElement || !tablistElement) return;
+
+      const tablistRect = tablistElement.getBoundingClientRect();
+      const maxTop = tablistRect.top;
+      const minTop = tablistRect.bottom - draggingElement.offsetHeight;
+
+      const centeredTop = top - draggingElement.offsetHeight / 2;
+      const clampedTop = Math.min(Math.max(centeredTop, maxTop), minTop);
 
       draggingElement.style.width = `${draggingElement.offsetWidth}px`;
       draggingElement.style.position = "fixed";
-      draggingElement.style.top = `${top - draggingElement.offsetHeight / 2}px`;
+      draggingElement.style.top = `${clampedTop}px`;
       draggingElement.style.zIndex = "1000";
       draggingElement.style.opacity = "0.9";
     },
-    [draggingTabId],
+    [draggingTabId, tablistRef],
   );
 
   const endDrag = useCallback(() => {
