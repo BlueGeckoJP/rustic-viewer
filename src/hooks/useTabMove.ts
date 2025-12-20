@@ -164,9 +164,8 @@ const useTabMove = ({
     return () => {
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mouseup", onMouseUp);
-      endDrag();
     };
-  }, [draggingTabId, endDrag, onMouseMove, onMouseUp, updateDraggingVisuals]);
+  }, [draggingTabId, onMouseMove, onMouseUp, updateDraggingVisuals]);
 
   return {
     draggingTabId,
