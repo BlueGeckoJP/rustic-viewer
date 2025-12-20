@@ -44,6 +44,13 @@ const TabItem = ({
   const label = getLabel(tab, isComp ? "comparison" : "single");
   const selected = selectedIDs.has(item.id);
 
+  const setActive = () => {
+    setActiveTab(item.id);
+    if (isChild && item.parentId) {
+      setActiveSlotIndex(item.parentId, item.slotIndex ?? 0);
+    }
+  };
+
   return (
     <div
       key={item.id}
@@ -60,24 +67,14 @@ const TabItem = ({
         if (tabMove.draggingTabId) return;
         if (e.metaKey || e.ctrlKey || e.shiftKey) return;
 
-        if (isChild && item.parentId) {
-          setActiveTab(item.id);
-          setActiveSlotIndex(item.parentId, item.slotIndex ?? 0);
-        } else {
-          setActiveTab(item.id);
-        }
+        setActive();
       }}
       onKeyDown={(e) => {
         if (e.key !== "Enter" && e.key !== " ") return;
         e.preventDefault();
         if (e.metaKey || e.ctrlKey || e.shiftKey) return;
 
-        if (isChild && item.parentId) {
-          setActiveTab(item.id);
-          setActiveSlotIndex(item.parentId, item.slotIndex ?? 0);
-        } else {
-          setActiveTab(item.id);
-        }
+        setActive();
       }}
       onContextMenu={(e) => {
         e.preventDefault();
