@@ -14,13 +14,13 @@ import createRenderer from "./renderers";
  *  - panOffset?: { x: number, y: number } (pan offset in CSS pixels)
  */
 
-export interface ImageCanvasProps {
+export type ImageCanvasProps = {
   image: ImageBitmap | null;
   className: string;
   zoom: number;
   panOffset: { x: number; y: number };
   rendererType?: RendererType;
-}
+};
 
 const ImageCanvas: React.FC<ImageCanvasProps> = ({
   image,

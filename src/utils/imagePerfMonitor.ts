@@ -1,4 +1,4 @@
-export interface ImageLoadMetrics {
+export type ImageLoadMetrics = {
   path: string;
   fileReadTime: number;
   decodeTime: number;
@@ -6,7 +6,7 @@ export interface ImageLoadMetrics {
   cacheHit: boolean;
   timestamp: number;
   imageSize: { width: number; height: number };
-}
+};
 
 class ImagePerformanceMonitor {
   recordMetric(metric: ImageLoadMetrics) {

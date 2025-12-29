@@ -4,7 +4,7 @@ import ContextMenu, { type ContextMenuItem } from "../ContextMenu";
 
 const CHILD_PREFIX = "::child::";
 
-interface TabContextMenuProps {
+export type TabContextMenuProps = {
   menuOpenFor: string | null;
   menuPos: { x: number; y: number } | null;
   onClose: () => void;
@@ -12,7 +12,7 @@ interface TabContextMenuProps {
   toggleExpanded: (id: string) => void;
   selectedIDs: Set<string>;
   setSelectedIDs: React.Dispatch<React.SetStateAction<Set<string>>>;
-}
+};
 
 const TabContextMenu = ({
   menuOpenFor,
