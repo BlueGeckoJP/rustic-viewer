@@ -117,7 +117,7 @@ const TabBar = () => {
         >
           {renderItems.map((item) => {
             if (item.kind === "spacer") {
-              return <div className="h-8" />;
+              return <div key={`__spacer_${item.id}__`} className="h-8" />;
             }
 
             return (
