@@ -57,19 +57,29 @@ export class Canvas2DRenderer implements ImageRenderer {
 
     if (this.timeoutId !== null) {
       clearTimeout(this.timeoutId);
+      this.timeoutId = null;
     }
 
     this.currentResizeId++;
     const resizeId = this.currentResizeId;
 
-    this.performLazyResize(
-      resizeId,
-      imagePath,
-      drawWidth,
-      drawHeight,
-      offsetX,
-      offsetY,
-    );
+    this.timeoutId = window.setTimeout(() => {
+      this.performLazyResize(
+        resizeId,
+        imagePath,
+        drawWidth,
+        drawHeight,
+        offsetX,
+        offsetY,
+      );
+
+      return () => {
+        if (this.timeoutId !== null) {
+          clearTimeout(this.timeoutId);
+          this.timeoutId = null;
+        }
+      };
+    }, 500);
   }
 
   private performLazyResize = async (
