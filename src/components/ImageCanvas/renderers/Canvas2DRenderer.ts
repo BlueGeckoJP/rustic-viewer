@@ -1,7 +1,10 @@
+import { Channel, invoke } from "@tauri-apps/api/core";
 import type { ImageRenderer } from ".";
 
 export class Canvas2DRenderer implements ImageRenderer {
   private ctx: CanvasRenderingContext2D | null = null;
+  private timeoutId: number | null = null;
+  private currentResizeId = 0;
 
   initialize(canvas: HTMLCanvasElement): void {
     this.ctx = canvas.getContext("2d");
@@ -9,6 +12,7 @@ export class Canvas2DRenderer implements ImageRenderer {
 
   draw(
     image: ImageBitmap,
+    imagePath: string,
     zoom: number,
     panOffset: { x: number; y: number },
   ): void {
@@ -50,7 +54,77 @@ export class Canvas2DRenderer implements ImageRenderer {
       drawWidth,
       drawHeight,
     );
+
+    if (this.timeoutId !== null) {
+      clearTimeout(this.timeoutId);
+      this.timeoutId = null;
+    }
+
+    this.currentResizeId++;
+    const resizeId = this.currentResizeId;
+
+    this.timeoutId = window.setTimeout(() => {
+      this.performLazyResize(
+        resizeId,
+        imagePath,
+        drawWidth,
+        drawHeight,
+        offsetX,
+        offsetY,
+      );
+
+      return () => {
+        if (this.timeoutId !== null) {
+          clearTimeout(this.timeoutId);
+          this.timeoutId = null;
+        }
+      };
+    }, 500);
   }
+
+  private performLazyResize = async (
+    resizeId: number,
+    path: string,
+    drawWidth: number,
+    drawHeight: number,
+    offsetX: number,
+    offsetY: number,
+  ) => {
+    if (resizeId !== this.currentResizeId) {
+      return;
+    }
+
+    const channel = new Channel();
+
+    channel.onmessage = (m) => {
+      const message = m as { width: number; height: number; data: string };
+
+      const img = new Image();
+
+      img.onload = () => {
+        if (resizeId !== this.currentResizeId) {
+          return;
+        }
+
+        const ctx = this.ctx;
+        if (!ctx) return;
+
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
+      };
+
+      img.src = message.data;
+    };
+
+    await invoke("lanczos_resize", {
+      channel: channel,
+      path,
+      targetWidth: Math.round(drawWidth),
+      targetHeight: Math.round(drawHeight),
+    }).catch((e) => {
+      console.error("Error during lanczos resize:", e);
+    });
+  };
 
   postResize(): void {
     const ctx = this.ctx;

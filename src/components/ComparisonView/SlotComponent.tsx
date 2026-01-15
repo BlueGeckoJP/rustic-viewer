@@ -66,6 +66,7 @@ const SlotComponent = ({ tabId, childId }: SlotComponentProps) => {
           <div className="max-w-[calc(100vw-2rem)] max-h-[calc(100vh-3rem)] w-full h-full block">
             <ImageCanvas
               image={currentImage}
+              imagePath={rawPath}
               className="w-full h-full max-w-full max-h-full block"
               zoom={childTab.zoom}
               panOffset={childTab.panOffset}

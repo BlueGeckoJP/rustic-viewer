@@ -16,6 +16,7 @@ import createRenderer from "./renderers";
 
 export type ImageCanvasProps = {
   image: ImageBitmap | null;
+  imagePath: string;
   className: string;
   zoom: number;
   panOffset: { x: number; y: number };
@@ -24,6 +25,7 @@ export type ImageCanvasProps = {
 
 const ImageCanvas: React.FC<ImageCanvasProps> = ({
   image,
+  imagePath,
   className,
   zoom = 1.0,
   panOffset = { x: 0, y: 0 },
@@ -58,8 +60,8 @@ const ImageCanvas: React.FC<ImageCanvasProps> = ({
       return;
     }
 
-    renderer.draw(image, zoom, panOffset);
-  }, [image, zoom, panOffset]);
+    renderer.draw(image, imagePath, zoom, panOffset);
+  }, [image, imagePath, zoom, panOffset]);
 
   // Resize observer for DPR changes or container size changes
   useEffect(() => {
