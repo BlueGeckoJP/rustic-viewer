@@ -1,4 +1,5 @@
 mod args;
+mod image;
 mod startup_state;
 
 use clap::Parser;
@@ -93,7 +94,7 @@ pub fn run() {
                 _ => {}
             }
         })
-        .invoke_handler(tauri::generate_handler![])
+        .invoke_handler(tauri::generate_handler![crate::image::lanczos_resize])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

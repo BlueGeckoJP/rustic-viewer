@@ -1,7 +1,10 @@
+import { Channel, invoke } from "@tauri-apps/api/core";
 import type { ImageRenderer } from ".";
 
 export class Canvas2DRenderer implements ImageRenderer {
   private ctx: CanvasRenderingContext2D | null = null;
+  private timeoutId: number | null = null;
+  private currentResizeId = 0;
 
   initialize(canvas: HTMLCanvasElement): void {
     this.ctx = canvas.getContext("2d");
@@ -50,6 +53,62 @@ export class Canvas2DRenderer implements ImageRenderer {
       drawWidth,
       drawHeight,
     );
+
+    if (this.timeoutId !== null) {
+      clearTimeout(this.timeoutId);
+    }
+
+    this.currentResizeId++;
+    const resizeId = this.currentResizeId;
+
+    this.timeoutId = window.setTimeout(async () => {
+      if (resizeId !== this.currentResizeId) {
+        return;
+      }
+
+      const tempCanvas = new OffscreenCanvas(image.width, image.height);
+      const tempCtx = tempCanvas.getContext("2d");
+      if (!tempCtx) return;
+
+      tempCtx.drawImage(image, 0, 0);
+
+      const imageData = tempCtx.getImageData(0, 0, image.width, image.height);
+      const imageArray = Array.from(new Uint8Array(imageData.data.buffer));
+
+      const channel = new Channel();
+
+      channel.onmessage = (m) => {
+        const message = m as { width: number; height: number; data: string };
+
+        const img = new Image();
+
+        img.onload = () => {
+          if (resizeId !== this.currentResizeId) {
+            return;
+          }
+
+          ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+          ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
+        };
+
+        img.src = message.data;
+      };
+
+      await invoke("lanczos_resize", {
+        channel: channel,
+        data: imageArray,
+        imageWidth: image.width,
+        imageHeight: image.height,
+        targetWidth: Math.round(drawWidth),
+        targetHeight: Math.round(drawHeight),
+      }).catch((e) => {
+        console.error("Error during lanczos resize:", e);
+      });
+
+      return () => {
+        this.timeoutId = null;
+      };
+    }, 300);
   }
 
   postResize(): void {
