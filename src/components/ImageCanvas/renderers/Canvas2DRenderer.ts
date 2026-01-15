@@ -70,12 +70,6 @@ export class Canvas2DRenderer implements ImageRenderer {
       offsetX,
       offsetY,
     );
-
-    this.timeoutId = window.setTimeout(async () => {
-      return () => {
-        this.timeoutId = null;
-      };
-    }, 300);
   }
 
   private performLazyResize = async (
@@ -90,9 +84,6 @@ export class Canvas2DRenderer implements ImageRenderer {
       return;
     }
 
-    const ctx = this.ctx;
-    if (!ctx) return;
-
     const channel = new Channel();
 
     channel.onmessage = (m) => {
@@ -104,6 +95,9 @@ export class Canvas2DRenderer implements ImageRenderer {
         if (resizeId !== this.currentResizeId) {
           return;
         }
+
+        const ctx = this.ctx;
+        if (!ctx) return;
 
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
         ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
