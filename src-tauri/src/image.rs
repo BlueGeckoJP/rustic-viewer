@@ -1,6 +1,6 @@
 use std::io::Cursor;
 
-use image::{ImageBuffer, Rgba};
+use image::{ImageBuffer, ImageReader, Rgba};
 use serde::Serialize;
 use tauri::ipc::Channel;
 
@@ -14,17 +14,17 @@ pub struct ResizedImage {
 #[tauri::command]
 pub async fn lanczos_resize(
     channel: Channel<ResizedImage>,
-    data: Vec<u8>,
-    image_width: u32,
-    image_height: u32,
+    path: &str,
     target_width: u32,
     target_height: u32,
 ) -> Result<(), String> {
-    let buffer = ImageBuffer::<Rgba<u8>, Vec<u8>>::from_raw(image_width, image_height, data)
-        .ok_or("Failed to create image buffer from raw data")?;
+    let img = ImageReader::open(path)
+        .map_err(|e| format!("Failed to open image: {}", e))?
+        .decode()
+        .map_err(|e| format!("Failed to decode image: {}", e))?;
 
     let resized = image::imageops::resize(
-        &buffer,
+        &img,
         target_width,
         target_height,
         image::imageops::FilterType::Lanczos3,

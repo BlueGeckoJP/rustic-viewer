@@ -53,6 +53,7 @@ const SingleView = () => {
         {currentImage ? (
           <ImageCanvas
             image={currentImage}
+            imagePath={rawPath}
             className="w-screen h-screen max-w-screen max-h-[calc(100vh-24px)]"
             zoom={singleTab?.zoom ?? 1.0}
             panOffset={singleTab?.panOffset ?? { x: 0, y: 0 }}

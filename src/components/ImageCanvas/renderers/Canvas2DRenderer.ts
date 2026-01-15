@@ -12,6 +12,7 @@ export class Canvas2DRenderer implements ImageRenderer {
 
   draw(
     image: ImageBitmap,
+    imagePath: string,
     zoom: number,
     panOffset: { x: number; y: number },
   ): void {
@@ -63,7 +64,7 @@ export class Canvas2DRenderer implements ImageRenderer {
 
     this.performLazyResize(
       resizeId,
-      image,
+      imagePath,
       drawWidth,
       drawHeight,
       offsetX,
@@ -79,7 +80,7 @@ export class Canvas2DRenderer implements ImageRenderer {
 
   private performLazyResize = async (
     resizeId: number,
-    image: ImageBitmap,
+    path: string,
     drawWidth: number,
     drawHeight: number,
     offsetX: number,
@@ -91,15 +92,6 @@ export class Canvas2DRenderer implements ImageRenderer {
 
     const ctx = this.ctx;
     if (!ctx) return;
-
-    const tempCanvas = new OffscreenCanvas(image.width, image.height);
-    const tempCtx = tempCanvas.getContext("2d");
-    if (!tempCtx) return;
-
-    tempCtx.drawImage(image, 0, 0);
-
-    const imageData = tempCtx.getImageData(0, 0, image.width, image.height);
-    const imageArray = Array.from(new Uint8Array(imageData.data.buffer));
 
     const channel = new Channel();
 
@@ -122,9 +114,7 @@ export class Canvas2DRenderer implements ImageRenderer {
 
     await invoke("lanczos_resize", {
       channel: channel,
-      data: imageArray,
-      imageWidth: image.width,
-      imageHeight: image.height,
+      path,
       targetWidth: Math.round(drawWidth),
       targetHeight: Math.round(drawHeight),
     }).catch((e) => {

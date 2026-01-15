@@ -6,6 +6,7 @@ export interface ImageRenderer {
   initialize(canvas: HTMLCanvasElement): void;
   draw(
     image: ImageBitmap,
+    imagePath: string,
     zoom: number,
     panOffset: { x: number; y: number },
   ): void;
