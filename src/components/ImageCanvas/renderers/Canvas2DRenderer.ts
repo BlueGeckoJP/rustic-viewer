@@ -1,5 +1,5 @@
-import { Channel, invoke } from "@tauri-apps/api/core";
 import type { ImageRenderer } from ".";
+import { replaceCacheWithResampledImage } from "../../../utils/imageLoader";
 
 export class Canvas2DRenderer implements ImageRenderer {
   private ctx: CanvasRenderingContext2D | null = null;
@@ -90,40 +90,25 @@ export class Canvas2DRenderer implements ImageRenderer {
     offsetX: number,
     offsetY: number,
   ) => {
-    if (resizeId !== this.currentResizeId) {
-      return;
+    if (resizeId !== this.currentResizeId) return;
+
+    try {
+      const highQualityBitmap = await replaceCacheWithResampledImage(
+        path,
+        Math.round(drawWidth),
+        Math.round(drawHeight),
+      );
+
+      if (!highQualityBitmap || resizeId !== this.currentResizeId) return;
+
+      if (!this.ctx) return;
+      const ctx = this.ctx;
+
+      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+      ctx.drawImage(highQualityBitmap, offsetX, offsetY, drawWidth, drawHeight);
+    } catch (error) {
+      console.error("Error during lazy resize:", error);
     }
-
-    const channel = new Channel();
-
-    channel.onmessage = (m) => {
-      const message = m as { width: number; height: number; data: string };
-
-      const img = new Image();
-
-      img.onload = () => {
-        if (resizeId !== this.currentResizeId) {
-          return;
-        }
-
-        const ctx = this.ctx;
-        if (!ctx) return;
-
-        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-        ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
-      };
-
-      img.src = message.data;
-    };
-
-    await invoke("lanczos_resize", {
-      channel: channel,
-      path,
-      targetWidth: Math.round(drawWidth),
-      targetHeight: Math.round(drawHeight),
-    }).catch((e) => {
-      console.error("Error during lanczos resize:", e);
-    });
   };
 
   postResize(): void {

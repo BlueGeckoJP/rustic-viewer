@@ -4,6 +4,8 @@ export type CacheItem = {
   width: number;
   height: number;
   bitmap?: ImageBitmap;
+  isHighQuality: boolean;
+  resampledDimensions?: { width: number; height: number };
 };
 
 // Simple LRU Cache (Map maintains insertion order)
