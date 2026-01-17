@@ -1,4 +1,5 @@
 import type { SingleTabState } from "../store";
+import imageCache from "../utils/imageCache";
 
 export type ViewerHeaderProps = {
   rawPath: string;
@@ -7,6 +8,9 @@ export type ViewerHeaderProps = {
 };
 
 const ViewerHeader = ({ rawPath, isLoading, singleTab }: ViewerHeaderProps) => {
+  const cacheItem = imageCache.get(rawPath);
+  const isHighQuality = cacheItem?.isHighQuality ?? false;
+
   return (
     <div
       className={`text-xs text-[#D3DAD9] flex items-center gap-2 h-6 ${isLoading ? "bg-[#715A5A] transition-colors duration-300" : "bg-[#44444E]"}`}
@@ -19,6 +23,12 @@ const ViewerHeader = ({ rawPath, isLoading, singleTab }: ViewerHeaderProps) => {
           ? "No Images"
           : `${singleTab.currentIndex + 1}/${singleTab.imageList.length}`}
       </span>
+
+      {isHighQuality && (
+        <span className="ml-2 px-1 py-0.5 text-xs font-medium text-[#D3DAD9]">
+          HQ
+        </span>
+      )}
 
       {/* Loading overlay */}
       <div
