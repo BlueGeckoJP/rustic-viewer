@@ -3,6 +3,7 @@ use std::io::Cursor;
 use image::{ImageBuffer, ImageReader, Rgba};
 use serde::Serialize;
 use tauri::ipc::Channel;
+use tokio::task::JoinHandle;
 
 #[derive(Serialize)]
 pub struct ResizedImage {
@@ -18,28 +19,36 @@ pub async fn lanczos_resize(
     target_width: u32,
     target_height: u32,
 ) -> Result<(), String> {
-    let img = ImageReader::open(path)
-        .map_err(|e| format!("Failed to open image: {}", e))?
-        .decode()
-        .map_err(|e| format!("Failed to decode image: {}", e))?;
+    let path = path.to_owned();
 
-    let resized = image::imageops::resize(
-        &img,
-        target_width,
-        target_height,
-        image::imageops::FilterType::Lanczos3,
-    );
+    let handle: JoinHandle<Result<ResizedImage, String>> = tokio::task::spawn_blocking(move || {
+        let img = ImageReader::open(path)
+            .map_err(|e| format!("Failed to open image: {}", e))?
+            .decode()
+            .map_err(|e| format!("Failed to decode image: {}", e))?;
 
-    let base64_data = image_to_base64(&resized)?;
+        let resized = image::imageops::resize(
+            &img,
+            target_width,
+            target_height,
+            image::imageops::FilterType::Lanczos3,
+        );
 
-    let result = ResizedImage {
-        width: target_width,
-        height: target_height,
-        data: base64_data,
-    };
+        let base64_data = image_to_base64(&resized)?;
+
+        let result = ResizedImage {
+            width: target_width,
+            height: target_height,
+            data: base64_data,
+        };
+
+        Ok(result)
+    });
+
+    let base64_data = handle.await.map_err(|e| format!("Task failed: {}", e))??;
 
     channel
-        .send(result)
+        .send(base64_data)
         .map_err(|e| format!("Failed to send resized image: {}", e))?;
 
     Ok(())
