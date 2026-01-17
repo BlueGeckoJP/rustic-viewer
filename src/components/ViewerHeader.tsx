@@ -1,3 +1,4 @@
+import { useCallback, useEffect, useState } from "react";
 import type { SingleTabState } from "../store";
 import imageCache from "../utils/imageCache";
 
@@ -8,8 +9,23 @@ export type ViewerHeaderProps = {
 };
 
 const ViewerHeader = ({ rawPath, isLoading, singleTab }: ViewerHeaderProps) => {
-  const cacheItem = imageCache.get(rawPath);
-  const isHighQuality = cacheItem?.isHighQuality ?? false;
+  const [isHighQuality, setIsHighQuality] = useState(false);
+
+  const updateIsHighQuality = useCallback(() => {
+    const cacheItem = imageCache.get(rawPath);
+    const isHighQuality = cacheItem?.isHighQuality ?? false;
+    setIsHighQuality(isHighQuality);
+  }, [rawPath]);
+
+  useEffect(() => {
+    updateIsHighQuality();
+
+    const interval = setInterval(() => {
+      updateIsHighQuality();
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [updateIsHighQuality]);
 
   return (
     <div
