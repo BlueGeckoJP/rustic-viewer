@@ -5,6 +5,7 @@ import SingleView from "./components/SingleView";
 import TabBar from "./components/TabBar";
 import { useTabStore } from "./store";
 import { determineDirectory, getSortedImageFiles } from "./utils/fileUtils";
+import imageCache from "./utils/imageCache";
 
 // Main App component: manages tab state, image loading, canvas rendering, and Tauri events
 export default function App() {
@@ -14,6 +15,7 @@ export default function App() {
   const openImageRef = useRef<(rawPath: string, newTab?: boolean) => void>(
     () => {},
   );
+  const reloadImageRef = useRef<() => void>(() => {});
   const updateImageListRef = useRef<(tabId: string) => void>(() => {});
   const rebuiltRef = useRef<Set<string>>(new Set());
   const activeTabId = useTabStore((s) => s.activeTabId);
@@ -68,6 +70,15 @@ export default function App() {
     ],
   );
 
+  const reloadImage = useCallback(() => {
+    const tab = singleTabs[activeTabId];
+    if (!tab || !tab.directory || tab.imageList.length === 0) return;
+
+    const currentPath = tab.imageList[tab.currentIndex];
+    imageCache.delete(currentPath);
+    updateSingleTab(tab.id, { reloadTrigger: Date.now() });
+  }, [activeTabId, singleTabs, updateSingleTab]);
+
   const updateImageList = useCallback(
     (tabId: string) => {
       const tab = singleTabs[tabId];
@@ -91,8 +102,9 @@ export default function App() {
   // Expose openImage through ref for parent (App) to call from Tauri events
   useEffect(() => {
     openImageRef.current = openImage;
+    reloadImageRef.current = reloadImage;
     updateImageListRef.current = updateImageList;
-  }, [openImage, updateImageList]);
+  }, [openImage, reloadImage, updateImageList]);
 
   // Add Tauri event listeners for 'open-image' and 'new-tab' events
   useEffect(() => {
@@ -131,10 +143,16 @@ export default function App() {
         addSingleTab([], 0, null);
       });
 
+      const reloadImageListener = await listen("reload-image", (event) => {
+        console.log("Received reload-image event: ", event.payload);
+        reloadImageRef.current();
+      });
+
       unlisteners.push(
         openImageListener,
         newTabListener,
         openImageNewTabListener,
+        reloadImageListener,
       );
       await emit("frontend-ready", null); // Notify backend that frontend is ready
     })();

@@ -48,6 +48,7 @@ const useImageViewer = ({
     rawPath,
     setCurrentImage,
     setIsLoading,
+    reloadTrigger: singleTab?.reloadTrigger,
   });
 
   const navigationHandlers = useImageNavigation({

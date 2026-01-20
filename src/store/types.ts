@@ -17,6 +17,8 @@ export type SingleTabState = {
   zoom: number;
   /** Current pan offset */
   panOffset: { x: number; y: number };
+  /** A trigger to reload the image when its value changes */
+  reloadTrigger?: number;
 };
 
 /**

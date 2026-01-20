@@ -72,7 +72,12 @@ pub fn run() {
                 ],
             )?;
 
-            Menu::with_items(app, &[&file_menu])
+            let reload_image =
+                MenuItem::with_id(app, "reload-image", "Reload Image", true, Some("F5"))?;
+
+            let view_menu = Submenu::with_items(app, "View", true, &[&reload_image])?;
+
+            Menu::with_items(app, &[&file_menu, &view_menu])
         })
         .on_menu_event(|app, event| {
             log::debug!("Received the event: {}", event.id().as_ref());
@@ -90,6 +95,9 @@ pub fn run() {
                 }
                 "quit" => {
                     app.exit(0);
+                }
+                "reload-image" => {
+                    app.emit("reload-image", ()).unwrap();
                 }
                 _ => {}
             }

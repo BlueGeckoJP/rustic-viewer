@@ -5,14 +5,19 @@ export type UseImageBitmapProps = {
   rawPath: string;
   setCurrentImage: React.Dispatch<React.SetStateAction<ImageBitmap | null>>;
   setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
+  reloadTrigger?: number;
 };
 
 const useImageBitmap = ({
   rawPath,
   setCurrentImage,
   setIsLoading,
+  reloadTrigger,
 }: UseImageBitmapProps) => {
   useEffect(() => {
+    if (reloadTrigger)
+      console.log("Reloading image due to trigger:", reloadTrigger);
+
     let alive = true;
 
     if (rawPath === "") {
@@ -50,7 +55,7 @@ const useImageBitmap = ({
       alive = false;
       clearTimeout(timeoutId);
     };
-  }, [rawPath, setCurrentImage, setIsLoading]);
+  }, [rawPath, setCurrentImage, setIsLoading, reloadTrigger]);
 };
 
 export default useImageBitmap;

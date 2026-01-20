@@ -38,9 +38,7 @@ export class ImageCache {
       // Remove least recently used (first item in Map)
       const oldestKey = this.cache.keys().next().value;
       if (oldestKey) {
-        const oldest = this.cache.get(oldestKey);
-        if (oldest?.bitmap) oldest.bitmap.close(); // Free up ImageBitmap resources
-        this.cache.delete(oldestKey);
+        this.delete(oldestKey);
       }
     }
     this.cache.set(key, item);
@@ -52,6 +50,12 @@ export class ImageCache {
 
   size(): number {
     return this.cache.size;
+  }
+
+  delete(key: string): void {
+    const item = this.cache.get(key);
+    if (item?.bitmap) item.bitmap.close();
+    this.cache.delete(key);
   }
 }
 
