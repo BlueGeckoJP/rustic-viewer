@@ -114,19 +114,22 @@ export default function App() {
     const unlisteners: Array<() => void> = [];
 
     (async () => {
-      const openImageListener = await listen("open-image", (event) => {
-        console.log("Received open-image event:", event.payload);
-        const rawPath =
-          typeof event.payload === "string"
-            ? event.payload
-            : String(event.payload);
+      const [
+        openImageListener,
+        openImageNewTabListener,
+        newTabListener,
+        reloadImageListener,
+      ] = await Promise.all([
+        listen("open-image", (event) => {
+          console.log("Received open-image event:", event.payload);
+          const rawPath =
+            typeof event.payload === "string"
+              ? event.payload
+              : String(event.payload);
 
-        openImageRef.current(rawPath);
-      });
-
-      const openImageNewTabListener = await listen(
-        "open-image-new-tab",
-        (event) => {
+          openImageRef.current(rawPath);
+        }),
+        listen("open-image-new-tab", (event) => {
           console.log("Received open-image-new-tab event:", event.payload);
           const rawPath =
             typeof event.payload === "string"
@@ -134,19 +137,17 @@ export default function App() {
               : String(event.payload);
 
           openImageRef.current(rawPath, true);
-        },
-      );
+        }),
+        listen("new-tab", (event) => {
+          console.log("Received new-tab event:", event.payload);
 
-      const newTabListener = await listen("new-tab", (event) => {
-        console.log("Received new-tab event:", event.payload);
-
-        addSingleTab([], 0, null);
-      });
-
-      const reloadImageListener = await listen("reload-image", (event) => {
-        console.log("Received reload-image event: ", event.payload);
-        reloadImageRef.current();
-      });
+          addSingleTab([], 0, null);
+        }),
+        listen("reload-image", (event) => {
+          console.log("Received reload-image event: ", event.payload);
+          reloadImageRef.current();
+        }),
+      ]);
 
       unlisteners.push(
         openImageListener,
@@ -154,6 +155,7 @@ export default function App() {
         openImageNewTabListener,
         reloadImageListener,
       );
+
       await emit("frontend-ready", null); // Notify backend that frontend is ready
     })();
 
