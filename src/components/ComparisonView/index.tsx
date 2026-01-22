@@ -34,7 +34,8 @@ export const ComparisonView: React.FC<ComparisonViewProps> = ({ tabId }) => {
         const child = singleTabs[cid];
         if (!child) return null;
         return (
-          <button
+          // biome-ignore lint/a11y/useSemanticElements: Cannot use <button> as it would create nested buttons (ViewerControls contains buttons)
+          <div
             key={child.id}
             className={`relative group rounded-md overflow-hidden flex flex-col bg-[#2F2E33] hover:[&>div:last-child]:opacity-100 ${
               n <= 3 ? "flex-1" : "w-full h-full"
@@ -44,10 +45,17 @@ export const ComparisonView: React.FC<ComparisonViewProps> = ({ tabId }) => {
                 : "outline-1 outline-transparent"
             }`}
             onClick={() => setActiveSlotIndex(tab.id, idx)}
-            type="button"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setActiveSlotIndex(tab.id, idx);
+              }
+            }}
+            role="button"
+            tabIndex={0}
           >
             <SlotComponent tabId={tab.id} childId={child.id} />
-          </button>
+          </div>
         );
       })}
     </div>
