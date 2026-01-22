@@ -1,5 +1,6 @@
 import { emit, listen } from "@tauri-apps/api/event";
 import { useCallback, useEffect, useRef } from "react";
+import { useShallow } from "zustand/shallow";
 import ComparisonView from "./components/ComparisonView";
 import SingleView from "./components/SingleView";
 import TabBar from "./components/TabBar";
@@ -18,11 +19,18 @@ export default function App() {
   const reloadImageRef = useRef<() => void>(() => {});
   const updateImageListRef = useRef<(tabId: string) => void>(() => {});
   const rebuiltRef = useRef<Set<string>>(new Set());
-  const activeTabId = useTabStore((s) => s.activeTabId);
-  const singleTabs = useTabStore((s) => s.singleTabs);
-  const comparisonTabs = useTabStore((s) => s.comparisonTabs);
-  const activeTab =
-    singleTabs[activeTabId] || comparisonTabs[activeTabId] || null;
+
+  // Optimize re-renders by using a single selector with shallow comparison
+  const { activeTabId, singleTabs, comparisonTabs, activeTab } = useTabStore(
+    useShallow((s) => ({
+      activeTabId: s.activeTabId,
+      singleTabs: s.singleTabs,
+      comparisonTabs: s.comparisonTabs,
+      activeTab:
+        s.singleTabs[s.activeTabId] || s.comparisonTabs[s.activeTabId] || null,
+    })),
+  );
+
   const addSingleTab = useTabStore((s) => s.addSingleTab);
   const setActiveTab = useTabStore((s) => s.setActiveTab);
   const updateSingleTab = useTabStore((s) => s.updateSingleTab);
@@ -34,14 +42,19 @@ export default function App() {
       getSortedImageFiles(dir)
         .then((files) => {
           const idx = files.indexOf(rawPath);
+          const state = useTabStore.getState();
+          const currentActiveTab =
+            state.singleTabs[activeTabId] ||
+            state.comparisonTabs[activeTabId] ||
+            null;
 
-          if (!activeTab || newTab) {
+          if (!currentActiveTab || newTab) {
             const id = addSingleTab(files, idx >= 0 ? idx : 0, dir);
             // Ensure this new tab becomes active (addTab already sets active but explicit for clarity)
             setActiveTab(id);
           } else {
-            const singleTab = singleTabs[activeTabId];
-            const comparisonTab = comparisonTabs[activeTabId];
+            const singleTab = state.singleTabs[activeTabId];
+            const comparisonTab = state.comparisonTabs[activeTabId];
 
             const targetTabId =
               singleTab?.id ??
@@ -59,15 +72,7 @@ export default function App() {
           console.error("Failed to open image:", e);
         });
     },
-    [
-      activeTab,
-      activeTabId,
-      singleTabs,
-      comparisonTabs,
-      addSingleTab,
-      setActiveTab,
-      updateSingleTab,
-    ],
+    [activeTabId, addSingleTab, setActiveTab, updateSingleTab],
   );
 
   const reloadImage = useCallback(() => {
