@@ -1,5 +1,6 @@
 import { STORAGE_KEY } from "../constants";
 import type { PersistedSessionV1, TabStoreState } from "./types";
+import { ReducedSingleTabState } from "./types/reducedSingleTabState";
 
 export function parseSession(): PersistedSessionV1 | null {
   if (typeof window === "undefined") return null;
@@ -34,13 +35,8 @@ export function saveSession(state: TabStoreState) {
   try {
     const singleTabs: PersistedSessionV1["singleTabs"] = {};
     for (const [id, tab] of Object.entries(state.singleTabs)) {
-      singleTabs[id] = {
-        parentId: tab.parentId,
-        directory: tab.directory,
-        currentIndex: tab.currentIndex,
-        zoom: tab.zoom,
-        panOffset: tab.panOffset,
-      };
+      const reducedState = ReducedSingleTabState.fromFullState(tab);
+      singleTabs[id] = reducedState;
     }
 
     const data: PersistedSessionV1 = {
@@ -57,17 +53,13 @@ export function saveSession(state: TabStoreState) {
   }
 }
 
-export function reducedToSingleTabs(
-  reduced: PersistedSessionV1["singleTabs"],
-): TabStoreState["singleTabs"] {
-  return Object.fromEntries(
-    Object.entries(reduced).map(([id, tab]) => [
-      id,
-      {
-        ...tab,
-        id,
-        imageList: [],
-      },
-    ]),
-  );
+export async function reducedToSingleTabs(
+  reducedTabs: PersistedSessionV1["singleTabs"],
+): Promise<TabStoreState["singleTabs"]> {
+  const fullTabs: TabStoreState["singleTabs"] = {};
+  for (const [id, reducedTab] of Object.entries(reducedTabs)) {
+    const fullState = await ReducedSingleTabState.toFullState(id, reducedTab);
+    fullTabs[id] = fullState;
+  }
+  return fullTabs;
 }

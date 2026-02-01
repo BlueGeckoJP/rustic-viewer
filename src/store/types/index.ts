@@ -1,3 +1,5 @@
+import type { ReducedSingleTabState } from "./reducedSingleTabState";
+
 /**
  * SingleTabState represents the state of a single image tab.
  * @remarks To determine if a SingleTab is a child of a ComparisonTab, check if parentId is not null.
@@ -71,15 +73,6 @@ export type TabStoreState = {
     fromIndex: number,
     toIndex: number,
   ) => void;
-};
-
-export type ReducedSingleTabState = {
-  parentId: string | null;
-  directory: string | null;
-  currentIndex: number;
-  zoom: number;
-  panOffset: { x: number; y: number };
-  //imageList: string[]; - this is excluded from persistence to reduce size
 };
 
 export type PersistedSessionV1 = {
