@@ -1,5 +1,5 @@
-import type { SingleTabState } from ".";
 import { determineDirectory, getSortedImageFiles } from "../../utils/fileUtils";
+import type { SingleTabState } from ".";
 
 export type ReducedSingleTabStateV2 = {
   parentId: string | null;
@@ -13,7 +13,10 @@ export namespace ReducedSingleTabStateV2 {
     singleTab: SingleTabState,
   ): ReducedSingleTabStateV2 {
     const rawPath =
-      singleTab.directory && singleTab.imageList.length > 0
+      singleTab.directory &&
+      singleTab.imageList.length > 0 &&
+      singleTab.currentIndex >= 0 &&
+      singleTab.currentIndex < singleTab.imageList.length
         ? singleTab.imageList[singleTab.currentIndex]
         : "";
 
@@ -36,9 +39,16 @@ export namespace ReducedSingleTabStateV2 {
     let currentIndex = 0;
 
     if (directory) {
-      imageList = await getSortedImageFiles(directory);
-      currentIndex = imageList.indexOf(reduced.rawPath);
-      if (currentIndex < 0) currentIndex = 0;
+      try {
+        imageList = await getSortedImageFiles(directory);
+        currentIndex = imageList.indexOf(reduced.rawPath);
+        if (currentIndex < 0) currentIndex = 0;
+      } catch (error) {
+        console.warn(
+          `Failed to restore tab ${id}: could not read directory ${directory}`,
+          error,
+        );
+      }
     }
 
     const fullState: SingleTabState = {

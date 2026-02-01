@@ -14,16 +14,14 @@ import {
 } from "./types/persistedSession";
 
 const restored = await parseSession();
-let restoredSingleTabs: TabStoreState["singleTabs"] = {};
-if (restored)
-  reducedToSingleTabs(restored.singleTabs).then((tabs) => {
-    restoredSingleTabs = tabs;
-  });
+const restoredSingleTabs: TabStoreState["singleTabs"] = restored
+  ? await reducedToSingleTabs(restored.singleTabs)
+  : {};
 
 export const useTabStore = create<TabStoreState>()(
   temporal(
     (...a) => ({
-      singleTabs: restored ? restoredSingleTabs : {},
+      singleTabs: restoredSingleTabs,
       comparisonTabs: restored ? restored.comparisonTabs : {},
       tabOrder: restored ? restored.tabOrder : [],
       activeTabId: restored ? restored.activeTabId : "",
