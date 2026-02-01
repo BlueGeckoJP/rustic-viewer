@@ -6,19 +6,24 @@ import { createCommonActions } from "./actions/commonActions";
 import { createComparisonTabActions } from "./actions/comparisonTabActions";
 import { createSingleTabActions } from "./actions/singleTabActions";
 import { createTabOrderActions } from "./actions/tabOrderActions";
+import type { TabStoreState } from "./types";
 import {
   parseSession,
   reducedToSingleTabs,
   saveSession,
-} from "./persistedSession";
-import type { TabStoreState } from "./types";
+} from "./types/persistedSession";
 
-const restored = parseSession();
+const restored = await parseSession();
+let restoredSingleTabs: TabStoreState["singleTabs"] = {};
+if (restored)
+  reducedToSingleTabs(restored.singleTabs).then((tabs) => {
+    restoredSingleTabs = tabs;
+  });
 
 export const useTabStore = create<TabStoreState>()(
   temporal(
     (...a) => ({
-      singleTabs: restored ? reducedToSingleTabs(restored.singleTabs) : {},
+      singleTabs: restored ? restoredSingleTabs : {},
       comparisonTabs: restored ? restored.comparisonTabs : {},
       tabOrder: restored ? restored.tabOrder : [],
       activeTabId: restored ? restored.activeTabId : "",

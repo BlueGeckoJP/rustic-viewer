@@ -72,20 +72,3 @@ export type TabStoreState = {
     toIndex: number,
   ) => void;
 };
-
-export type ReducedSingleTabState = {
-  parentId: string | null;
-  directory: string | null;
-  currentIndex: number;
-  zoom: number;
-  panOffset: { x: number; y: number };
-  //imageList: string[]; - this is excluded from persistence to reduce size
-};
-
-export type PersistedSessionV1 = {
-  version: 1;
-  tabOrder: string[];
-  activeTabId: string;
-  comparisonTabs: TabStoreState["comparisonTabs"];
-  singleTabs: Record<string, ReducedSingleTabState>;
-};
