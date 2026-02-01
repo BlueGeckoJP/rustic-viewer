@@ -33,7 +33,11 @@ export async function migrateV1ToV2(
     if (tabV1.directory) {
       try {
         const imageList = await getSortedImageFiles(tabV1.directory);
-        if (imageList.length > 0 && tabV1.currentIndex < imageList.length) {
+        if (
+          imageList.length > 0 &&
+          tabV1.currentIndex >= 0 &&
+          tabV1.currentIndex < imageList.length
+        ) {
           rawPath = imageList[tabV1.currentIndex];
         }
       } catch (error) {
