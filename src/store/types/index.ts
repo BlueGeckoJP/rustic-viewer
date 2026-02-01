@@ -1,5 +1,3 @@
-import type { ReducedSingleTabState } from "./reducedSingleTabState";
-
 /**
  * SingleTabState represents the state of a single image tab.
  * @remarks To determine if a SingleTab is a child of a ComparisonTab, check if parentId is not null.
@@ -73,12 +71,4 @@ export type TabStoreState = {
     fromIndex: number,
     toIndex: number,
   ) => void;
-};
-
-export type PersistedSessionV1 = {
-  version: 1;
-  tabOrder: string[];
-  activeTabId: string;
-  comparisonTabs: TabStoreState["comparisonTabs"];
-  singleTabs: Record<string, ReducedSingleTabState>;
 };

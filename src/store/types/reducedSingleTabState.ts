@@ -1,17 +1,17 @@
 import type { SingleTabState } from ".";
 import { determineDirectory, getSortedImageFiles } from "../../utils/fileUtils";
 
-export type ReducedSingleTabState = {
+export type ReducedSingleTabStateV2 = {
   parentId: string | null;
   rawPath: string;
   zoom: number;
   panOffset: { x: number; y: number };
 };
 
-export namespace ReducedSingleTabState {
+export namespace ReducedSingleTabStateV2 {
   export function fromFullState(
     singleTab: SingleTabState,
-  ): ReducedSingleTabState {
+  ): ReducedSingleTabStateV2 {
     const rawPath =
       singleTab.directory && singleTab.imageList.length > 0
         ? singleTab.imageList[singleTab.currentIndex]
@@ -27,7 +27,7 @@ export namespace ReducedSingleTabState {
 
   export async function toFullState(
     id: string,
-    reduced: ReducedSingleTabState,
+    reduced: ReducedSingleTabStateV2,
   ): Promise<SingleTabState> {
     const directory = reduced.rawPath
       ? determineDirectory(reduced.rawPath)
@@ -54,3 +54,12 @@ export namespace ReducedSingleTabState {
     return fullState;
   }
 }
+
+export type ReducedSingleTabStateV1 = {
+  parentId: string | null;
+  directory: string | null;
+  currentIndex: number;
+  zoom: number;
+  panOffset: { x: number; y: number };
+  //imageList: string[]; - this is excluded from persistence to reduce size
+};
