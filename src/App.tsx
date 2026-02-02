@@ -1,23 +1,14 @@
 import { emit, listen } from "@tauri-apps/api/event";
-import { useCallback, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useShallow } from "zustand/shallow";
 import ComparisonView from "./components/ComparisonView";
 import SingleView from "./components/SingleView";
 import TabBar from "./components/TabBar";
 import { useTabStore } from "./store";
-import { determineDirectory, getSortedImageFiles } from "./utils/fileUtils";
-import imageCache from "./utils/imageCache";
 
 // Main App component: manages tab state, image loading, canvas rendering, and Tauri events
 export default function App() {
   const didAddListeners = useRef(false);
-  // Exposed by SingleView to allow Tauri events to open images
-  // As a countermeasure for the issue where all internal conditional branches become null when using the old openImage
-  const openImageRef = useRef<(rawPath: string, newTab?: boolean) => void>(
-    () => {},
-  );
-  const reloadImageRef = useRef<() => void>(() => {});
-  const updateImageListRef = useRef<(tabId: string) => void>(() => {});
   const rebuiltRef = useRef<Set<string>>(new Set());
 
   // Optimize re-renders by using a single selector with shallow comparison
@@ -32,84 +23,9 @@ export default function App() {
   );
 
   const addSingleTab = useTabStore((s) => s.addSingleTab);
-  const setActiveTab = useTabStore((s) => s.setActiveTab);
-  const updateSingleTab = useTabStore((s) => s.updateSingleTab);
-
-  const openImage = useCallback(
-    (rawPath: string, newTab: boolean = false) => {
-      const dir = determineDirectory(rawPath);
-
-      getSortedImageFiles(dir)
-        .then((files) => {
-          const idx = files.indexOf(rawPath);
-          const state = useTabStore.getState();
-          const currentActiveTab =
-            state.singleTabs[activeTabId] ||
-            state.comparisonTabs[activeTabId] ||
-            null;
-
-          if (!currentActiveTab || newTab) {
-            const id = addSingleTab(files, idx >= 0 ? idx : 0, dir);
-            // Ensure this new tab becomes active (addTab already sets active but explicit for clarity)
-            setActiveTab(id);
-          } else {
-            const singleTab = state.singleTabs[activeTabId];
-            const comparisonTab = state.comparisonTabs[activeTabId];
-
-            const targetTabId =
-              singleTab?.id ??
-              comparisonTab?.children[comparisonTab.activeSlotIndex];
-
-            if (targetTabId)
-              updateSingleTab(targetTabId, {
-                directory: dir,
-                imageList: files,
-                currentIndex: idx >= 0 ? idx : 0,
-              });
-          }
-        })
-        .catch((e) => {
-          console.error("Failed to open image:", e);
-        });
-    },
-    [activeTabId, addSingleTab, setActiveTab, updateSingleTab],
-  );
-
-  const reloadImage = useCallback(() => {
-    const tab = singleTabs[activeTabId];
-    if (!tab || !tab.directory || tab.imageList.length === 0) return;
-
-    const currentPath = tab.imageList[tab.currentIndex];
-    imageCache.delete(currentPath);
-    updateSingleTab(tab.id, { reloadTrigger: Date.now() });
-  }, [activeTabId, singleTabs, updateSingleTab]);
-
-  const updateImageList = useCallback(
-    (tabId: string) => {
-      const tab = singleTabs[tabId];
-      if (!tab || !tab.directory) return;
-
-      getSortedImageFiles(tab.directory)
-        .then((files) => {
-          updateSingleTab(tab.id, {
-            imageList: files,
-            // Clamp currentIndex to new list length
-            currentIndex: Math.min(tab.currentIndex, files.length - 1),
-          });
-        })
-        .catch((e) => {
-          console.error("Failed to update image list:", e);
-        });
-    },
-    [singleTabs, updateSingleTab],
-  );
-
-  // Expose openImage through ref for parent (App) to call from Tauri events
-  useEffect(() => {
-    openImageRef.current = openImage;
-    reloadImageRef.current = reloadImage;
-    updateImageListRef.current = updateImageList;
-  }, [openImage, reloadImage, updateImageList]);
+  const openImage = useTabStore((s) => s.openImage);
+  const reloadActiveImage = useTabStore((s) => s.reloadActiveImage);
+  const updateImageList = useTabStore((s) => s.updateImageList);
 
   // Add Tauri event listeners for 'open-image' and 'new-tab' events
   useEffect(() => {
@@ -132,7 +48,7 @@ export default function App() {
               ? event.payload
               : String(event.payload);
 
-          openImageRef.current(rawPath);
+          openImage(rawPath);
         }),
         listen("open-image-new-tab", (event) => {
           console.log("Received open-image-new-tab event:", event.payload);
@@ -141,7 +57,7 @@ export default function App() {
               ? event.payload
               : String(event.payload);
 
-          openImageRef.current(rawPath, true);
+          openImage(rawPath, true);
         }),
         listen("new-tab", (event) => {
           console.log("Received new-tab event:", event.payload);
@@ -150,7 +66,7 @@ export default function App() {
         }),
         listen("reload-image", (event) => {
           console.log("Received reload-image event: ", event.payload);
-          reloadImageRef.current();
+          reloadActiveImage();
         }),
       ]);
 
@@ -169,7 +85,7 @@ export default function App() {
         fn();
       });
     };
-  }, [addSingleTab]);
+  }, [addSingleTab, openImage, reloadActiveImage]);
 
   useEffect(() => {
     for (const tab of Object.values(singleTabs)) {
@@ -179,9 +95,9 @@ export default function App() {
 
       rebuiltRef.current.add(tab.id);
 
-      updateImageListRef.current(tab.id);
+      updateImageList(tab.id);
     }
-  }, [singleTabs]);
+  }, [singleTabs, updateImageList]);
 
   // Arrow key navigation handled inside SingleView
 

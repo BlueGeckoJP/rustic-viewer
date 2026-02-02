@@ -71,4 +71,7 @@ export type TabStoreState = {
     fromIndex: number,
     toIndex: number,
   ) => void;
+  openImage: (rawPath: string, inNewTab?: boolean) => Promise<void>;
+  reloadActiveImage: () => void;
+  updateImageList: (tabId: string) => Promise<void>;
 };

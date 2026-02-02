@@ -4,6 +4,7 @@ import { PERSIST_SAVE_DELAY_MS } from "../constants";
 import { createChildManagementActions } from "./actions/childManagementActions";
 import { createCommonActions } from "./actions/commonActions";
 import { createComparisonTabActions } from "./actions/comparisonTabActions";
+import { createImageActions } from "./actions/imageActions";
 import { createSingleTabActions } from "./actions/singleTabActions";
 import { createTabOrderActions } from "./actions/tabOrderActions";
 import type { TabStoreState } from "./types";
@@ -31,6 +32,7 @@ export const useTabStore = create<TabStoreState>()(
       ...createComparisonTabActions(...a),
       ...createCommonActions(...a),
       ...createTabOrderActions(...a),
+      ...createImageActions(...a),
     }),
     {
       limit: 100,
