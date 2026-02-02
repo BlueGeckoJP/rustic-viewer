@@ -1,9 +1,7 @@
 import useImageViewer from "../hooks/useImageViewer";
 import useViewHotkeys from "../hooks/useViewHotkeys";
 import { type SingleTabState, useTabStore } from "../store";
-import ImageCanvas from "./ImageCanvas";
-import ViewerControls from "./ViewerControls";
-import ViewerHeader from "./ViewerHeader";
+import ImageViewer from "./ImageViewer";
 
 const SingleView = () => {
   const activeTabId = useTabStore((s) => s.activeTabId);
@@ -33,37 +31,21 @@ const SingleView = () => {
 
   return (
     <div className="group relative overflow-hidden flex flex-col bg-[#2F2E33] h-full w-full">
-      <ViewerHeader
+      <ImageViewer
         rawPath={rawPath}
         isLoading={isLoading}
         singleTab={singleTab}
-      />
-      <div
-        className="flex-1 flex items-center justify-center"
-        role="img"
-        aria-label="Image viewer with zoom and pan controls"
+        currentImage={currentImage}
+        isPanning={isPanning}
+        imageCanvasClassName="w-full h-full max-w-full max-h-[calc(100vh-24px)]"
         onWheel={onWheel}
         onMouseDown={onMouseDown}
         onMouseMove={onMouseMove}
         onMouseUp={onMouseUp}
         onMouseLeave={onMouseLeave}
         onDoubleClick={onDoubleClick}
-        style={{ cursor: isPanning ? "grabbing" : "default" }}
-      >
-        {currentImage ? (
-          <ImageCanvas
-            image={currentImage}
-            imagePath={rawPath}
-            className="w-screen h-screen max-w-screen max-h-[calc(100vh-24px)]"
-            zoom={singleTab?.zoom ?? 1.0}
-            panOffset={singleTab?.panOffset ?? { x: 0, y: 0 }}
-          />
-        ) : (
-          <span className="text-[#888]">No Image</span>
-        )}
-      </div>
-
-      <ViewerControls singleTab={singleTab} setCurrentIndex={setCurrentIndex} />
+        setCurrentIndex={setCurrentIndex}
+      />
     </div>
   );
 };
