@@ -2,8 +2,10 @@ import type { TabStoreState } from ".";
 import { STORAGE_KEY } from "../../constants";
 import { getSortedImageFiles } from "../../utils/fileUtils";
 import {
+  fromFullState,
   type ReducedSingleTabStateV1,
-  ReducedSingleTabStateV2,
+  type ReducedSingleTabStateV2,
+  toFullState,
 } from "./reducedSingleTabState";
 
 export type PersistedSessionV1 = {
@@ -114,7 +116,7 @@ export function saveSession(state: TabStoreState) {
   try {
     const singleTabs: PersistedSessionV2["singleTabs"] = {};
     for (const [id, tab] of Object.entries(state.singleTabs)) {
-      const reducedState = ReducedSingleTabStateV2.fromFullState(tab);
+      const reducedState = fromFullState(tab);
       singleTabs[id] = reducedState;
     }
 
@@ -137,7 +139,7 @@ export async function reducedToSingleTabs(
 ): Promise<TabStoreState["singleTabs"]> {
   const fullTabs: TabStoreState["singleTabs"] = {};
   for (const [id, reducedTab] of Object.entries(reducedTabs)) {
-    const fullState = await ReducedSingleTabStateV2.toFullState(id, reducedTab);
+    const fullState = await toFullState(id, reducedTab);
     fullTabs[id] = fullState;
   }
   return fullTabs;

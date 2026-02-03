@@ -1,5 +1,5 @@
-import { determineDirectory, getSortedImageFiles } from "../../utils/fileUtils";
 import type { SingleTabState } from ".";
+import { determineDirectory, getSortedImageFiles } from "../../utils/fileUtils";
 
 export type ReducedSingleTabStateV2 = {
   parentId: string | null;
@@ -8,61 +8,59 @@ export type ReducedSingleTabStateV2 = {
   panOffset: { x: number; y: number };
 };
 
-export namespace ReducedSingleTabStateV2 {
-  export function fromFullState(
-    singleTab: SingleTabState,
-  ): ReducedSingleTabStateV2 {
-    const rawPath =
-      singleTab.directory &&
-      singleTab.imageList.length > 0 &&
-      singleTab.currentIndex >= 0 &&
-      singleTab.currentIndex < singleTab.imageList.length
-        ? singleTab.imageList[singleTab.currentIndex]
-        : "";
+export function fromFullState(
+  singleTab: SingleTabState,
+): ReducedSingleTabStateV2 {
+  const rawPath =
+    singleTab.directory &&
+    singleTab.imageList.length > 0 &&
+    singleTab.currentIndex >= 0 &&
+    singleTab.currentIndex < singleTab.imageList.length
+      ? singleTab.imageList[singleTab.currentIndex]
+      : "";
 
-    return {
-      parentId: singleTab.parentId,
-      rawPath,
-      zoom: singleTab.zoom,
-      panOffset: singleTab.panOffset,
-    };
-  }
+  return {
+    parentId: singleTab.parentId,
+    rawPath,
+    zoom: singleTab.zoom,
+    panOffset: singleTab.panOffset,
+  };
+}
 
-  export async function toFullState(
-    id: string,
-    reduced: ReducedSingleTabStateV2,
-  ): Promise<SingleTabState> {
-    const directory = reduced.rawPath
-      ? determineDirectory(reduced.rawPath)
-      : null;
-    let imageList: string[] = [];
-    let currentIndex = 0;
+export async function toFullState(
+  id: string,
+  reduced: ReducedSingleTabStateV2,
+): Promise<SingleTabState> {
+  const directory = reduced.rawPath
+    ? determineDirectory(reduced.rawPath)
+    : null;
+  let imageList: string[] = [];
+  let currentIndex = 0;
 
-    if (directory) {
-      try {
-        imageList = await getSortedImageFiles(directory);
-        currentIndex = imageList.indexOf(reduced.rawPath);
-        if (currentIndex < 0) currentIndex = 0;
-      } catch (error) {
-        console.warn(
-          `Failed to restore tab ${id}: could not read directory ${directory}`,
-          error,
-        );
-      }
+  if (directory) {
+    try {
+      imageList = await getSortedImageFiles(directory);
+      currentIndex = imageList.indexOf(reduced.rawPath);
+      if (currentIndex < 0) currentIndex = 0;
+    } catch (error) {
+      console.warn(
+        `Failed to restore tab ${id}: could not read directory ${directory}`,
+        error,
+      );
     }
-
-    const fullState: SingleTabState = {
-      id,
-      parentId: reduced.parentId,
-      directory,
-      imageList,
-      currentIndex,
-      zoom: reduced.zoom,
-      panOffset: reduced.panOffset,
-    };
-
-    return fullState;
   }
+
+  const fullState: SingleTabState = {
+    id,
+    parentId: reduced.parentId,
+    directory,
+    imageList,
+    currentIndex,
+    zoom: reduced.zoom,
+    panOffset: reduced.panOffset,
+  };
+
+  return fullState;
 }
 
 export type ReducedSingleTabStateV1 = {
