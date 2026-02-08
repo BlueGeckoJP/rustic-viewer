@@ -1,3 +1,4 @@
+import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useState } from "react";
 import type { SingleTabState } from "../store/tabStoreState";
 import imageCache from "../utils/imageCache";
@@ -47,22 +48,30 @@ const ViewerHeader = ({ rawPath, isLoading, singleTab }: ViewerHeaderProps) => {
       )}
 
       {/* Loading overlay */}
-      <div
-        className={`ml-auto px-2 h-full flex items-center justify-center transition-opacity duration-300 ${isLoading ? "animate-loading-overlay-fade-in" : "animate-loading-overlay-fade-out pointer-events-none"}`}
-      >
-        <div className="flex justify-between items-center gap-3">
-          {/* Loading pulse indicator */}
-          <div className="relative">
-            <div className="w-3 h-3 bg-[#D3DAD9] rounded-full animate-pulse"></div>
-            <div className="absolute top-0 left-0 w-3 h-3 bg-[#D3DAD9] rounded-full animate-ping opacity-75"></div>
-          </div>
-          <div className="flex">
-            <span className="text-[#D3DAD9] text-sm font-medium">
-              Loading...
-            </span>
-          </div>
-        </div>
-      </div>
+      <AnimatePresence initial={false}>
+        {isLoading && (
+          <motion.div
+            className="ml-auto px-2 h-full flex items-center justify-center w-auto"
+            initial={false}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+          >
+            <div className="flex justify-between items-center gap-3">
+              {/* Loading pulse indicator */}
+              <div className="relative">
+                <div className="w-3 h-3 bg-[#D3DAD9] rounded-full animate-pulse"></div>
+                <div className="absolute top-0 left-0 w-3 h-3 bg-[#D3DAD9] rounded-full animate-ping opacity-75"></div>
+              </div>
+              <div className="flex">
+                <span className="text-[#D3DAD9] text-sm font-medium">
+                  Loading...
+                </span>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
