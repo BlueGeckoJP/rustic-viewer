@@ -15,14 +15,6 @@ const useErrorToastStore = create<ErrorToastStoreState>((set) => ({
     set((state) => ({
       errorToasts: [[message, now], ...state.errorToasts],
     }));
-
-    setTimeout(() => {
-      set((state) => ({
-        errorToasts: state.errorToasts.filter(
-          ([, timestamp]) => timestamp !== now,
-        ),
-      }));
-    }, 8000);
   },
 
   removeErrorToast: (id: number) => {
