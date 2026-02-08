@@ -1,5 +1,8 @@
 import type { StateCreator } from "zustand";
-import { determineDirectory, getSortedImageFiles } from "../../../utils/fileUtils";
+import {
+  determineDirectory,
+  getSortedImageFiles,
+} from "../../../utils/fileUtils";
 import imageCache from "../../../utils/imageCache";
 import type { TabStoreState } from "../types";
 
