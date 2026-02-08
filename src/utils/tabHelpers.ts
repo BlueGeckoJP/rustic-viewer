@@ -1,4 +1,7 @@
-import type { ComparisonTabState, SingleTabState } from "../store";
+import type {
+  ComparisonTabState,
+  SingleTabState,
+} from "../store/tabStoreState";
 
 export const getLabel = (
   tab: SingleTabState | ComparisonTabState,
