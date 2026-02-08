@@ -22,7 +22,7 @@ const useErrorToastStore = create<ErrorToastStoreState>((set) => ({
           ([, timestamp]) => timestamp !== now,
         ),
       }));
-    }, 5000);
+    }, 8000);
   },
 
   removeErrorToast: (id: number) => {
