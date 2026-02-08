@@ -1,3 +1,5 @@
+import { faAnglesLeft, faAnglesRight } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useMemo, useRef, useState } from "react";
 import { useStore } from "zustand";
 import useTabHotkeysUndoRedo from "../../hooks/useTabHotkeysUndoRedo";
@@ -96,7 +98,7 @@ const TabBar = () => {
       className={`absolute left-0 flex flex-col text-[#D3DAD9] shadow-md transition-all duration-200 z-20 bg-[#37353E]/88 backdrop-blur-md ${
         isOpen
           ? "top-0 bottom-0 w-64 p-3 space-y-2 overflow-y-auto pr-5"
-          : "top-1/2 -translate-y-1/2 h-8 w-4 p-1 rounded-r"
+          : "top-1/2 -translate-y-1/2 h-8 w-6 p-1 rounded-r"
       }`}
     >
       <button
@@ -105,7 +107,11 @@ const TabBar = () => {
         onClick={() => setIsOpen(!isOpen)}
         type="button"
       >
-        {isOpen ? "«" : "»"}
+        {isOpen ? (
+          <FontAwesomeIcon icon={faAnglesLeft} />
+        ) : (
+          <FontAwesomeIcon icon={faAnglesRight} />
+        )}
       </button>
 
       {isOpen && (

@@ -1,3 +1,9 @@
+import {
+  faChevronDown,
+  faChevronRight,
+  faXmark,
+} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useTabStore } from "../../store/tabStoreState";
 
 export type TabRowProps = {
@@ -36,7 +42,11 @@ const TabRow = ({
           aria-label={expanded ? "Collapse comparison" : "Expand comparison"}
           type="button"
         >
-          {expanded ? "▼" : "▶"}
+          {expanded ? (
+            <FontAwesomeIcon icon={faChevronDown} />
+          ) : (
+            <FontAwesomeIcon icon={faChevronRight} />
+          )}
         </button>
       )}
       {!isComp && <span className="text-xs opacity-50">•</span>}
@@ -70,7 +80,7 @@ const TabRow = ({
         className="ml-1 text-[#D3DAD9] hover:text-white hover:bg-[#37353E] px-1 rounded-lg"
         type="button"
       >
-        ✕
+        <FontAwesomeIcon icon={faXmark} />
       </button>
     </>
   );

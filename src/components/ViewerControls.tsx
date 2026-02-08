@@ -1,3 +1,8 @@
+import {
+  faChevronLeft,
+  faChevronRight,
+} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import type { SingleTabState } from "../store/tabStoreState";
 
 export type ViewerControlsProps = {
@@ -22,7 +27,7 @@ const ViewerControls = ({
         }}
         type="button"
       >
-        ◀
+        <FontAwesomeIcon icon={faChevronLeft} />
       </button>
       <button
         className="px-2 py-1 bg-[#44444E] rounded text-xs hover:bg-[#555]"
@@ -34,7 +39,7 @@ const ViewerControls = ({
         }}
         type="button"
       >
-        ▶
+        <FontAwesomeIcon icon={faChevronRight} />
       </button>
     </div>
   );
