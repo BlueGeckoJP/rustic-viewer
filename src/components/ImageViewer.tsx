@@ -1,4 +1,4 @@
-import type { SingleTabState } from "../store";
+import type { SingleTabState } from "../store/tabStoreState";
 import ImageCanvas from "./ImageCanvas";
 import ViewerControls from "./ViewerControls";
 import ViewerHeader from "./ViewerHeader";

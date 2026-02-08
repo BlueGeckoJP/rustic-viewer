@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import type { SingleTabState } from "../store";
+import type { SingleTabState } from "../store/tabStoreState";
 import imageCache from "../utils/imageCache";
 
 export type ViewerHeaderProps = {

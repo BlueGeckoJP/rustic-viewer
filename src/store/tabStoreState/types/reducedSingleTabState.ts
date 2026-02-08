@@ -1,5 +1,5 @@
 import type { SingleTabState } from ".";
-import { determineDirectory, getSortedImageFiles } from "../../utils/fileUtils";
+import { determineDirectory, getSortedImageFiles } from "../../../utils/fileUtils";
 
 export type ReducedSingleTabStateV2 = {
   parentId: string | null;
@@ -13,9 +13,9 @@ export function fromFullState(
 ): ReducedSingleTabStateV2 {
   const rawPath =
     singleTab.directory &&
-    singleTab.imageList.length > 0 &&
-    singleTab.currentIndex >= 0 &&
-    singleTab.currentIndex < singleTab.imageList.length
+      singleTab.imageList.length > 0 &&
+      singleTab.currentIndex >= 0 &&
+      singleTab.currentIndex < singleTab.imageList.length
       ? singleTab.imageList[singleTab.currentIndex]
       : "";
 

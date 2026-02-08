@@ -1,6 +1,6 @@
 import type { TabStoreState } from ".";
-import { STORAGE_KEY } from "../../constants";
-import { getSortedImageFiles } from "../../utils/fileUtils";
+import { STORAGE_KEY } from "../../../constants";
+import { getSortedImageFiles } from "../../../utils/fileUtils";
 import {
   fromFullState,
   type ReducedSingleTabStateV1,

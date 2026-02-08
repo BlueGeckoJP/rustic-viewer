@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { DRAG_THRESHOLD_PX } from "../constants";
-import { useTabStore } from "../store";
+import { useTabStore } from "../store/tabStoreState";
 
 export type UseTabMoveProps = {
   tablistRef: React.RefObject<HTMLDivElement | null>;

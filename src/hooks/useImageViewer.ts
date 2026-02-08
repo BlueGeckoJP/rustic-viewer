@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { SingleTabState } from "../store";
+import type { SingleTabState } from "../store/tabStoreState";
 import useImageBitmap from "./useImageBitmap";
 import useImageNavigation, {
   type ImageNavigationReturn,

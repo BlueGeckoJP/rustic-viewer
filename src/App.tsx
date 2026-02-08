@@ -4,7 +4,7 @@ import { useShallow } from "zustand/shallow";
 import ComparisonView from "./components/ComparisonView";
 import SingleView from "./components/SingleView";
 import TabBar from "./components/TabBar";
-import { useTabStore } from "./store";
+import { useTabStore } from "./store/tabStoreState";
 
 // Main App component: manages tab state, image loading, canvas rendering, and Tauri events
 export default function App() {

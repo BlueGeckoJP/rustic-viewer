@@ -1,4 +1,4 @@
-import { useTabStore } from "../../store";
+import { useTabStore } from "../../store/tabStoreState";
 
 export type TabRowProps = {
   isComp: boolean;

@@ -1,30 +1,30 @@
-import type { TabStoreState } from "../store";
+import type { TabStoreState } from "../store/tabStoreState";
 
 export type VerticalTabItem =
   | {
-      kind: "comparison";
-      id: string;
-      active: boolean;
-    }
+    kind: "comparison";
+    id: string;
+    active: boolean;
+  }
   | {
-      kind: "single";
-      id: string;
-      active: boolean;
-      parentId: string;
-      slotIndex: number;
-    }
+    kind: "single";
+    id: string;
+    active: boolean;
+    parentId: string;
+    slotIndex: number;
+  }
   | {
-      kind: "single";
-      id: string;
-      active: boolean;
-      parentId: null;
-      slotIndex?: never;
-    }
+    kind: "single";
+    id: string;
+    active: boolean;
+    parentId: null;
+    slotIndex?: never;
+  }
   | {
-      kind: "spacer";
-      id: string;
-      active: false;
-    };
+    kind: "spacer";
+    id: string;
+    active: false;
+  };
 
 export const selectVerticalTabs = (state: TabStoreState): VerticalTabItem[] => {
   const result: VerticalTabItem[] = [];

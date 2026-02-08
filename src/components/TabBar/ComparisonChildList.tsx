@@ -1,4 +1,4 @@
-import type { ComparisonTabState, SingleTabState } from "../../store";
+import type { ComparisonTabState, SingleTabState } from "../../store/tabStoreState";
 
 export type ComparisonChildListProps = {
   isComp: boolean;
@@ -40,11 +40,10 @@ const ComparisonChildList = ({
             return (
               <button
                 key={childId}
-                className={`group flex items-center gap-2 text-xs rounded-lg px-2 py-1 cursor-pointer min-w-0 transition-colors ${
-                  childActive
+                className={`group flex items-center gap-2 text-xs rounded-lg px-2 py-1 cursor-pointer min-w-0 transition-colors ${childActive
                     ? "bg-[#4F4E58] ring-1 ring-[#715A5A]"
                     : "hover:bg-[#44444E]"
-                }`}
+                  }`}
                 onClick={(e) => {
                   e.stopPropagation();
                   setActiveTab(tabId);

@@ -3,7 +3,7 @@ import {
   type ComparisonTabState,
   type SingleTabState,
   useTabStore,
-} from "../../store";
+} from "../../store/tabStoreState";
 import ImageViewer from "../ImageViewer";
 
 export type SlotComponentProps = {

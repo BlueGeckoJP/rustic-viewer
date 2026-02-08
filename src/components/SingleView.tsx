@@ -1,6 +1,6 @@
 import useImageViewer from "../hooks/useImageViewer";
 import useViewHotkeys from "../hooks/useViewHotkeys";
-import { type SingleTabState, useTabStore } from "../store";
+import { type SingleTabState, useTabStore } from "../store/tabStoreState";
 import ImageViewer from "./ImageViewer";
 
 const SingleView = () => {

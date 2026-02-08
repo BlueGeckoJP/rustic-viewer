@@ -1,4 +1,4 @@
-import type { SingleTabState } from "../store";
+import type { SingleTabState } from "../store/tabStoreState";
 
 export type ViewerControlsProps = {
   singleTab: SingleTabState;

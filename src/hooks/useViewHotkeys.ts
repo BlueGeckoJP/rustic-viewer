@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { type SingleTabState, useTabStore } from "../store";
+import { type SingleTabState, useTabStore } from "../store/tabStoreState";
 
 export type UseViewHotkeysProps = {
   singleTab: SingleTabState | null;

@@ -1,6 +1,6 @@
 import type { UseTabMoveReturn } from "../../hooks/useTabMove";
 import type { VerticalTabItem } from "../../selectors/selectVerticalTabs";
-import { useTabStore } from "../../store";
+import { useTabStore } from "../../store/tabStoreState";
 import { getLabel } from "../../utils/tabHelpers";
 import TabRow from "./TabRow";
 
@@ -84,13 +84,12 @@ const TabItem = ({
         setMenuOpenFor(item.id);
         setMenuPos({ x: e.clientX, y: e.clientY });
       }}
-      className={`flex items-center gap-2 cursor-pointer select-none px-2 py-1 transition-colors duration-150 min-w-0 rounded-xl text-[#D3DAD9] ${
-        item.active
+      className={`flex items-center gap-2 cursor-pointer select-none px-2 py-1 transition-colors duration-150 min-w-0 rounded-xl text-[#D3DAD9] ${item.active
           ? "shadow-md bg-[#44444E] ring-2 ring-[#715A5A]"
           : selected
             ? "bg-[#44444E]"
             : "hover:bg-[#44444E]"
-      }`}
+        }`}
       ref={(el) => tabMove.registerTab(item.id, el)}
     >
       <TabRow

@@ -1,7 +1,7 @@
 import type React from "react";
 import { useMemo } from "react";
 import useViewHotkeys from "../../hooks/useViewHotkeys";
-import { useTabStore } from "../../store";
+import { useTabStore } from "../../store/tabStoreState";
 import { getComparisonLayoutClass } from "../../utils/layoutUtils";
 import SlotComponent from "./SlotComponent";
 
@@ -37,13 +37,11 @@ export const ComparisonView: React.FC<ComparisonViewProps> = ({ tabId }) => {
           // biome-ignore lint/a11y/useSemanticElements: Cannot use <button> as it would create nested buttons (ViewerControls contains buttons)
           <div
             key={child.id}
-            className={`relative group rounded-md overflow-hidden flex flex-col bg-[#2F2E33] hover:[&>div:last-child]:opacity-100 ${
-              n <= 3 ? "flex-1" : "w-full h-full"
-            } ${
-              activeSlotIndex === idx
+            className={`relative group rounded-md overflow-hidden flex flex-col bg-[#2F2E33] hover:[&>div:last-child]:opacity-100 ${n <= 3 ? "flex-1" : "w-full h-full"
+              } ${activeSlotIndex === idx
                 ? "outline-2 outline-[#715A5A]"
                 : "outline-1 outline-transparent"
-            }`}
+              }`}
             onClick={() => setActiveSlotIndex(tab.id, idx)}
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " ") {
