@@ -2,6 +2,7 @@ import { emit, listen } from "@tauri-apps/api/event";
 import { useEffect, useRef } from "react";
 import { useShallow } from "zustand/shallow";
 import ComparisonView from "./components/ComparisonView";
+import ErrorToast from "./components/ErrorToast";
 import SingleView from "./components/SingleView";
 import TabBar from "./components/TabBar";
 import { useTabStore } from "./store/tabStoreState";
@@ -102,7 +103,7 @@ export default function App() {
   // Arrow key navigation handled inside SingleView
 
   return (
-    <div className="w-screen h-screen overflow-hidden bg-[#27262B] text-[#D3DAD9]">
+    <div className="w-screen h-screen overflow-hidden bg-[#27262B] text-[#D3DAD9] relative">
       <TabBar />
       <div className="h-full relative">
         {activeTab && singleTabs[activeTabId] && <SingleView />}
@@ -111,6 +112,7 @@ export default function App() {
           <ComparisonView tabId={activeTabId} />
         )}
       </div>
+      <ErrorToast />
     </div>
   );
 }
