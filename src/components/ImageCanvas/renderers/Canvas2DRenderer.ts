@@ -1,4 +1,5 @@
 import type { ImageRenderer } from ".";
+import imageCache from "../../../utils/imageCache";
 import { replaceCacheWithResampledImage } from "../../../utils/imageLoader";
 
 export class Canvas2DRenderer implements ImageRenderer {
@@ -42,6 +43,8 @@ export class Canvas2DRenderer implements ImageRenderer {
     const offsetX = centerX - drawWidth / 2 + panOffset.x;
     const offsetY = centerY - drawHeight / 2 + panOffset.y;
 
+    this.markHighQualityStale(imagePath, drawWidth, drawHeight);
+
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     ctx.drawImage(
       image,
@@ -80,6 +83,30 @@ export class Canvas2DRenderer implements ImageRenderer {
         }
       };
     }, 500);
+  }
+
+  private markHighQualityStale(
+    path: string,
+    drawWidth: number,
+    drawHeight: number,
+  ): void {
+    const item = imageCache.get(path);
+    if (!item?.isHighQuality || !item.resampledDimensions) return;
+
+    const roundedWidth = Math.round(drawWidth);
+    const roundedHeight = Math.round(drawHeight);
+    const widthMatch =
+      Math.abs(item.resampledDimensions.width - roundedWidth) < 2;
+    const heightMatch =
+      Math.abs(item.resampledDimensions.height - roundedHeight) < 2;
+
+    if (widthMatch && heightMatch) return;
+
+    imageCache.put(path, {
+      ...item,
+      isHighQuality: false,
+      resampledDimensions: undefined,
+    });
   }
 
   private performLazyResize = async (
