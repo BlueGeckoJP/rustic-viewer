@@ -1,6 +1,10 @@
 import type { StateCreator } from "zustand";
-import { handleChildRemoval } from "../helpers/comparisonHelpers";
+import {
+  handleChildRemoval,
+  restoreToIndependentTab,
+} from "../helpers/comparisonHelpers";
 import type { TabStoreState } from "../types";
+import { isChildSingleTabState } from "../types/guards";
 
 export const createChildManagementActions: StateCreator<
   TabStoreState,
@@ -15,16 +19,16 @@ export const createChildManagementActions: StateCreator<
       const childId = comparisonTab.children[slotIndex];
       if (!childId) return state;
       const child = state.singleTabs[childId];
-      if (!child) return state;
+      if (!isChildSingleTabState(child)) return state;
 
       const newChildren = comparisonTab.children.filter(
         (_, i) => i !== slotIndex,
       );
-      const newSingleTabs = { ...state.singleTabs };
-      newSingleTabs[childId] = { ...child, parentId: null };
+      const restoredState = restoreToIndependentTab(child, state);
+      const newSingleTabs = { ...restoredState.singleTabs };
 
       return handleChildRemoval(
-        state,
+        restoredState,
         comparisonTab,
         comparisonId,
         slotIndex,
@@ -63,23 +67,26 @@ export const createChildManagementActions: StateCreator<
       const comparisonTab = state.comparisonTabs[comparisonId];
       if (!comparisonTab) return state;
 
-      const activeTabId =
-        comparisonTab.children[0] || state.addSingleTab([], 0, null);
-
-      const newSingleTabs = { ...state.singleTabs };
+      let restoredState = state;
       comparisonTab.children.forEach((childId) => {
-        const child = newSingleTabs[childId];
-        if (child) {
-          newSingleTabs[childId] = { ...child, parentId: null };
+        const child = restoredState.singleTabs[childId];
+        if (isChildSingleTabState(child)) {
+          restoredState = restoreToIndependentTab(child, restoredState);
         }
       });
-      const newComparisonTabs = { ...state.comparisonTabs };
+
+      const activeTabId =
+        comparisonTab.children.find(
+          (childId) => restoredState.singleTabs[childId]?.parentId === null,
+        ) || state.addSingleTab([], 0, null);
+
+      const newComparisonTabs = { ...restoredState.comparisonTabs };
       delete newComparisonTabs[comparisonId];
 
       return {
-        tabOrder: state.tabOrder.filter((id) => id !== comparisonId),
+        tabOrder: restoredState.tabOrder.filter((id) => id !== comparisonId),
         activeTabId,
-        singleTabs: newSingleTabs,
+        singleTabs: restoredState.singleTabs,
         comparisonTabs: newComparisonTabs,
       };
     });

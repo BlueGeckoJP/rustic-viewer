@@ -61,6 +61,10 @@ export async function toFullState(
     currentIndex,
     zoom: reduced.zoom,
     panOffset: reduced.panOffset,
+    originalIndex: 0,
+    snapshotOrder: [],
+    beforeTabId: null,
+    afterTabId: null,
   };
 
   return fullState;

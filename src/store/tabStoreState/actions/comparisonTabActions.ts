@@ -79,7 +79,22 @@ export const createComparisonTabActions: StateCreator<
       const childrenIds = limited.map((tab) => tab.id);
       const newSingleTabs = { ...state.singleTabs };
       limited.forEach((tab) => {
-        newSingleTabs[tab.id] = { ...tab, parentId: newComparisonTabId };
+        const originalIndex = state.tabOrder.indexOf(tab.id);
+        const beforeTabId =
+          originalIndex > 0 ? state.tabOrder[originalIndex - 1] : null;
+        const afterTabId =
+          originalIndex >= 0 && originalIndex < state.tabOrder.length - 1
+            ? state.tabOrder[originalIndex + 1]
+            : null;
+
+        newSingleTabs[tab.id] = {
+          ...tab,
+          parentId: newComparisonTabId,
+          originalIndex: originalIndex,
+          snapshotOrder: Array.from(state.tabOrder),
+          beforeTabId: beforeTabId,
+          afterTabId: afterTabId,
+        };
       });
 
       const newComparisonTabs = { ...state.comparisonTabs };
