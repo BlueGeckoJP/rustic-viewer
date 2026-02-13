@@ -104,10 +104,17 @@ export const createComparisonTabActions: StateCreator<
         activeSlotIndex: 0,
       };
 
+      const newTabOrder = [...state.tabOrder];
+      newTabOrder.splice(
+        Math.min(...limited.map((tab) => state.tabOrder.indexOf(tab.id))),
+        0,
+        newComparisonTabId,
+      );
+
       return {
         singleTabs: newSingleTabs,
         comparisonTabs: newComparisonTabs,
-        tabOrder: [...state.tabOrder, newComparisonTabId],
+        tabOrder: newTabOrder,
         activeTabId: newComparisonTabId,
       };
     });
