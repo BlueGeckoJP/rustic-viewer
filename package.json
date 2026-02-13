@@ -7,6 +7,12 @@
     "dev": "vite",
     "wasm:build": "wasm-pack build src-wasm --target web --dev",
     "build": "tsc && vite build",
+    "lint": "pnpm lint:biome && pnpm lint:types && pnpm lint:rust",
+    "lint:biome": "biome check .",
+    "lint:types": "tsc --noEmit",
+    "lint:rust": "pnpm lint:rust:fmt && pnpm lint:rust:clippy",
+    "lint:rust:fmt": "cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check",
+    "lint:rust:clippy": "cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets --all-features -- -D warnings",
     "preview": "vite preview",
     "tauri": "tauri",
     "test": "jest --colors --runInBand --config=jest.config.cjs"

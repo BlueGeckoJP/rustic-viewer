@@ -1,8 +1,8 @@
-import type { SingleTabState } from ".";
 import {
   determineDirectory,
   getSortedImageFiles,
 } from "../../../utils/fileUtils";
+import type { SingleTabState } from ".";
 
 export type ReducedSingleTabStateV2 = {
   parentId: string | null;

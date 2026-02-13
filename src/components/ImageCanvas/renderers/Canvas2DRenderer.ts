@@ -1,6 +1,6 @@
-import type { ImageRenderer } from ".";
 import imageCache from "../../../utils/imageCache";
 import { replaceCacheWithResampledImage } from "../../../utils/imageLoader";
+import type { ImageRenderer } from ".";
 
 export class Canvas2DRenderer implements ImageRenderer {
   private ctx: CanvasRenderingContext2D | null = null;
