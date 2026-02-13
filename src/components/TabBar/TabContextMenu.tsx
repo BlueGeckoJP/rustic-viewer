@@ -1,8 +1,7 @@
 import type React from "react";
 import { useTabStore } from "../../store/tabStoreState";
+import { isChildSingleTabState } from "../../store/tabStoreState/types/guards";
 import ContextMenu, { type ContextMenuItem } from "../ContextMenu";
-
-const CHILD_PREFIX = "::child::";
 
 export type TabContextMenuProps = {
   menuOpenFor: string | null;
@@ -112,7 +111,10 @@ const TabContextMenu = ({
     "move-up": {
       label: "Move Up",
       handle: () => {
-        const [parentId, childId] = menuOpenFor.split(CHILD_PREFIX);
+        const tab = singleTabs[menuOpenFor];
+        if (!isChildSingleTabState(tab)) return;
+        const parentId = tab.parentId;
+        const childId = menuOpenFor;
         const parent = comparisonTabs[parentId];
         if (!parent) return;
         const childIndex = parent.children.indexOf(childId);
@@ -124,7 +126,10 @@ const TabContextMenu = ({
     "move-down": {
       label: "Move Down",
       handle: () => {
-        const [parentId, childId] = menuOpenFor.split(CHILD_PREFIX);
+        const tab = singleTabs[menuOpenFor];
+        if (!isChildSingleTabState(tab)) return;
+        const parentId = tab.parentId;
+        const childId = menuOpenFor;
         const parent = comparisonTabs[parentId];
         if (!parent) return;
         const childIndex = parent.children.indexOf(childId);
@@ -136,7 +141,10 @@ const TabContextMenu = ({
     detach: {
       label: "Detach to Top",
       handle: () => {
-        const [parentId, childId] = menuOpenFor.split(CHILD_PREFIX);
+        const tab = singleTabs[menuOpenFor];
+        if (!isChildSingleTabState(tab)) return;
+        const parentId = tab.parentId;
+        const childId = menuOpenFor;
         const parent = comparisonTabs[parentId];
         if (!parent) return;
         const childIndex = parent.children.indexOf(childId);
@@ -147,7 +155,10 @@ const TabContextMenu = ({
     remove: {
       label: "Remove From Comparison",
       handle: () => {
-        const [parentId, childId] = menuOpenFor.split(CHILD_PREFIX);
+        const tab = singleTabs[menuOpenFor];
+        if (!isChildSingleTabState(tab)) return;
+        const parentId = tab.parentId;
+        const childId = menuOpenFor;
         const parent = comparisonTabs[parentId];
         if (!parent) return;
         const childIndex = parent.children.indexOf(childId);
@@ -157,7 +168,7 @@ const TabContextMenu = ({
     },
   };
 
-  const isChildContext = menuOpenFor.includes(CHILD_PREFIX);
+  const isChildContext = isChildSingleTabState(singleTabs[menuOpenFor]);
   let contextItemIds: string[] = [];
 
   if (!isChildContext) {
