@@ -1,6 +1,9 @@
 import type React from "react";
 import { useTabStore } from "../../store/tabStoreState";
-import { isChildSingleTabState } from "../../store/tabStoreState/types/guards";
+import {
+  isChildSingleTabState,
+  isIndependentSingleTabState,
+} from "../../store/tabStoreState/types/guards";
 import ContextMenu, { type ContextMenuItem } from "../ContextMenu";
 
 export type TabContextMenuProps = {
@@ -35,6 +38,12 @@ const TabContextMenu = ({
   const detachAllChildren = useTabStore((s) => s.detachAllChildren);
 
   if (!menuOpenFor || !menuPos) return null;
+
+  const selectedIndependentSingleIDs = tabOrder.filter((id) => {
+    const tab = singleTabs[id];
+    return isIndependentSingleTabState(tab) && selectedIDs.has(id);
+  });
+  const selectedIndependentSingleCount = selectedIndependentSingleIDs.length;
 
   const contextItemDefinitions: Record<
     string,
@@ -86,19 +95,14 @@ const TabContextMenu = ({
       },
     },
     "create-comparison": {
-      label: `Create Comparison (${tabOrder.filter((id) => singleTabs[id] && selectedIDs.has(id)).length})`,
+      label: `Create Comparison (${selectedIndependentSingleCount})`,
       handle: () => {
-        const selectedSingleIDs = tabOrder.filter(
-          (id) => singleTabs[id] && selectedIDs.has(id),
-        );
-        if (selectedSingleIDs.length >= 2) {
-          createComparison(selectedSingleIDs);
+        if (selectedIndependentSingleCount >= 2) {
+          createComparison(selectedIndependentSingleIDs);
         }
         setSelectedIDs(new Set());
       },
-      disabled:
-        tabOrder.filter((id) => singleTabs[id] && selectedIDs.has(id)).length <
-        2,
+      disabled: selectedIndependentSingleCount < 2,
     },
     "detach-all": {
       label: "Detach All Children",
@@ -174,10 +178,7 @@ const TabContextMenu = ({
   if (!isChildContext) {
     contextItemIds = ["new", "clone", "close", "close-others"];
 
-    const singleSelectedCount = tabOrder.filter(
-      (id) => singleTabs[id] && selectedIDs.has(id),
-    ).length;
-    if (singleSelectedCount >= 2) {
+    if (selectedIndependentSingleCount >= 2) {
       contextItemIds.unshift("create-comparison");
     }
 
