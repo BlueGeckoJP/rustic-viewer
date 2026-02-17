@@ -136,8 +136,7 @@ pub fn run() {
                     });
                 }
                 "about-version" => {
-                    let version = get_app_version();
-                    app.emit("notify", format!("App Version: {}", version)).unwrap();
+                    app.emit("notify", get_app_version()).unwrap();
                 }
                 _ => {}
             }
@@ -154,23 +153,32 @@ struct LatestCommit {
     sha: String,
 }
 
-fn get_git_info() -> (&'static str, &'static str, &'static str) {
+fn get_git_info() -> (&'static str, &'static str, &'static str, &'static str) {
     let git_branch = option_env!("VERGEN_GIT_BRANCH").unwrap_or("unknown");
     let git_commit_date = option_env!("VERGEN_GIT_COMMIT_DATE").unwrap_or("unknown");
     let git_sha = option_env!("VERGEN_GIT_SHA").unwrap_or("unknown");
-    (git_branch, git_commit_date, git_sha)
+    let git_dirty = option_env!("VERGEN_GIT_DIRTY").unwrap_or("unknown");
+    (git_branch, git_commit_date, git_sha, git_dirty)
 }
 
 fn get_app_version() -> String {
-    let (git_branch, git_commit_date, git_sha) = get_git_info();
+    let (git_branch, git_commit_date, git_sha, git_dirty) = get_git_info();
+
     format!(
-        "\nBranch: {}\nCommit Date: {}\nSHA: {}",
-        git_branch, git_commit_date, git_sha
+        "App Version:\nBranch: {}\nCommit Date: {}\nSHA: {}{}",
+        git_branch,
+        git_commit_date,
+        git_sha,
+        if git_dirty == "true" {
+            "\n⚠️ Warning: This build contains uncommitted changes!!"
+        } else {
+            ""
+        }
     )
 }
 
 async fn can_update() -> Result<bool, String> {
-    let (_, _, git_sha) = get_git_info();
+    let (_, _, git_sha, _) = get_git_info();
 
     let url = "https://api.github.com/repos/BlueGeckoJP/rustic-viewer/commits/main";
     let client = reqwest::Client::new();
