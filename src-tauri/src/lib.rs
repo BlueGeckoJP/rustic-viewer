@@ -3,6 +3,8 @@ mod image;
 mod startup_state;
 
 use clap::Parser;
+use reqwest::header::USER_AGENT;
+use serde::Deserialize;
 use tauri::{
     menu::{Menu, MenuItem, PredefinedMenuItem, Submenu},
     Emitter, Listener, Manager,
@@ -77,7 +79,24 @@ pub fn run() {
 
             let view_menu = Submenu::with_items(app, "View", true, &[&reload_image])?;
 
-            Menu::with_items(app, &[&file_menu, &view_menu])
+            let check_update = MenuItem::with_id(
+                app,
+                "check-update",
+                "Check for Updates",
+                true,
+                None::<String>,
+            )?;
+            let about_version = MenuItem::with_id(
+                app,
+                "about-version",
+                "About Version",
+                true,
+                None::<String>,
+            )?;
+
+            let help_menu = Submenu::with_items(app, "Help", true, &[&check_update, &about_version])?;
+
+            Menu::with_items(app, &[&file_menu, &view_menu, &help_menu])
         })
         .on_menu_event(|app, event| {
             log::debug!("Received the event: {}", event.id().as_ref());
@@ -99,10 +118,69 @@ pub fn run() {
                 "reload-image" => {
                     app.emit("reload-image", ()).unwrap();
                 }
+                "check-update" => {
+                    let inner_app = app.clone();
+                    tauri::async_runtime::spawn(async move {
+                        match can_update().await {
+                            Ok(true) => {
+                                inner_app.emit("notify", "A new update is available! Please check the GitHub releases page.").unwrap();
+                            }
+                            Ok(false) => {},
+                            Err(e) => {
+                                inner_app.emit("notify-error", "Failed to check for updates. Please try again later.").unwrap();
+                                log::error!("Failed to check for updates: {}", e);
+                            }
+                        }
+                    });
+                }
+                "about-version" => {
+                    let version = get_app_version();
+                    app.emit("notify", format!("App Version: {}", version)).unwrap();
+                }
                 _ => {}
             }
         })
-        .invoke_handler(tauri::generate_handler![crate::image::lanczos_resize])
+        .invoke_handler(tauri::generate_handler![
+            crate::image::lanczos_resize,
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+#[derive(Deserialize)]
+struct LatestCommit {
+    sha: String,
+}
+
+fn get_git_info() -> (&'static str, &'static str, &'static str) {
+    let git_branch = option_env!("VERGEN_GIT_BRANCH").unwrap_or("unknown");
+    let git_commit_date = option_env!("VERGEN_GIT_COMMIT_DATE").unwrap_or("unknown");
+    let git_sha = option_env!("VERGEN_GIT_SHA").unwrap_or("unknown");
+    (git_branch, git_commit_date, git_sha)
+}
+
+fn get_app_version() -> String {
+    let (git_branch, git_commit_date, git_sha) = get_git_info();
+    format!(
+        "Branch: {}, Commit Date: {}, SHA: {}",
+        git_branch, git_commit_date, git_sha
+    )
+}
+
+async fn can_update() -> Result<bool, String> {
+    let (_, _, git_sha) = get_git_info();
+
+    let url = "https://api.github.com/repos/BlueGeckoJP/rustic-viewer/commits/main";
+    let client = reqwest::Client::new();
+    let res: LatestCommit = client
+        .get(url)
+        .header(USER_AGENT, "rustic-viewer")
+        .send()
+        .await
+        .map_err(|e| format!("Failed to fetch latest commit: {}", e))?
+        .json()
+        .await
+        .map_err(|e| format!("Failed to parse latest commit: {}", e))?;
+
+    Ok(res.sha != git_sha)
 }
