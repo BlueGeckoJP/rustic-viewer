@@ -2,10 +2,11 @@ import { emit, listen } from "@tauri-apps/api/event";
 import { useEffect, useRef } from "react";
 import { useShallow } from "zustand/shallow";
 import ComparisonView from "./components/ComparisonView";
-import ErrorToast from "./components/ErrorToast";
 import SingleView from "./components/SingleView";
 import TabBar from "./components/TabBar";
+import ToastNotification from "./components/ToastNotification";
 import { useTabStore } from "./store/tabStoreState";
+import useToastStore from "./store/toastStore";
 
 // Main App component: manages tab state, image loading, canvas rendering, and Tauri events
 export default function App() {
@@ -27,6 +28,8 @@ export default function App() {
   const openImage = useTabStore((s) => s.openImage);
   const reloadActiveImage = useTabStore((s) => s.reloadActiveImage);
   const updateImageList = useTabStore((s) => s.updateImageList);
+
+  const addToast = useToastStore((s) => s.addToast);
 
   // Add Tauri event listeners for 'open-image' and 'new-tab' events
   useEffect(() => {
@@ -69,6 +72,12 @@ export default function App() {
           console.log("Received reload-image event: ", event.payload);
           reloadActiveImage();
         }),
+        listen("notify", (event) => {
+          addToast(String(event.payload), false);
+        }),
+        listen("notify-error", (event) => {
+          addToast(String(event.payload), true);
+        }),
       ]);
 
       unlisteners.push(
@@ -86,7 +95,7 @@ export default function App() {
         fn();
       });
     };
-  }, [addSingleTab, openImage, reloadActiveImage]);
+  }, [addSingleTab, openImage, reloadActiveImage, addToast]);
 
   useEffect(() => {
     for (const tab of Object.values(singleTabs)) {
@@ -112,7 +121,7 @@ export default function App() {
           <ComparisonView tabId={activeTabId} />
         )}
       </div>
-      <ErrorToast />
+      <ToastNotification />
     </div>
   );
 }

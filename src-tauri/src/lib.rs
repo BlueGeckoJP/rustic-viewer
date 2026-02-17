@@ -125,7 +125,9 @@ pub fn run() {
                             Ok(true) => {
                                 inner_app.emit("notify", "A new update is available! Please check the GitHub releases page.").unwrap();
                             }
-                            Ok(false) => {},
+                            Ok(false) => {
+                                inner_app.emit("notify", "You are using the latest version.").unwrap();
+                            },
                             Err(e) => {
                                 inner_app.emit("notify-error", "Failed to check for updates. Please try again later.").unwrap();
                                 log::error!("Failed to check for updates: {}", e);
@@ -162,7 +164,7 @@ fn get_git_info() -> (&'static str, &'static str, &'static str) {
 fn get_app_version() -> String {
     let (git_branch, git_commit_date, git_sha) = get_git_info();
     format!(
-        "Branch: {}, Commit Date: {}, SHA: {}",
+        "\nBranch: {}\nCommit Date: {}\nSHA: {}",
         git_branch, git_commit_date, git_sha
     )
 }
