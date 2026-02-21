@@ -136,7 +136,7 @@ pub fn run() {
                     });
                 }
                 "about-version" => {
-                    app.emit("notify", get_app_version()).unwrap();
+                    app.emit("notify", get_app_version_message()).unwrap();
                 }
                 _ => {}
             }
@@ -161,7 +161,7 @@ fn get_git_info() -> (&'static str, &'static str, &'static str, &'static str) {
     (git_branch, git_commit_date, git_sha, git_dirty)
 }
 
-fn get_app_version() -> String {
+fn get_app_version_message() -> String {
     let (git_branch, git_commit_date, git_sha, git_dirty) = get_git_info();
 
     format!(
