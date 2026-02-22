@@ -1,4 +1,3 @@
-import type React from "react";
 import { useMemo } from "react";
 import useViewHotkeys from "../../hooks/useViewHotkeys";
 import { useTabStore } from "../../store/tabStoreState";
@@ -9,7 +8,7 @@ type ComparisonViewProps = {
   tabId: string;
 };
 
-export const ComparisonView: React.FC<ComparisonViewProps> = ({ tabId }) => {
+export const ComparisonView = ({ tabId }: ComparisonViewProps) => {
   const tab = useTabStore((s) => s.comparisonTabs[tabId] || null);
   const singleTabs = useTabStore((s) => s.singleTabs);
   const setActiveSlotIndex = useTabStore((s) => s.setActiveSlotIndex);

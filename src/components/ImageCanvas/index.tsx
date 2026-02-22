@@ -1,4 +1,3 @@
-import type React from "react";
 import { useCallback, useEffect, useRef } from "react";
 import type { ImageRenderer, RendererType } from "./renderers";
 import createRenderer from "./renderers";
@@ -23,14 +22,14 @@ export type ImageCanvasProps = {
   rendererType?: RendererType;
 };
 
-const ImageCanvas: React.FC<ImageCanvasProps> = ({
+const ImageCanvas = ({
   image,
   imagePath,
   className,
   zoom = 1.0,
   panOffset = { x: 0, y: 0 },
   rendererType = "2d",
-}) => {
+}: ImageCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const rendererRef = useRef<ImageRenderer | null>(null);
 
