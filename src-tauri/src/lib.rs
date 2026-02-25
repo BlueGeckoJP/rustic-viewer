@@ -25,8 +25,7 @@ pub fn run() {
             let parsed = Args::try_parse_from(args).unwrap_or_else(|e| {
                 log::error!("Failed to parse args: {}", e);
                 app.exit(1);
-                // This will never be reached, but we need to return something
-                Args::default()
+                unreachable!();
             });
 
             handle_args(app, parsed, "subsequent");
