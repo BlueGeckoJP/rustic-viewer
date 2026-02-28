@@ -73,10 +73,11 @@ pub fn run() {
                 ],
             )?;
 
+            let fullscreen_item = MenuItem::with_id(app, "toggle-fullscreen", "Toggle Fullscreen", true, Some("F11"))?;
             let reload_image =
                 MenuItem::with_id(app, "reload-image", "Reload Image", true, Some("F5"))?;
 
-            let view_menu = Submenu::with_items(app, "View", true, &[&reload_image])?;
+            let view_menu = Submenu::with_items(app, "View", true, &[&fullscreen_item, &PredefinedMenuItem::separator(app)?, &reload_image])?;
 
             let check_update = MenuItem::with_id(
                 app,
@@ -113,6 +114,15 @@ pub fn run() {
                 }
                 "quit" => {
                     app.exit(0);
+                }
+                "toggle-fullscreen" => {
+                    if let Some(window) = app.get_webview_window("main") {
+                        let is_fullscreen = window.is_fullscreen().unwrap_or(false);
+                        if let Err(e) = window.set_fullscreen(!is_fullscreen) {
+                            log::error!("Failed to toggle fullscreen: {}", e);
+                            app.emit("notify-error", "Failed to toggle fullscreen. Please try again.").unwrap();
+                        }
+                    }
                 }
                 "reload-image" => {
                     app.emit("reload-image", ()).unwrap();
