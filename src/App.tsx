@@ -44,6 +44,8 @@ export default function App() {
         openImageNewTabListener,
         newTabListener,
         reloadImageListener,
+        notifyListener,
+        notifyErrorListener,
       ] = await Promise.all([
         listen("open-image", (event) => {
           console.log("Received open-image event:", event.payload);
@@ -85,6 +87,8 @@ export default function App() {
         newTabListener,
         openImageNewTabListener,
         reloadImageListener,
+        notifyListener,
+        notifyErrorListener,
       );
 
       await emit("frontend-ready", null); // Notify backend that frontend is ready
