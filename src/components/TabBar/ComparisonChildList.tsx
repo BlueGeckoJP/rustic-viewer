@@ -3,7 +3,7 @@ import type {
   SingleTabState,
 } from "../../store/tabStoreState";
 
-export type ComparisonChildListProps = {
+type ComparisonChildListProps = {
   isComp: boolean;
   expanded: boolean;
   comparisonTab: ComparisonTabState;
