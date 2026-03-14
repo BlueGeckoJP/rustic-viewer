@@ -18,7 +18,7 @@ export class WebGLRenderer implements ImageRenderer {
 
   private timeoutId: number | null = null;
   private currentResizeId = 0;
-  private currentImagePath: string | null = null;
+  private currentImage: ImageBitmap | null = null;
 
   initialize(canvas: HTMLCanvasElement): void {
     this.gl = canvas.getContext("webgl", {
@@ -140,13 +140,6 @@ export class WebGLRenderer implements ImageRenderer {
     gl.attachShader(program, fragmentShader);
     gl.linkProgram(program);
     const success = gl.getProgramParameter(program, gl.LINK_STATUS);
-
-    // Shaders are no longer needed after linking; detach and delete them to free GPU memory.
-    gl.detachShader(program, vertexShader);
-    gl.detachShader(program, fragmentShader);
-    gl.deleteShader(vertexShader);
-    gl.deleteShader(fragmentShader);
-
     if (success) return program;
 
     console.error(gl.getProgramInfoLog(program));
@@ -210,9 +203,9 @@ export class WebGLRenderer implements ImageRenderer {
 
     this.markHighQualityStale(imagePath, drawWidth, drawHeight);
 
-    // Update texture if image or imagePath changed
-    if (this.currentImagePath !== imagePath) {
-      this.currentImagePath = imagePath;
+    // Update texture if image changed
+    if (this.currentImage !== image) {
+      this.currentImage = image;
       gl.bindTexture(gl.TEXTURE_2D, this.texture);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
@@ -362,11 +355,6 @@ export class WebGLRenderer implements ImageRenderer {
   }
 
   dispose(): void {
-    if (this.timeoutId !== null) {
-      clearTimeout(this.timeoutId);
-      this.timeoutId = null;
-    }
-
     this.clear();
 
     if (this.gl) {
@@ -381,6 +369,6 @@ export class WebGLRenderer implements ImageRenderer {
     this.positionBuffer = null;
     this.texCoordBuffer = null;
     this.texture = null;
-    this.currentImagePath = null;
+    this.currentImage = null;
   }
 }
