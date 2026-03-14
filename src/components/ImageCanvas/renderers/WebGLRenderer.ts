@@ -140,6 +140,13 @@ export class WebGLRenderer implements ImageRenderer {
     gl.attachShader(program, fragmentShader);
     gl.linkProgram(program);
     const success = gl.getProgramParameter(program, gl.LINK_STATUS);
+
+    // Shaders are no longer needed after linking; detach and delete them to free GPU memory.
+    gl.detachShader(program, vertexShader);
+    gl.detachShader(program, fragmentShader);
+    gl.deleteShader(vertexShader);
+    gl.deleteShader(fragmentShader);
+
     if (success) return program;
 
     console.error(gl.getProgramInfoLog(program));
@@ -355,6 +362,11 @@ export class WebGLRenderer implements ImageRenderer {
   }
 
   dispose(): void {
+    if (this.timeoutId !== null) {
+      clearTimeout(this.timeoutId);
+      this.timeoutId = null;
+    }
+
     this.clear();
 
     if (this.gl) {
