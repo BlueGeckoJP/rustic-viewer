@@ -13,18 +13,15 @@ export const createCommonActions: StateCreator<
       delete newTabs[id];
       const newOrder = state.tabOrder.filter((tid) => tid !== id);
 
-      let activeTabId = state.activeTabId;
-      if (state.activeTabId === id) {
-        if (newOrder.length > 0) {
-          const currentIndex = state.tabOrder.indexOf(id);
-          activeTabId =
-            currentIndex < state.tabOrder.length - 1
+      const currentIndex = state.tabOrder.indexOf(id);
+      const activeTabId =
+        state.activeTabId === id
+          ? newOrder.length > 0
+            ? currentIndex < state.tabOrder.length - 1
               ? state.tabOrder[currentIndex + 1]
-              : state.tabOrder[currentIndex - 1];
-        } else {
-          activeTabId = state.addSingleTab([], 0, null);
-        }
-      }
+              : state.tabOrder[currentIndex - 1]
+            : state.addSingleTab([], 0, null)
+          : state.activeTabId;
 
       return { singleTabs: newTabs, activeTabId, tabOrder: newOrder };
     });
