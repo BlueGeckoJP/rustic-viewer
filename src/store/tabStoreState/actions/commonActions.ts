@@ -12,12 +12,20 @@ export const createCommonActions: StateCreator<
       const newTabs = { ...state.singleTabs };
       delete newTabs[id];
       const newOrder = state.tabOrder.filter((tid) => tid !== id);
-      const activeTabId =
-        state.activeTabId === id
-          ? newOrder.length > 0
-            ? newOrder[newOrder.length - 1]
-            : state.addSingleTab([], 0, null)
-          : state.activeTabId;
+
+      let activeTabId = state.activeTabId;
+      if (state.activeTabId === id) {
+        if (newOrder.length > 0) {
+          const currentIndex = state.tabOrder.indexOf(id);
+          activeTabId =
+            currentIndex < state.tabOrder.length - 1
+              ? state.tabOrder[currentIndex + 1]
+              : state.tabOrder[currentIndex - 1];
+        } else {
+          activeTabId = state.addSingleTab([], 0, null);
+        }
+      }
+
       return { singleTabs: newTabs, activeTabId, tabOrder: newOrder };
     });
   },
