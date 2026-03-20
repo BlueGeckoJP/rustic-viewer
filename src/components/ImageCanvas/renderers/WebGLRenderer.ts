@@ -82,8 +82,16 @@ export class WebGLRenderer implements ImageRenderer {
       }
     `;
 
-    const vertexShader = this.createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
-    const fragmentShader = this.createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
+    const vertexShader = this.createShader(
+      gl,
+      gl.VERTEX_SHADER,
+      vertexShaderSource,
+    );
+    const fragmentShader = this.createShader(
+      gl,
+      gl.FRAGMENT_SHADER,
+      fragmentShaderSource,
+    );
 
     if (!vertexShader || !fragmentShader) return;
 
@@ -93,9 +101,18 @@ export class WebGLRenderer implements ImageRenderer {
     this.positionLocation = gl.getAttribLocation(this.program, "a_position");
     this.texCoordLocation = gl.getAttribLocation(this.program, "a_texCoord");
 
-    this.resolutionUniformLocation = gl.getUniformLocation(this.program, "u_resolution");
-    this.imageResolutionUniformLocation = gl.getUniformLocation(this.program, "u_imageResolution");
-    this.offsetUniformLocation = gl.getUniformLocation(this.program, "u_offset");
+    this.resolutionUniformLocation = gl.getUniformLocation(
+      this.program,
+      "u_resolution",
+    );
+    this.imageResolutionUniformLocation = gl.getUniformLocation(
+      this.program,
+      "u_imageResolution",
+    );
+    this.offsetUniformLocation = gl.getUniformLocation(
+      this.program,
+      "u_offset",
+    );
     this.scaleUniformLocation = gl.getUniformLocation(this.program, "u_scale");
 
     this.positionBuffer = gl.createBuffer();
@@ -107,12 +124,7 @@ export class WebGLRenderer implements ImageRenderer {
     gl.bufferData(
       gl.ARRAY_BUFFER,
       new Float32Array([
-        0.0, 0.0,
-        1.0, 0.0,
-        0.0, 1.0,
-        0.0, 1.0,
-        1.0, 0.0,
-        1.0, 1.0,
+        0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0,
       ]),
       gl.STATIC_DRAW,
     );
@@ -120,7 +132,11 @@ export class WebGLRenderer implements ImageRenderer {
     this.texture = gl.createTexture();
   }
 
-  private createShader(gl: WebGLRenderingContext, type: number, source: string): WebGLShader | null {
+  private createShader(
+    gl: WebGLRenderingContext,
+    type: number,
+    source: string,
+  ): WebGLShader | null {
     const shader = gl.createShader(type);
     if (!shader) return null;
     gl.shaderSource(shader, source);
@@ -133,7 +149,11 @@ export class WebGLRenderer implements ImageRenderer {
     return null;
   }
 
-  private createProgram(gl: WebGLRenderingContext, vertexShader: WebGLShader, fragmentShader: WebGLShader): WebGLProgram | null {
+  private createProgram(
+    gl: WebGLRenderingContext,
+    vertexShader: WebGLShader,
+    fragmentShader: WebGLShader,
+  ): WebGLProgram | null {
     const program = gl.createProgram();
     if (!program) return null;
     gl.attachShader(program, vertexShader);
@@ -147,21 +167,20 @@ export class WebGLRenderer implements ImageRenderer {
     return null;
   }
 
-  private setRectangle(gl: WebGLRenderingContext, x: number, y: number, width: number, height: number) {
+  private setRectangle(
+    gl: WebGLRenderingContext,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+  ) {
     const x1 = x;
     const x2 = x + width;
     const y1 = y;
     const y2 = y + height;
     gl.bufferData(
       gl.ARRAY_BUFFER,
-      new Float32Array([
-        x1, y1,
-        x2, y1,
-        x1, y2,
-        x1, y2,
-        x2, y1,
-        x2, y2,
-      ]),
+      new Float32Array([x1, y1, x2, y1, x1, y2, x1, y2, x2, y1, x2, y2]),
       gl.STATIC_DRAW,
     );
   }
@@ -177,8 +196,10 @@ export class WebGLRenderer implements ImageRenderer {
     const gl = this.gl;
 
     // Use WebGL canvas bounds for resolution, as it matches CSS bounds and handles DPR via viewport
-    const cssW = (gl.canvas as HTMLCanvasElement).clientWidth || gl.canvas.width;
-    const cssH = (gl.canvas as HTMLCanvasElement).clientHeight || gl.canvas.height;
+    const cssW =
+      (gl.canvas as HTMLCanvasElement).clientWidth || gl.canvas.width;
+    const cssH =
+      (gl.canvas as HTMLCanvasElement).clientHeight || gl.canvas.height;
 
     const imgRatio = image.width / image.height;
     const canvasRatio = cssW / cssH;
@@ -211,13 +232,21 @@ export class WebGLRenderer implements ImageRenderer {
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+      gl.texImage2D(
+        gl.TEXTURE_2D,
+        0,
+        gl.RGBA,
+        gl.RGBA,
+        gl.UNSIGNED_BYTE,
+        image,
+      );
     }
 
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
     gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
+    // biome-ignore lint/correctness/useHookAtTopLevel: gl.useProgram is a WebGL API call, not a React hook
     gl.useProgram(this.program);
 
     gl.enableVertexAttribArray(this.positionLocation);
@@ -257,7 +286,7 @@ export class WebGLRenderer implements ImageRenderer {
         baseWidth,
         baseHeight,
         cssW,
-        cssH
+        cssH,
       );
     }, 500);
   }
@@ -315,12 +344,20 @@ export class WebGLRenderer implements ImageRenderer {
 
       // Re-upload high quality texture
       gl.bindTexture(gl.TEXTURE_2D, this.texture);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, highQualityBitmap);
+      gl.texImage2D(
+        gl.TEXTURE_2D,
+        0,
+        gl.RGBA,
+        gl.RGBA,
+        gl.UNSIGNED_BYTE,
+        highQualityBitmap,
+      );
 
       gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT);
 
+      // biome-ignore lint/correctness/useHookAtTopLevel: gl.useProgram is a WebGL API call, not a React hook
       gl.useProgram(this.program);
 
       gl.enableVertexAttribArray(this.positionLocation);
