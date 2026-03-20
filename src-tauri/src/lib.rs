@@ -102,13 +102,17 @@ pub fn run() {
             log::debug!("Received the event: {}", event.id().as_ref());
             match event.id().as_ref() {
                 "new" => {
-                    app.emit("new-tab", ()).unwrap();
+                    if let Err(e) = app.emit("new-tab", ()) {
+                        log::error!("Failed to emit new-tab: {}", e);
+                    }
                 }
                 "open" => {
                     let inner_app = app.clone();
                     app.dialog().file().pick_file(move |path| {
                         if let Some(path) = path {
-                            inner_app.emit("open-image", path.to_string()).unwrap();
+                            if let Err(e) = inner_app.emit("open-image", path.to_string()) {
+                                log::error!("Failed to emit open-image: {}", e);
+                            }
                         }
                     });
                 }
@@ -120,32 +124,44 @@ pub fn run() {
                         let is_fullscreen = window.is_fullscreen().unwrap_or(false);
                         if let Err(e) = window.set_fullscreen(!is_fullscreen) {
                             log::error!("Failed to toggle fullscreen: {}", e);
-                            app.emit("notify-error", "Failed to toggle fullscreen. Please try again.").unwrap();
+                            if let Err(e) = app.emit("notify-error", "Failed to toggle fullscreen. Please try again.") {
+                                log::error!("Failed to emit notify-error: {}", e);
+                            }
                         }
                     }
                 }
                 "reload-image" => {
-                    app.emit("reload-image", ()).unwrap();
+                    if let Err(e) = app.emit("reload-image", ()) {
+                        log::error!("Failed to emit reload-image: {}", e);
+                    }
                 }
                 "check-update" => {
                     let inner_app = app.clone();
                     tauri::async_runtime::spawn(async move {
                         match can_update().await {
                             Ok(true) => {
-                                inner_app.emit("notify", "A new update is available! Please check the GitHub releases page.").unwrap();
+                                if let Err(e) = inner_app.emit("notify", "A new update is available! Please check the GitHub releases page.") {
+                                    log::error!("Failed to emit notify: {}", e);
+                                }
                             }
                             Ok(false) => {
-                                inner_app.emit("notify", "You are using the latest version.").unwrap();
+                                if let Err(e) = inner_app.emit("notify", "You are using the latest version.") {
+                                    log::error!("Failed to emit notify: {}", e);
+                                }
                             },
                             Err(e) => {
-                                inner_app.emit("notify-error", "Failed to check for updates. Please try again later.").unwrap();
+                                if let Err(e) = inner_app.emit("notify-error", "Failed to check for updates. Please try again later.") {
+                                    log::error!("Failed to emit notify-error: {}", e);
+                                }
                                 log::error!("Failed to check for updates: {}", e);
                             }
                         }
                     });
                 }
                 "about-version" => {
-                    app.emit("notify", get_app_version_message()).unwrap();
+                    if let Err(e) = app.emit("notify", get_app_version_message()) {
+                        log::error!("Failed to emit notify: {}", e);
+                    }
                 }
                 _ => {}
             }
