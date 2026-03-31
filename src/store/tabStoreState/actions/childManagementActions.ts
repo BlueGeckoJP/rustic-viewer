@@ -10,7 +10,13 @@ export const createChildManagementActions: StateCreator<
   TabStoreState,
   [],
   [],
-  Pick<TabStoreState, "detachToSingleTab" | "removeChild" | "detachAllChildren">
+  Pick<
+    TabStoreState,
+    | "detachToSingleTab"
+    | "removeChild"
+    | "detachAllChildren"
+    | "removeComparison"
+  >
 > = (set) => ({
   detachToSingleTab: (comparisonId, slotIndex) => {
     set((state) => {
@@ -88,6 +94,44 @@ export const createChildManagementActions: StateCreator<
         activeTabId,
         singleTabs: restoredState.singleTabs,
         comparisonTabs: newComparisonTabs,
+      };
+    });
+  },
+
+  removeComparison: (comparisonId) => {
+    set((state) => {
+      const comparisonTab = state.comparisonTabs[comparisonId];
+      if (!comparisonTab) return state;
+
+      const childrenIds = comparisonTab.children;
+      const newSingleTabs = { ...state.singleTabs };
+      for (const childId of childrenIds) {
+        delete newSingleTabs[childId];
+      }
+
+      const newComparisonTabs = { ...state.comparisonTabs };
+      delete newComparisonTabs[comparisonId];
+
+      const newOrder = state.tabOrder.filter(
+        (id) => id !== comparisonId && !childrenIds.includes(id),
+      );
+
+      const currentIndex = state.tabOrder.indexOf(comparisonId);
+      const isActiveRemoved =
+        state.activeTabId === comparisonId ||
+        childrenIds.includes(state.activeTabId);
+
+      const activeTabId = isActiveRemoved
+        ? newOrder.length > 0
+          ? newOrder[Math.min(currentIndex, newOrder.length - 1)]
+          : state.addSingleTab([], 0, null)
+        : state.activeTabId;
+
+      return {
+        singleTabs: newSingleTabs,
+        comparisonTabs: newComparisonTabs,
+        tabOrder: newOrder,
+        activeTabId,
       };
     });
   },

@@ -95,4 +95,5 @@ export type TabStoreState = {
   openImage: (rawPath: string, inNewTab?: boolean) => Promise<void>;
   reloadActiveImage: () => void;
   updateImageList: (tabId: string) => Promise<void>;
+  removeComparison: (comparisonId: string) => void;
 };

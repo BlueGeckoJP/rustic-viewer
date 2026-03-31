@@ -24,7 +24,7 @@ const TabRow = ({
   setSelectedIDs,
 }: TabRowProps) => {
   const removeSingleTab = useTabStore((s) => s.removeSingleTab);
-  const detachAllChildren = useTabStore((s) => s.detachAllChildren);
+  const removeComparison = useTabStore((s) => s.removeComparison);
 
   return (
     <>
@@ -55,7 +55,7 @@ const TabRow = ({
       <button
         onClick={(e) => {
           e.stopPropagation();
-          if (isComp) detachAllChildren(tabId);
+          if (isComp) removeComparison(tabId);
           else removeSingleTab(tabId);
 
           setSelectedIDs((prev) => {
