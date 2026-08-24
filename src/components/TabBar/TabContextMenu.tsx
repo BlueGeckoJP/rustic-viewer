@@ -36,6 +36,7 @@ const TabContextMenu = ({
   const removeChild = useTabStore((s) => s.removeChild);
   const reorderChildren = useTabStore((s) => s.reorderComparisonChildren);
   const detachAllChildren = useTabStore((s) => s.detachAllChildren);
+  const removeComparison = useTabStore((s) => s.removeComparison);
 
   if (!menuOpenFor || !menuPos) return null;
 
@@ -71,12 +72,25 @@ const TabContextMenu = ({
     close: {
       label: "Close",
       handle: () => {
-        if (singleTabs[menuOpenFor]) removeSingleTab(menuOpenFor);
-        else if (comparisonTabs[menuOpenFor]) detachAllChildren(menuOpenFor);
+        let idsToClose = new Set(menuOpenFor);
+
+        if (selectedIDs.size > 1) {
+          idsToClose = new Set([...idsToClose, ...selectedIDs]);
+        }
+
+        for (const id of idsToClose) {
+          if (singleTabs[id]) removeSingleTab(id);
+          else if (comparisonTabs[id]) removeComparison(id);
+        }
+
         setSelectedIDs((prev) => {
-          if (!prev.has(menuOpenFor)) return prev;
           const n = new Set(prev);
-          n.delete(menuOpenFor);
+
+          for (const id of idsToClose) {
+            if (!prev.has(id)) continue;
+            n.delete(id);
+          }
+
           return n;
         });
       },
