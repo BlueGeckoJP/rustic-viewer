@@ -33,7 +33,7 @@ const useToastStore = create<ToastStoreState>((set) => ({
 const originalConsoleError = console.error;
 
 console.error = (...args: unknown[]) => {
-  useToastStore.getState().addToast(String(args[0]), true);
+  useToastStore.getState().addToast(String(args.join("\n")), true);
   originalConsoleError(...args);
 };
 
