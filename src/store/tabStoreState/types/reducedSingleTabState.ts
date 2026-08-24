@@ -44,7 +44,6 @@ export async function toFullState(
     try {
       imageList = await getSortedImageFiles(directory);
       currentIndex = imageList.indexOf(reduced.rawPath);
-      if (currentIndex < 0) currentIndex = 0;
     } catch (error) {
       console.warn(
         `Failed to restore tab ${id}: could not read directory ${directory}`,
